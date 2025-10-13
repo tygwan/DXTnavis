@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>DXrevit</Name>
+    <FullClassName>DXrevit.Application</FullClassName>
+    <Text>DX Platform - Revit Data Producer</Text>
+    <Description>BIM 데이터를 추출하여 중앙 데이터베이스에 저장</Description>
+    <VisibilityMode>AlwaysVisible</VisibilityMode>
+    <Assembly>C:\ProgramData\Autodesk\Revit\Addins\2025\DXrevit\DXrevit.dll</Assembly>
+    <AddInId>EC4D50CD-D084-4164-A3A8-2F62750B9F2F</AddInId>
+    <VendorId>DX</VendorId>
+    <VendorDescription>DX Platform</VendorDescription>
+  </AddIn>
+</RevitAddIns>

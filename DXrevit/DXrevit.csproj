@@ -1,0 +1,87 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Align with Revit 2025 (.NET 8) runtime -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5">
+      <IncludeAssets>all</IncludeAssets>
+      <PrivateAssets>none</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DXBase\DXBase.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Revit 2025\RevitAPIUI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
+    <MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <PropertyGroup>
+      <RevitAddinsPath>C:\ProgramData\Autodesk\Revit\Addins\2025\DXrevit</RevitAddinsPath>
+    </PropertyGroup>
+
+    <!-- Addins 폴더 생성 -->
+    <MakeDir Directories="$(RevitAddinsPath)" Condition="!Exists('$(RevitAddinsPath)')" />
+    <MakeDir Directories="$(RevitAddinsPath)\Resources" Condition="!Exists('$(RevitAddinsPath)\Resources')" />
+
+    <!-- 모든 출력 파일 복사 (DLL, PDB 등) -->
+    <ItemGroup>
+      <OutputFiles Include="$(TargetDir)**\*.*" Exclude="$(TargetDir)**\*.addin;$(TargetDir)**\RevitAPI*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(RevitAddinsPath)\%(RecursiveDir)" SkipUnchangedFiles="true" />
+
+    <!-- Resources 폴더 복사 -->
+    <ItemGroup>
+      <ResourceFiles Include="$(ProjectDir)Resources\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ResourceFiles)" DestinationFolder="$(RevitAddinsPath)\Resources\%(RecursiveDir)" SkipUnchangedFiles="true" Condition="Exists('$(ProjectDir)Resources')" />
+
+    <!-- .addin 파일 복사 (상위 폴더) -->
+    <Copy SourceFiles="$(ProjectDir)DXrevit.addin" DestinationFiles="C:\ProgramData\Autodesk\Revit\Addins\2025\DXrevit.addin" SkipUnchangedFiles="true" />
+
+    <Message Text="DXrevit deployed to $(RevitAddinsPath)" Importance="high" />
+  </Target>
+
+</Project>
