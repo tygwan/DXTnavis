@@ -30,12 +30,23 @@ namespace DXrevit.ViewModels
             _dataExtractor = new DataExtractor(document);
             _apiDataWriter = new ApiDataWriter();
 
+            // 진행률 보고자 설정
+            var progressReporter = new Utils.ProgressReporter((percentage, message) =>
+            {
+                ProgressValue = percentage;
+                StatusMessage = message;
+            });
+            _dataExtractor.SetProgressReporter(progressReporter);
+
             // 기본값 설정
             var settings = ConfigurationService.LoadSettings();
             ModelVersion = IdGenerator.GenerateModelVersion(_document.ProjectInformation.Name);
             CreatedBy = settings.DefaultUsername ?? Environment.UserName;
             Description = $"{DateTime.Now:yyyy-MM-dd} 스냅샷";
             StatusMessage = "저장 준비 완료";
+
+            // Dispatcher 초기화
+            Utils.DispatcherHelper.Initialize(System.Windows.Application.Current.Dispatcher);
 
             // 커맨드 초기화
             SaveCommand = new RelayCommand(async () => await ExecuteSaveAsync(), CanExecuteSave);
@@ -128,12 +139,12 @@ namespace DXrevit.ViewModels
                 IsProcessing = true;
                 ProgressValue = 0;
 
-                // 1. 데이터 추출
+                // 1. 데이터 추출 (메인 스레드에서 동기적으로 실행)
                 StatusMessage = "Revit 데이터 추출 중...";
                 ProgressValue = 10;
 
-                var extractedData = await Task.Run(() =>
-                    _dataExtractor.ExtractAll(ModelVersion, CreatedBy, Description));
+                // Revit API는 메인 스레드에서만 호출 가능하므로 동기 실행
+                var extractedData = _dataExtractor.ExtractAll(ModelVersion, CreatedBy, Description);
 
                 ProgressValue = 50;
 

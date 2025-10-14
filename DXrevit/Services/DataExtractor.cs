@@ -2,6 +2,7 @@ using Autodesk.Revit.DB;
 using DXBase.Models;
 using DXBase.Services;
 using DXBase.Utils;
+using DXrevit.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,19 @@ namespace DXrevit.Services
     public class DataExtractor
     {
         private readonly Document _document;
+        private IProgressReporter _progressReporter;
 
         public DataExtractor(Document document)
         {
             _document = document;
+        }
+
+        /// <summary>
+        /// 진행률 보고자 설정
+        /// </summary>
+        public void SetProgressReporter(IProgressReporter progressReporter)
+        {
+            _progressReporter = progressReporter;
         }
 
         /// <summary>
@@ -43,6 +53,7 @@ namespace DXrevit.Services
             int currentCount = 0;
 
             LoggingService.LogInfo($"총 {totalCount}개 객체 추출 시작", "DXrevit");
+            _progressReporter?.ReportProgress(15, $"객체 추출 중 (0/{totalCount})");
 
             foreach (Element element in collector)
             {
@@ -51,7 +62,9 @@ namespace DXrevit.Services
                 // 진행률 보고 (10%마다)
                 if (currentCount % Math.Max(totalCount / 10, 1) == 0)
                 {
+                    int progress = 15 + (int)((currentCount / (double)totalCount) * 30); // 15% ~ 45%
                     LoggingService.LogInfo($"진행률: {currentCount}/{totalCount}", "DXrevit");
+                    _progressReporter?.ReportProgress(progress, $"객체 추출 중 ({currentCount}/{totalCount})");
                 }
 
                 // 객체 데이터 추출
@@ -65,6 +78,8 @@ namespace DXrevit.Services
                 var relationships = ExtractRelationships(element, modelVersion);
                 extractedData.Relationships.AddRange(relationships);
             }
+
+            _progressReporter?.ReportProgress(45, "데이터 추출 완료");
 
             extractedData.Metadata.TotalObjectCount = extractedData.Objects.Count;
 

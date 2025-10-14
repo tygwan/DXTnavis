@@ -5,29 +5,45 @@
   - Models: MetadataRecord, ObjectRecord, PropertyRecord, RelationshipRecord
   - Services: ConfigurationService, HttpClientService, LoggingService
   - Utils: IdGenerator, JsonHelper, ValidationHelper
-- Phase 2: DXrevit — 80%
-  - DataExtractor 데이터 추출 로직, ApiDataWriter 전송, MVVM 기본 구조(Commands/Views/ViewModels)
-- Phase 3: PostgreSQL Database — 100%
+- Phase 2: DXrevit — 100% ✅
+  - DataExtractor: 진행률 보고 기능, 메인 스레드 안전 처리
+  - ApiDataWriter: API 전송 로직
+  - SnapshotCommand/ViewModel: 완전한 MVVM 구현
+  - SettingsCommand/ViewModel: 설정 관리 UI
+  - Utils: DispatcherHelper, ProgressReporter
+  - 빌드 성공 및 Revit 2025 배포
+- Phase 3: PostgreSQL Database — 100% ✅
   - 테이블 스키마(metadata, objects, relationships)
   - 분석용 뷰(version_summary, 4d_link_data)
   - 함수(fn_compare_versions, fn_get_object_history)
   - 트리거 및 보안 설정
-- 문서화: 데이터 파이프라인(`docs/dev/data-pipeline.md`), 아키텍처 보완(`docs/dev/architecture.md`)
-- RAG 스키마/뷰: pgvector + rag_* 테이블, `analytics_rag_usage` 뷰 추가
-- Phase 4: FastAPI 서버 — 40%
-  - 비동기 서버 스캐폴딩 및 DB 풀(asyncpg)
-  - 엔드포인트: `/api/v1/ingest`, `/api/v1/models/versions`, `/api/v1/models/{version}/summary`, `/api/v1/models/compare`, `/api/v1/timeliner/{version}/mapping`
-  - 시스템: `/health`, `/metrics`, CORS/TrustedHost/보안 헤더 적용
+  - 초기화 스크립트 및 README
+- Phase 4: FastAPI 서버 — 92% ✅
+  - 표준화된 응답 모델 (StandardResponse, PaginatedResponse, IngestResponse)
+  - 전역 에러 핸들러 (validation, http, database, general)
+  - Ingest 엔드포인트: 입력 검증, 처리 시간 측정, 경고 시스템
+  - Analytics 엔드포인트: 페이지네이션, 정렬, 필터링 강화
+  - 헬스체크 상세화: DB 응답 시간, 메타데이터 카운트
+  - 시스템: `/health`, `/metrics`, CORS/TrustedHost/보안 헤더
+- 문서화: 데이터 파이프라인, 아키텍처, Database README, STATUS.md
+- RAG 스키마/뷰: pgvector + rag_* 테이블 (미래 확장)
 
 ## 다음 작업
-- Phase 2 마무리(→100%)
-  - 메인 스레드 안전 추출, 진행표시 `IProgress`/Dispatcher 반영, 배치 전송/재시도, 설정 UI 항목 확장
-- FastAPI 고도화
-  - 응답 모델 표준화, 에러 응답 일관화
-  - 분석 API 페이지네이션/정렬 고도화, 입력 값 검증 강화
-  - 운영: Gunicorn 배포 스크립트, 헬스체크 확장(DB detailed), 메트릭 추가(DB/ingest 카운터)
+- End-to-End 통합 테스트
+  - PostgreSQL 설치 및 스키마 초기화
+  - FastAPI 서버 실행
+  - DXrevit에서 Revit 모델 데이터 전송
+  - 전체 파이프라인 검증
+- Phase 5: DXnavis (Navisworks 애드인) — 0%
+  - API 클라이언트 구현
+  - TimeLiner 자동화 로직
+  - 4D 시뮬레이션 UI
+- 운영 배포
+  - Gunicorn 배포 스크립트
+  - Docker 컨테이너화
+  - CI/CD 파이프라인
 - 문서/가이드
-  - 사용자 가이드(설치/업데이트/트러블슈팅) 보완
+  - 사용자 가이드 (설치/업데이트/트러블슈팅)
   - BI 연결 가이드 및 샘플 리포트 템플릿
 
 ## 실행 가이드

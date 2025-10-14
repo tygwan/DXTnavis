@@ -146,3 +146,4 @@ journal.*.txt
 *.pfx
 *.p12
 connectionstrings.json
+nul
