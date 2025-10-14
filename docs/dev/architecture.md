@@ -250,6 +250,16 @@ public class ElementDTO
 
 ---
 
+## 문서 파싱 · RAG · 시각화 연계
+
+- 문서→JSON 표준 스키마: Document/Chunk/Relationship(JSON) 정규화 후 API로 적재.
+- 저장소: PostgreSQL(JSONB) + `pgvector` 임베딩(`rag_*` 테이블).
+- 검색/RAG: KNN(벡터) + 메타데이터 필터(project/version/source) 조합.
+- 분석 뷰: `analytics_rag_usage` 포함, BI는 `dx_readonly_role`로 조회.
+- 상세 설계: `docs/dev/data-pipeline.md` 참조.
+
+---
+
 ## 설정 관리
 
 ### 계층 구조

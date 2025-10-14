@@ -312,3 +312,42 @@ catch (Exception ex)
 - [Navisworks API Docs](https://help.autodesk.com/view/NAV/2025/ENU/)
 - [.NET 8 Docs](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8)
 - [Building Coder Blog](https://thebuildingcoder.typepad.com/)
+
+# FastAPI 서버 실행 가이드
+
+## 사전 준비
+- PostgreSQL 15+ 설치 및 데이터베이스 생성(`dx_platform`).
+- 데이터베이스 초기화: `psql -U <user> -d dx_platform -f database/init_database.sql`.
+
+## 의존성 설치 및 환경설정
+```bash
+cd fastapi_server
+python -m venv venv
+venv\\Scripts\\activate   # Windows (Mac/Linux: source venv/bin/activate)
+pip install -r requirements.txt
+copy .env.example .env   # 값 수정: DATABASE_URL, ALLOWED_ORIGINS, ALLOWED_HOSTS
+```
+
+## 실행
+```bash
+uvicorn fastapi_server.main:app --host 0.0.0.0 --port 5000 --reload
+```
+
+## 기본 점검
+- `GET /health` : 서버/DB 상태
+- `GET /metrics` : Prometheus 메트릭
+- `POST /api/v1/ingest` : DXrevit 스냅샷 수집
+- 분석 API :
+  - `GET /api/v1/models/versions?projectName=...&limit=100&offset=0`
+  - `GET /api/v1/models/{version}/summary`
+  - `GET /api/v1/models/compare?v1=...&v2=...&changeType=ADDED&limit=1000`
+  - `GET /api/v1/timeliner/{version}/mapping`
+
+## 보안 설정
+- CORS: `.env`의 `ALLOWED_ORIGINS`로 제한
+- Trusted Host: `.env`의 `ALLOWED_HOSTS` 지정
+- 보안 헤더: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, (선택) HSTS, 최소 CSP
+
+## 권장 모듈 버전
+- fastapi 0.110.x, uvicorn 0.30.x, asyncpg 0.29.x
+- pydantic 2.7.x, pydantic-settings 2.2.x, prometheus-client 0.20.x
