@@ -13,6 +13,9 @@
     <!-- Keep compatibility for any netstandard consumers -->
     <PackageReference Include="System.Text.Json" Version="7.0.3" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Polly" Version="8.4.2" />
+  </ItemGroup>
 
   <PropertyGroup>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
