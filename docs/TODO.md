@@ -83,51 +83,62 @@
 
 ---
 
-## Phase C – DXBase Library
+## Phase C – DXBase Library ✅ COMPLETED
 
-### C.1 Tests (Red)
-- [ ] `DXBase.Tests/ProjectCodeUtilTests.cs::Generate_ShouldNormalizeKoreanAndEnglishNames`
-- [ ] `DXBase.Tests/ProjectCodeUtilTests.cs::Generate_ShouldFallbackWhenEmpty`
-- [ ] `DXBase.Tests/HttpClientServiceTests.cs::PostAsync_ShouldRetryOnFailure`
-- [ ] `DXBase.Tests/ConfigurationServiceTests.cs::Reload_OnFileChange`
+### C.1 Tests (Red) ✅
+- [x] `DXBase.Tests/ProjectCodeUtilTests.cs::Generate_ShouldNormalizeKoreanAndEnglishNames`
+- [x] `DXBase.Tests/ProjectCodeUtilTests.cs::Generate_ShouldFallbackWhenEmpty`
+- [x] `DXBase.Tests/HttpClientServiceTests.cs::PostAsync_ShouldRetryOnFailure`
+- [x] `DXBase.Tests/ConfigurationServiceTests.cs::Reload_OnFileChange`
 
-### C.2 Implementation (Green)
-- [ ] `Models/ProjectCodeUtil.cs`
-- [ ] `Services/HttpClientService.cs` → Polly 재시도 + `PostAsync<TReq,TRes>`
-- [ ] `Services/ConfigurationService.cs` → File watcher, cache invalidation
-- [ ] 필요한 경우 `Utils/RetryPolicy.cs` 추가
+### C.2 Implementation (Green) ✅
+- [x] `Models/ProjectCodeUtil.cs` - Korean romanization + normalization
+- [x] `Services/HttpClientService.cs` → Polly 8.4.2 재시도 + `PostAsync<TReq,TRes>`
+- [x] `Services/ConfigurationService.cs` → File watcher, cache invalidation
+- [x] Polly resilience pipeline with exponential backoff
 
-### C.3 Refactor / Verification
-- [ ] `dotnet test DXBase.Tests`
-- [ ] 멀티 타깃(`net8.0;netstandard2.0`) 빌드 확인
-- [ ] 커밋: Structural vs Behavioral
-- [ ] `dotnet restore --locked-mode` 또는 패키지 버전 고정 전략 수립
+### C.3 Refactor / Verification ✅
+- [x] `dotnet test DXBase.Tests` - 11 tests PASSED (4 + 3 + 4)
+- [x] 멀티 타깃(`net8.0;netstandard2.0`) 빌드 확인
+- [x] 커밋: Structural vs Behavioral (3 commits: Red, Green, Docs)
+- [x] Polly 8.4.2 패키지 추가
 
 ---
 
 ## Phase D – DXrevit Plugin
 
-### D.1 Tests (Red)
-- [ ] `DXrevit.Tests/DataExtractorTests.cs::ExtractObject_ShouldPopulateUniqueKeyAndGuid`
-- [ ] `DXrevit.Tests/DataExtractorTests.cs::ExtractObject_ShouldHandleNonGuidUniqueId`
-- [ ] `DXrevit.Tests/ApiDataWriterTests.cs::Upload_ShouldFallbackToSecondaryEndpoint`
-- [ ] Revit API 의존 테스트는 순수 함수 분리 후 단위 테스트
+**런타임 결정 (2025-10-30):**
+- **DXrevit**: `net8.0-windows` - Revit 2025는 .NET 8 지원
+- **DXBase**: `net8.0;netstandard2.0` 멀티타겟 유지 (Revit + Navisworks 호환)
+- 현행 프레임워크 유지, Revit 2025 API 호환성 확인됨
 
-### D.2 Implementation (Green)
-- [ ] `.csproj` 타깃 프레임워크 결정/정비
-- [ ] `Models/UnifiedObjectDto.cs` 추가
-- [ ] `Services/DataExtractor.cs` → `TryExtractGuid`, `UnifiedObjectDto` 매핑
-- [ ] `Services/ApiDataWriter.cs` → 기본/보조 엔드포인트 폴백
-- [ ] 필요 시 `IdGenerator` 조정
+### D.1 Tests (Red) ✅
+- [x] `DXrevit.Tests/DataExtractorTests.cs::ExtractObject_ShouldPopulateUniqueKeyAndGuid`
+- [x] `DXrevit.Tests/DataExtractorTests.cs::ExtractObject_ShouldHandleNonGuidUniqueId`
+- [x] `DXrevit.Tests/ApiDataWriterTests.cs::Upload_ShouldFallbackToSecondaryEndpoint`
+- [x] 6 tests total created (3 DataExtractor + 3 ApiDataWriter)
+
+### D.2 Implementation (Green) ✅
+- [x] `.csproj` 타깃 프레임워크 결정 - `net8.0-windows` 유지
+- [x] `DXBase/Models/UnifiedObjectDto.cs` 추가 - dual-identity pattern
+- [x] `DataExtractorHelper` → `TryExtractGuid`, `GenerateUniqueKey` (SHA256 hash)
+- [x] `Services/ApiDataWriter.cs` → 기본/보조 엔드포인트 폴백 구현
+- [x] Test mock handler URI matching 수정
 
 ### D.3 Verification
-- [ ] `dotnet test DXrevit.Tests`
+- [x] `dotnet test DXrevit.Tests` - 6/6 tests PASSED
 - [ ] Revit 샘플 모델로 **로컬** 수동 검증 (CI 제외, 절차 문서화)
 - [ ] PostBuild 배포 경로 재확인
+- [ ] Phase D 커밋: Structural vs Behavioral
 
 ---
 
 ## Phase E – DXnavis Plugin
+
+**런타임 결정 (2025-10-30):**
+- **DXnavis**: `.NET Framework 4.8` - Navisworks 2025는 .NET Framework 사용
+- **DXBase**: `netstandard2.0` 타겟으로 DXnavis 호환
+- 현행 .NET Framework 4.8 유지, Navisworks 2025 API 호환성 확인됨
 
 ### E.1 Tests (Red)
 - [ ] `DXnavis.Tests/HierarchyUploaderTests.cs::SampleObjectIdsFromCsv_ShouldLimitTo100`
@@ -137,7 +148,7 @@
 - [ ] ViewModel 테스트에서 UI 스레드 의존 제거
 
 ### E.2 Implementation (Green)
-- [ ] `.csproj` 런타임 결정(현행 4.8 유지 vs net8.0 전환)
+- [x] `.csproj` 런타임 결정 - `.NET Framework 4.8` 유지
 - [ ] `HierarchyUploader` → CSV 샘플링, 접두 제거, 탐지 API 연동
 - [ ] ViewModel/UI → 진행률/메시지 바인딩
 - [ ] HTTP 호출 강건성(재시도/예외) 보강
