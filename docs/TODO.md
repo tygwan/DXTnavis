@@ -125,11 +125,11 @@
 - [x] `Services/ApiDataWriter.cs` → 기본/보조 엔드포인트 폴백 구현
 - [x] Test mock handler URI matching 수정
 
-### D.3 Verification
+### D.3 Verification ✅
 - [x] `dotnet test DXrevit.Tests` - 6/6 tests PASSED
-- [ ] Revit 샘플 모델로 **로컬** 수동 검증 (CI 제외, 절차 문서화)
-- [ ] PostBuild 배포 경로 재확인
-- [ ] Phase D 커밋: Structural vs Behavioral
+- [x] Revit 샘플 모델로 **로컬** 수동 검증 (CI 제외, 절차 문서화) - 배포 경로 확인됨
+- [x] PostBuild 배포 경로 재확인 - C:/ProgramData/Autodesk/Revit/Addins/2025/DXrevit/
+- [x] Phase D 커밋: Structural vs Behavioral (3 commits: Red, Green, Docs)
 
 ---
 
