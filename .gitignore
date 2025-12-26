@@ -146,4 +146,32 @@ journal.*.txt
 *.pfx
 *.p12
 connectionstrings.json
-nul
+
+## MCP Configuration (contains database credentials)
+.mcp.json
+.env.mcp
+.env
+.env.local
+.env.*.local
+
+## Database backups (large files)
+backup_*.sql
+*.backup
+*.dump
+
+## Test cache
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.coverage
+htmlcov/
+.tox/
+
+## Python virtual environments
+venv/
+env/
+ENV/
+.venv/
+.worktrees/
