@@ -1,0 +1,27 @@
+{
+  "project": {
+    "name": "DXTnavis",
+    "type": "navisworks-plugin",
+    "framework": ".NET Framework 4.8",
+    "targetPlatform": "x64"
+  },
+  "versionConstraints": {
+    "navisworks": "2025",
+    "dotnet": "4.8",
+    "locked": true
+  },
+  "agents": [
+    "navisworks-api-expert",
+    "wpf-mvvm-specialist",
+    "csv-data-expert"
+  ],
+  "conventions": {
+    "namespace": "DXTnavis",
+    "codeStyle": "C# conventions",
+    "language": "ko-KR (comments), en-US (code)"
+  },
+  "deployment": {
+    "target": "C:\\ProgramData\\Autodesk\\Navisworks Manage 2025\\Plugins\\",
+    "postBuildEvent": true
+  }
+}
