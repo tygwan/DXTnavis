@@ -82,13 +82,23 @@ dxtnavis/
 ### PostBuild Deployment
 Automatic deployment to Navisworks plugins folder:
 ```
-C:\ProgramData\Autodesk\Navisworks Manage 2025\Plugins\
+C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\
 ```
 
+**Note**: Requires Visual Studio to run as Administrator for write access to Program Files.
+
 Files deployed:
-- DXTnavis.dll
-- System.Text.Json.dll
+- DXTnavis.dll (main plugin)
 - Newtonsoft.Json.dll
+- System.Text.Json.dll
+- System.Text.Encodings.Web.dll
+- Microsoft.Bcl.AsyncInterfaces.dll
+- System.Buffers.dll
+- System.Memory.dll
+- System.Numerics.Vectors.dll
+- System.Runtime.CompilerServices.Unsafe.dll
+- System.Threading.Tasks.Extensions.dll
+- System.ValueTuple.dll
 
 ## API Dependencies
 ```xml

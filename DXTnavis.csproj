@@ -153,9 +153,17 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>echo Deploying DXTnavis to Navisworks 2025...
-xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
-xcopy "$(TargetDir)System.Text.Json.dll" "C:\ProgramData\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
-xcopy "$(TargetDir)Newtonsoft.Json.dll" "C:\ProgramData\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetPath)" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)System.Text.Json.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)Newtonsoft.Json.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)Microsoft.Bcl.AsyncInterfaces.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)System.Buffers.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)System.Memory.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)System.Numerics.Vectors.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)System.Runtime.CompilerServices.Unsafe.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)System.Text.Encodings.Web.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)System.Threading.Tasks.Extensions.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
+xcopy "$(TargetDir)System.ValueTuple.dll" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\" /Y /I
 echo DXTnavis deployment completed!</PostBuildEvent>
   </PropertyGroup>
 </Project>
