@@ -21,7 +21,7 @@
     "language": "ko-KR (comments), en-US (code)"
   },
   "deployment": {
-    "target": "C:\\Program Files\\Autodesk\\Navisworks Manage 2025\\Plugins\\",
+    "target": "C:\\Program Files\\Autodesk\\Navisworks Manage 2025\\Plugins\\DXTnavis\\",
     "postBuildEvent": true,
     "requiresAdmin": true
   }

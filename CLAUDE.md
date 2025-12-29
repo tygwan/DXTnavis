@@ -82,7 +82,7 @@ dxtnavis/
 ### PostBuild Deployment
 Automatic deployment to Navisworks plugins folder:
 ```
-C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\
+C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\DXTnavis\
 ```
 
 **Note**: Requires Visual Studio to run as Administrator for write access to Program Files.
