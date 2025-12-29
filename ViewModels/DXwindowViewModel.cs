@@ -32,12 +32,6 @@ namespace DXTnavis.ViewModels
         private System.Windows.Threading.DispatcherTimer _debounceTimer;
         private bool _isLoadingProperties;
 
-        // 설정 필드
-        private string _apiServerUrl;
-        private string _defaultUsername;
-        private int _timeoutSeconds;
-        private int _batchSize;
-
         #endregion
 
         #region Properties
@@ -166,67 +160,6 @@ namespace DXTnavis.ViewModels
             }
         }
 
-        // v2.0 API 통합 속성
-
-        // 설정 프로퍼티
-
-        /// <summary>
-        /// API 서버 URL
-        /// </summary>
-        public string ApiServerUrl
-        {
-            get => _apiServerUrl;
-            set
-            {
-                _apiServerUrl = value;
-                OnPropertyChanged(nameof(ApiServerUrl));
-            }
-        }
-
-        /// <summary>
-        /// 기본 사용자명
-        /// </summary>
-        public string DefaultUsername
-        {
-            get => _defaultUsername;
-            set
-            {
-                _defaultUsername = value;
-                OnPropertyChanged(nameof(DefaultUsername));
-            }
-        }
-
-        /// <summary>
-        /// 타임아웃 (초)
-        /// </summary>
-        public int TimeoutSeconds
-        {
-            get => _timeoutSeconds;
-            set
-            {
-                _timeoutSeconds = value;
-                OnPropertyChanged(nameof(TimeoutSeconds));
-            }
-        }
-
-        /// <summary>
-        /// 배치 크기
-        /// </summary>
-        public int BatchSize
-        {
-            get => _batchSize;
-            set
-            {
-                _batchSize = value;
-                OnPropertyChanged(nameof(BatchSize));
-            }
-        }
-
-        /// <summary>
-        /// 설정 파일 경로 (Standalone version - not used)
-        /// </summary>
-        public string SettingsFilePath => "Settings not available in standalone version";
-
         #endregion
 
         #region Commands
@@ -238,9 +171,6 @@ namespace DXTnavis.ViewModels
         public ICommand CreateSearchSetCommand { get; }
         public ICommand LoadHierarchyCommand { get; }
 
-        // 설정 커맨드
-        public ICommand SaveSettingsCommand { get; }
-
         #endregion
 
         #region Constructor
@@ -250,9 +180,6 @@ namespace DXTnavis.ViewModels
             SelectedObjectProperties = new ObservableCollection<PropertyInfo>();
             AllHierarchicalProperties = new ObservableCollection<HierarchicalPropertyRecord>();
             ObjectHierarchyRoot = new ObservableCollection<TreeNodeModel>();
-
-            // 설정 로드
-            LoadSettings();
 
             // 속성 변경 이벤트 구독 (SelectedPropertiesCount 업데이트용)
             AllHierarchicalProperties.CollectionChanged += (s, e) =>
@@ -305,10 +232,6 @@ namespace DXTnavis.ViewModels
 
             LoadHierarchyCommand = new AsyncRelayCommand(
                 execute: async _ => await LoadModelHierarchyAsync());
-
-            // 설정 커맨드 초기화
-            SaveSettingsCommand = new RelayCommand(
-                execute: _ => SaveSettings());
         }
 
         private void OnPropertyRecordChanged(object sender, PropertyChangedEventArgs e)
@@ -859,29 +782,6 @@ namespace DXTnavis.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"TreeNode 선택 처리 중 오류: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// 설정 로드
-        /// </summary>
-        private void LoadSettings()
-        {
-            // CSV export doesn't require settings
-            // Settings functionality removed with DXBase dependency
-        }
-
-        /// <summary>
-        /// 설정 저장
-        /// </summary>
-        private void SaveSettings()
-        {
-            // CSV export doesn't require settings
-            // Settings functionality removed with DXBase dependency
-            MessageBox.Show(
-                "설정 기능은 Standalone 버전에서 제거되었습니다.\n\nDXnavis는 이제 CSV 내보내기 기능만 제공합니다.",
-                "알림",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
         }
 
         #endregion
