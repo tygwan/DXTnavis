@@ -1,0 +1,24 @@
+# Build directories
+bin/
+obj/
+packages/
+.claude/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+
+# NuGet
+*.nupkg
+
+# Debug files
+*.pdb
+*.dll.config
+
+# Temporary files
+*.tmp
+*.bak
+*~
