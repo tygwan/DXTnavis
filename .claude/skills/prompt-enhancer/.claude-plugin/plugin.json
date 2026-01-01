@@ -1,0 +1,16 @@
+{
+  "name": "prompt-enhancer",
+  "version": "1.0.0",
+  "description": "Enhance user prompts by analyzing project context and generating detailed requirements",
+  "author": {
+    "name": "Tygwan",
+    "url": "https://github.com/tygwan"
+  },
+  "homepage": "https://github.com/tygwan/skills/tree/master/prompt-enhancer",
+  "keywords": [
+    "prompt",
+    "context-analysis",
+    "requirements",
+    "project-analysis"
+  ]
+}

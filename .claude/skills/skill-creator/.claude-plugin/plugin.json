@@ -1,0 +1,16 @@
+{
+  "name": "skill-creator",
+  "version": "1.0.0",
+  "description": "Guide for creating effective Claude Code skills with validation and packaging",
+  "author": {
+    "name": "Tygwan",
+    "url": "https://github.com/tygwan"
+  },
+  "homepage": "https://github.com/tygwan/skills/tree/master/skill-creator",
+  "keywords": [
+    "skill",
+    "development",
+    "guide",
+    "packaging"
+  ]
+}

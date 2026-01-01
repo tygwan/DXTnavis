@@ -1,0 +1,16 @@
+{
+  "name": "codex",
+  "version": "1.0.0",
+  "description": "Execute OpenAI Codex CLI for code analysis, refactoring, and automated editing",
+  "author": {
+    "name": "Tygwan",
+    "url": "https://github.com/tygwan"
+  },
+  "homepage": "https://github.com/tygwan/skills/tree/master/codex",
+  "keywords": [
+    "codex",
+    "openai",
+    "code-analysis",
+    "refactoring"
+  ]
+}

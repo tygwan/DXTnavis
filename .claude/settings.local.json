@@ -5,9 +5,21 @@
       "Read(//c/ProgramData/Autodesk/Revit/Addins/2025/**)",
       "Bash(dotnet build)",
       "Bash(git config:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(mkdir:*)",
+      "Bash(PGPASSWORD=1234 psql:*)",
+      "Bash(awk:*)",
+      "Bash(PGPASSWORD=123456 psql:*)",
+      "Read(//c/Users/Yoon taegwan/AppData/Roaming/DX_Platform/Logs/**)",
+      "Read(//c/Users/Yoon taegwan/.cursor/**)",
+      "Read(//c/Users/Yoon taegwan/.claude/**)",
+      "Bash(dotnet test:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "dx-platform-postgres"
+  ]
 }

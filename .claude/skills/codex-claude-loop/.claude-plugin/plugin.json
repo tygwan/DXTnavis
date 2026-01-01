@@ -1,0 +1,16 @@
+{
+  "name": "codex-claude-loop",
+  "version": "1.0.0",
+  "description": "Dual-AI engineering loop with Claude and Codex for optimal code quality",
+  "author": {
+    "name": "Tygwan",
+    "url": "https://github.com/tygwan"
+  },
+  "homepage": "https://github.com/tygwan/skills/tree/master/codex-claude-loop",
+  "keywords": [
+    "codex",
+    "claude",
+    "code-review",
+    "ai-collaboration"
+  ]
+}

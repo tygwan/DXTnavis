@@ -1,0 +1,16 @@
+{
+  "name": "brainstorming",
+  "version": "1.0.0",
+  "description": "Refines rough ideas into fully-formed designs through collaborative questioning and alternative exploration",
+  "author": {
+    "name": "Tygwan",
+    "url": "https://github.com/tygwan"
+  },
+  "homepage": "https://github.com/tygwan/skills/tree/master/brainstorming",
+  "keywords": [
+    "brainstorming",
+    "ideation",
+    "design",
+    "collaboration"
+  ]
+}
