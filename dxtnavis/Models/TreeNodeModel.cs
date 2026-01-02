@@ -12,6 +12,21 @@ namespace DXTnavis.Models
         private bool _isSelected;
         private bool _isExpanded;
 
+        // Level별 색상 팔레트
+        private static readonly string[] LevelColors = new[]
+        {
+            "#0078D4", // L0 - Blue
+            "#28A745", // L1 - Green
+            "#FFC107", // L2 - Yellow/Orange
+            "#DC3545", // L3 - Red
+            "#6F42C1", // L4 - Purple
+            "#20C997", // L5 - Teal
+            "#FD7E14", // L6 - Orange
+            "#E83E8C", // L7 - Pink
+            "#17A2B8", // L8 - Cyan
+            "#6C757D"  // L9+ - Gray
+        };
+
         /// <summary>
         /// Navisworks ModelItem의 GUID
         /// </summary>
@@ -32,6 +47,21 @@ namespace DXTnavis.Models
         /// TreeView에서 계층 레벨을 시각적으로 표시
         /// </summary>
         public string LevelPrefix => $"L{Level}";
+
+        /// <summary>
+        /// Level 기반 배경 색상
+        /// </summary>
+        public string LevelColor => LevelColors[Math.Min(Level, LevelColors.Length - 1)];
+
+        /// <summary>
+        /// 노드 아이콘 (자식 유무에 따라)
+        /// </summary>
+        public string NodeIcon => Children.Count > 0 ? "📁" : (HasGeometry ? "🔷" : "📄");
+
+        /// <summary>
+        /// 자식 개수 텍스트 (자식이 있을 때만 표시)
+        /// </summary>
+        public string ChildCountText => Children.Count > 0 ? $"({Children.Count})" : "";
 
         /// <summary>
         /// 형상 존재 여부
@@ -72,6 +102,50 @@ namespace DXTnavis.Models
         public TreeNodeModel()
         {
             Children = new ObservableCollection<TreeNodeModel>();
+        }
+
+        /// <summary>
+        /// 지정된 레벨까지 확장
+        /// </summary>
+        /// <param name="targetLevel">확장할 최대 레벨</param>
+        public void ExpandToLevel(int targetLevel)
+        {
+            if (Level < targetLevel)
+            {
+                IsExpanded = true;
+                foreach (var child in Children)
+                {
+                    child.ExpandToLevel(targetLevel);
+                }
+            }
+            else
+            {
+                IsExpanded = false;
+            }
+        }
+
+        /// <summary>
+        /// 모든 노드 축소
+        /// </summary>
+        public void CollapseAll()
+        {
+            IsExpanded = false;
+            foreach (var child in Children)
+            {
+                child.CollapseAll();
+            }
+        }
+
+        /// <summary>
+        /// 모든 노드 확장
+        /// </summary>
+        public void ExpandAll()
+        {
+            IsExpanded = true;
+            foreach (var child in Children)
+            {
+                child.ExpandAll();
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

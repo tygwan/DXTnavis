@@ -43,6 +43,9 @@ namespace DXTnavis.ViewModels
         // 3D Selection Service (Phase 3)
         private readonly NavisworksSelectionService _selectionService;
 
+        // Tree Expand/Collapse (Phase 2)
+        private int _selectedExpandLevel;
+
         #endregion
 
         #region Properties
@@ -264,6 +267,24 @@ namespace DXTnavis.ViewModels
             }
         }
 
+        /// <summary>
+        /// 사용 가능한 확장 레벨 목록 (Tree 확장/축소용)
+        /// </summary>
+        public ObservableCollection<int> AvailableExpandLevels { get; }
+
+        /// <summary>
+        /// 선택된 확장 레벨
+        /// </summary>
+        public int SelectedExpandLevel
+        {
+            get => _selectedExpandLevel;
+            set
+            {
+                _selectedExpandLevel = value;
+                OnPropertyChanged(nameof(SelectedExpandLevel));
+            }
+        }
+
         #endregion
 
         #region Commands
@@ -283,6 +304,11 @@ namespace DXTnavis.ViewModels
         public ICommand ShowAllObjectsCommand { get; }
         public ICommand ZoomToFilteredCommand { get; }
 
+        // Tree Expand/Collapse Commands (Phase 2)
+        public ICommand ExpandToLevelCommand { get; }
+        public ICommand CollapseAllCommand { get; }
+        public ICommand ExpandAllCommand { get; }
+
         #endregion
 
         #region Constructor
@@ -295,6 +321,10 @@ namespace DXTnavis.ViewModels
             FilteredHierarchicalProperties = new ObservableCollection<HierarchicalPropertyRecord>();
             AvailableCategories = new ObservableCollection<string>();
             AvailableLevels = new ObservableCollection<string>();
+
+            // Tree Expand Levels 초기화 (Phase 2)
+            AvailableExpandLevels = new ObservableCollection<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            SelectedExpandLevel = 2; // 기본값: Level 2까지 확장
 
             // 3D Selection Service 초기화 (Phase 3)
             _selectionService = new NavisworksSelectionService();
@@ -375,6 +405,19 @@ namespace DXTnavis.ViewModels
             ZoomToFilteredCommand = new RelayCommand(
                 execute: _ => ZoomToFiltered(),
                 canExecute: _ => FilteredHierarchicalProperties.Count > 0);
+
+            // Tree Expand/Collapse Commands (Phase 2)
+            ExpandToLevelCommand = new RelayCommand(
+                execute: _ => ExpandTreeToLevel(SelectedExpandLevel),
+                canExecute: _ => ObjectHierarchyRoot.Count > 0);
+
+            CollapseAllCommand = new RelayCommand(
+                execute: _ => CollapseAllTreeNodes(),
+                canExecute: _ => ObjectHierarchyRoot.Count > 0);
+
+            ExpandAllCommand = new RelayCommand(
+                execute: _ => ExpandAllTreeNodes(),
+                canExecute: _ => ObjectHierarchyRoot.Count > 0);
         }
 
         private void OnPropertyRecordChanged(object sender, PropertyChangedEventArgs e)
@@ -994,6 +1037,12 @@ namespace DXTnavis.ViewModels
                 // FilteredHierarchicalProperties 동기화 (필터링 기능 활성화)
                 SyncFilteredProperties();
 
+                // 트리 명령 갱신 (Phase 2)
+                RefreshTreeCommands();
+
+                // 기본적으로 Level 2까지 확장
+                ExpandTreeToLevel(SelectedExpandLevel);
+
                 ExportStatusMessage = $"Hierarchy loaded!";
                 StatusMessage = $"Loaded: {allData.Count} properties from {nodeMap.Count} objects";
 
@@ -1058,6 +1107,77 @@ namespace DXTnavis.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"TreeNode 선택 처리 중 오류: {ex.Message}");
             }
+        }
+
+        #endregion
+
+        #region Tree Expand/Collapse Methods (Phase 2)
+
+        /// <summary>
+        /// 지정된 레벨까지 트리 확장
+        /// </summary>
+        private void ExpandTreeToLevel(int targetLevel)
+        {
+            try
+            {
+                foreach (var node in ObjectHierarchyRoot)
+                {
+                    node.ExpandToLevel(targetLevel);
+                }
+                StatusMessage = $"Tree expanded to Level {targetLevel}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 모든 트리 노드 축소
+        /// </summary>
+        private void CollapseAllTreeNodes()
+        {
+            try
+            {
+                foreach (var node in ObjectHierarchyRoot)
+                {
+                    node.CollapseAll();
+                }
+                StatusMessage = "Tree collapsed";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 모든 트리 노드 확장
+        /// </summary>
+        private void ExpandAllTreeNodes()
+        {
+            try
+            {
+                foreach (var node in ObjectHierarchyRoot)
+                {
+                    node.ExpandAll();
+                }
+                StatusMessage = "Tree fully expanded";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 트리 확장/축소 명령의 CanExecute 갱신
+        /// </summary>
+        private void RefreshTreeCommands()
+        {
+            ((RelayCommand)ExpandToLevelCommand)?.RaiseCanExecuteChanged();
+            ((RelayCommand)CollapseAllCommand)?.RaiseCanExecuteChanged();
+            ((RelayCommand)ExpandAllCommand)?.RaiseCanExecuteChanged();
         }
 
         #endregion
