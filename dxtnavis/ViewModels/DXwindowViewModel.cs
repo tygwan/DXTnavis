@@ -40,6 +40,9 @@ namespace DXTnavis.ViewModels
         private string _propertyValueFilter;
         private string _statusMessage;
 
+        // 3D Selection Service (Phase 3)
+        private readonly NavisworksSelectionService _selectionService;
+
         #endregion
 
         #region Properties
@@ -274,6 +277,12 @@ namespace DXTnavis.ViewModels
         public ICommand ApplyFilterCommand { get; }
         public ICommand ClearFilterCommand { get; }
 
+        // 3D Object Selection Commands (Phase 3)
+        public ICommand SelectIn3DCommand { get; }
+        public ICommand ShowOnlyFilteredCommand { get; }
+        public ICommand ShowAllObjectsCommand { get; }
+        public ICommand ZoomToFilteredCommand { get; }
+
         #endregion
 
         #region Constructor
@@ -286,6 +295,9 @@ namespace DXTnavis.ViewModels
             FilteredHierarchicalProperties = new ObservableCollection<HierarchicalPropertyRecord>();
             AvailableCategories = new ObservableCollection<string>();
             AvailableLevels = new ObservableCollection<string>();
+
+            // 3D Selection Service 초기화 (Phase 3)
+            _selectionService = new NavisworksSelectionService();
 
             // 초기 상태 메시지
             StatusMessage = "Ready - Select objects to view hierarchy";
@@ -347,6 +359,22 @@ namespace DXTnavis.ViewModels
 
             ClearFilterCommand = new RelayCommand(
                 execute: _ => ClearFilter());
+
+            // 3D Object Selection Commands (Phase 3)
+            SelectIn3DCommand = new RelayCommand(
+                execute: _ => SelectIn3D(),
+                canExecute: _ => FilteredHierarchicalProperties.Count > 0);
+
+            ShowOnlyFilteredCommand = new RelayCommand(
+                execute: _ => ShowOnlyFiltered(),
+                canExecute: _ => FilteredHierarchicalProperties.Count > 0);
+
+            ShowAllObjectsCommand = new RelayCommand(
+                execute: _ => ShowAllObjects());
+
+            ZoomToFilteredCommand = new RelayCommand(
+                execute: _ => ZoomToFiltered(),
+                canExecute: _ => FilteredHierarchicalProperties.Count > 0);
         }
 
         private void OnPropertyRecordChanged(object sender, PropertyChangedEventArgs e)
@@ -398,6 +426,7 @@ namespace DXTnavis.ViewModels
             StatusMessage = $"Filtered: {FilteredHierarchicalProperties.Count} / {AllHierarchicalProperties.Count} items";
             OnPropertyChanged(nameof(SelectedPropertiesCount));
             ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
+            RefreshSelectionCommands();
         }
 
         /// <summary>
@@ -420,6 +449,7 @@ namespace DXTnavis.ViewModels
             StatusMessage = $"Total: {AllHierarchicalProperties.Count} items";
             OnPropertyChanged(nameof(SelectedPropertiesCount));
             ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
+            RefreshSelectionCommands();
         }
 
         /// <summary>
@@ -470,6 +500,7 @@ namespace DXTnavis.ViewModels
             PropertyValueFilter = string.Empty;
 
             StatusMessage = $"Loaded: {AllHierarchicalProperties.Count} items";
+            RefreshSelectionCommands();
         }
 
         #endregion
@@ -1027,6 +1058,168 @@ namespace DXTnavis.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"TreeNode 선택 처리 중 오류: {ex.Message}");
             }
+        }
+
+        #endregion
+
+        #region 3D Object Selection Methods (Phase 3)
+
+        /// <summary>
+        /// 필터링된 객체들을 Navisworks 3D 뷰에서 선택합니다.
+        /// 체크박스로 선택된 항목이 있으면 해당 항목만, 없으면 전체 필터링된 항목 선택
+        /// </summary>
+        private void SelectIn3D()
+        {
+            try
+            {
+                int selectedCount;
+                var checkedCount = _selectionService.GetCheckedObjectCount(FilteredHierarchicalProperties);
+
+                if (checkedCount > 0)
+                {
+                    // 체크된 항목만 선택
+                    selectedCount = _selectionService.SelectCheckedObjects(FilteredHierarchicalProperties);
+                    StatusMessage = $"Selected {selectedCount} checked objects in 3D view";
+                }
+                else
+                {
+                    // 전체 필터링된 항목 선택
+                    selectedCount = _selectionService.SelectFilteredObjects(FilteredHierarchicalProperties);
+                    StatusMessage = $"Selected {selectedCount} filtered objects in 3D view";
+                }
+
+                if (selectedCount == 0)
+                {
+                    MessageBox.Show(
+                        "No objects could be selected.\n\n" +
+                        "Possible reasons:\n" +
+                        "- ObjectId is empty for filtered items\n" +
+                        "- Objects no longer exist in the model",
+                        "Selection",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+                MessageBox.Show(
+                    $"Error selecting objects:\n\n{ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 필터링된 객체만 표시하고 나머지는 숨깁니다.
+        /// 체크박스로 선택된 항목이 있으면 해당 항목만, 없으면 전체 필터링된 항목 표시
+        /// </summary>
+        private void ShowOnlyFiltered()
+        {
+            try
+            {
+                int visibleCount;
+                var checkedCount = _selectionService.GetCheckedObjectCount(FilteredHierarchicalProperties);
+
+                if (checkedCount > 0)
+                {
+                    // 체크된 항목만 표시
+                    visibleCount = _selectionService.ShowOnlyCheckedObjects(FilteredHierarchicalProperties);
+                    StatusMessage = $"Showing {visibleCount} checked objects only";
+                }
+                else
+                {
+                    // 전체 필터링된 항목 표시
+                    visibleCount = _selectionService.ShowOnlyFilteredObjects(FilteredHierarchicalProperties);
+                    StatusMessage = $"Showing {visibleCount} filtered objects only";
+                }
+
+                if (visibleCount == 0)
+                {
+                    MessageBox.Show(
+                        "No objects could be shown.\n\n" +
+                        "Please check the filter settings.",
+                        "Visibility",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+                MessageBox.Show(
+                    $"Error setting visibility:\n\n{ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 모든 객체를 표시합니다 (숨김 해제).
+        /// </summary>
+        private void ShowAllObjects()
+        {
+            try
+            {
+                _selectionService.ShowAllObjects();
+                StatusMessage = "All objects are now visible";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+                MessageBox.Show(
+                    $"Error showing all objects:\n\n{ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 필터링된 객체로 카메라 줌을 수행합니다.
+        /// </summary>
+        private void ZoomToFiltered()
+        {
+            try
+            {
+                var checkedCount = _selectionService.GetCheckedObjectCount(FilteredHierarchicalProperties);
+
+                if (checkedCount > 0)
+                {
+                    // 체크된 항목으로 줌
+                    var checkedRecords = FilteredHierarchicalProperties.Where(r => r.IsSelected);
+                    _selectionService.ZoomToFilteredObjects(checkedRecords);
+                    StatusMessage = $"Zoomed to {checkedCount} checked objects";
+                }
+                else
+                {
+                    // 전체 필터링된 항목으로 줌
+                    _selectionService.ZoomToFilteredObjects(FilteredHierarchicalProperties);
+                    var uniqueCount = _selectionService.GetUniqueObjectCount(FilteredHierarchicalProperties);
+                    StatusMessage = $"Zoomed to {uniqueCount} filtered objects";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+                MessageBox.Show(
+                    $"Error zooming to objects:\n\n{ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 필터 적용 후 3D 선택 관련 Command의 CanExecute를 갱신합니다.
+        /// </summary>
+        private void RefreshSelectionCommands()
+        {
+            ((RelayCommand)SelectIn3DCommand)?.RaiseCanExecuteChanged();
+            ((RelayCommand)ShowOnlyFilteredCommand)?.RaiseCanExecuteChanged();
+            ((RelayCommand)ZoomToFilteredCommand)?.RaiseCanExecuteChanged();
         }
 
         #endregion

@@ -140,14 +140,16 @@ catch (System.AccessViolationException)
 - CSV/JSON export fully functional
 - Search Set creation working
 - Settings UI present (but disabled in standalone mode)
+- **Phase 1 Complete**: Level/SysPath filtering implemented
+- **Phase 3 Complete**: 3D object selection and visibility control
 
 ---
 
 ## Development Roadmap
 
-### Phase 1: Filtering Enhancement (Current Priority)
-- [ ] **Level Filter**: ComboBox with (All), L0, L1, L2... options
-- [ ] **Sys Path Filter**: Full hierarchical path with `>` separator
+### Phase 1: Filtering Enhancement ✅ COMPLETE
+- [x] **Level Filter**: ComboBox with (All), L0, L1, L2... options
+- [x] **Sys Path Filter**: Full hierarchical path with `>` separator
   - Format: `Project > Building > Level 1 > Wall`
   - Distinguishes same-named objects at different locations
 - [ ] **Property Exclusion**: Filter out unnecessary values (DisplayString, etc.)
@@ -156,11 +158,15 @@ catch (System.AccessViolationException)
 - [ ] **Vertical Layout Option**: PropertyGrid-style stacked display
 - [ ] **Full Path Display**: Show complete hierarchy path in TreeView
 
-### Phase 3: 3D Object Integration
-- [ ] **Conditional 3D Display**: Show only filtered objects in Navisworks view
-  - Use `Document.CurrentSelection` or HiddenSelection API
-- [ ] **Object List Selection**: Sync FilteredProperties to Navisworks selection
-- [ ] **3D Snapshot**:
+### Phase 3: 3D Object Integration ✅ COMPLETE
+- [x] **Conditional 3D Display**: Show only filtered objects in Navisworks view
+  - Uses `Models.SetHidden()` API for visibility control
+  - "Show Only" button hides non-filtered objects
+  - "Show All" button resets visibility
+- [x] **Object List Selection**: Sync FilteredProperties to Navisworks selection
+  - "Select in 3D" button selects filtered/checked objects
+  - "Zoom" button zooms camera to selected objects
+- [ ] **3D Snapshot** (Future):
   - Image capture (PNG/JPG)
   - ViewPoint save (SavedViewpoint API)
   - Naming: `{FilterCondition}_{Timestamp}.{ext}`
@@ -169,11 +175,11 @@ catch (System.AccessViolationException)
 - [ ] **Unit Mismatch Detection**: Identify inconsistent units across properties
 - [ ] **Validation Report**: Generate warnings and reports
 
-### Planned New Services
-| Service | Purpose |
-|---------|---------|
-| `NavisworksSelectionService.cs` | 3D object selection/visibility control |
-| `SnapshotService.cs` | Image capture and ViewPoint save |
+### Implemented Services
+| Service | Purpose | Status |
+|---------|---------|--------|
+| `NavisworksSelectionService.cs` | 3D object selection/visibility control | ✅ Implemented |
+| `SnapshotService.cs` | Image capture and ViewPoint save | 📋 Planned |
 
 ---
 

@@ -147,6 +147,7 @@
     <Compile Include="Services\NavisworksDataExtractor.cs" />
     <Compile Include="Services\HierarchyFileWriter.cs" />
     <Compile Include="Services\SetCreationService.cs" />
+    <Compile Include="Services\NavisworksSelectionService.cs" />
     <Compile Include="ViewModels\DXwindowViewModel.cs" />
     <Compile Include="ViewModels\HierarchyNodeViewModel.cs" />
     <Compile Include="ViewModels\PropertyItemViewModel.cs" />
