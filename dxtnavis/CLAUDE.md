@@ -31,6 +31,7 @@ dxtnavis/
 │   ├── FullModelExporterService.cs
 │   ├── HierarchyFileWriter.cs
 │   ├── NavisworksDataExtractor.cs
+│   ├── NavisworksSelectionService.cs
 │   ├── PropertyFileWriter.cs
 │   └── SetCreationService.cs
 ├── ViewModels/           # MVVM ViewModels
@@ -141,6 +142,7 @@ catch (System.AccessViolationException)
 - Search Set creation working
 - Settings UI present (but disabled in standalone mode)
 - **Phase 1 Complete**: Level/SysPath filtering implemented
+- **Phase 2 Partial**: Tree expand/collapse functionality implemented
 - **Phase 3 Complete**: 3D object selection and visibility control
 
 ---
@@ -154,7 +156,13 @@ catch (System.AccessViolationException)
   - Distinguishes same-named objects at different locations
 - [ ] **Property Exclusion**: Filter out unnecessary values (DisplayString, etc.)
 
-### Phase 2: UI/Layout Improvements
+### Phase 2: UI/Layout Improvements (Partial)
+- [x] **Tree Expand/Collapse**: Level-based expand/collapse controls
+  - Level selector ComboBox (1-10 levels)
+  - Expand to level (➕) and Collapse all (➖) buttons
+  - Color-coded level badges for visual hierarchy
+  - Node icons (📁/🔷/📄) based on content type
+  - Child count display for parent nodes
 - [ ] **Vertical Layout Option**: PropertyGrid-style stacked display
 - [ ] **Full Path Display**: Show complete hierarchy path in TreeView
 
