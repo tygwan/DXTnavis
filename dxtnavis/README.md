@@ -19,6 +19,17 @@ DXTnavis는 BIM 모델의 속성을 효율적으로 확인하고 관리하기 �
 
 ---
 
+## Quick Start
+
+1. **빌드**: Visual Studio에서 `DXTnavis.sln` 열고 빌드 (관리자 권한)
+2. **실행**: Navisworks 2025 실행 → Home 탭 → DXTnavis 클릭
+3. **사용**:
+   - `계층 구조 로드` → TreeView에서 모델 탐색
+   - Level/SysPath 필터로 원하는 객체 필터링
+   - `Select in 3D` / `Show Only`로 3D 뷰 제어
+
+---
+
 ## Features
 
 ### Hierarchy Navigation
@@ -173,4 +184,4 @@ Internal Development Project
 
 ---
 
-*Last Updated: 2025-01-04*
+*Last Updated: 2026-01-05*
