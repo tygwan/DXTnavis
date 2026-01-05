@@ -1,0 +1,44 @@
+# Build directories
+bin/
+obj/
+packages/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+UpgradeLog.htm
+
+# NuGet
+*.nupkg
+
+# Debug files
+*.pdb
+*.dll.config
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Development logs (not for public repo)
+LOG-debug/
+LOG-error/
+LOG-prd/
+
+# Data files
+hierachy_data/
+
+# Old docs
+gitdocs/
+
+# Development documents
+docs/
+
+# Scripts (internal use)
+scripts/
+
+# Claude Code config
+.claude/
