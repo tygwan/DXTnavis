@@ -144,6 +144,7 @@ catch (System.AccessViolationException)
 - **Phase 1 Complete**: Level/SysPath filtering implemented
 - **Phase 2 Partial**: Tree expand/collapse functionality implemented
 - **Phase 3 Complete**: 3D object selection and visibility control
+- **Phase 4 Complete**: 3D Snapshot capture and ViewPoint save
 
 ---
 
@@ -174,12 +175,21 @@ catch (System.AccessViolationException)
 - [x] **Object List Selection**: Sync FilteredProperties to Navisworks selection
   - "Select in 3D" button selects filtered/checked objects
   - "Zoom" button zooms camera to selected objects
-- [ ] **3D Snapshot** (Future):
-  - Image capture (PNG/JPG)
-  - ViewPoint save (SavedViewpoint API)
-  - Naming: `{FilterCondition}_{Timestamp}.{ext}`
 
-### Phase 4: Data Validation
+### Phase 4: 3D Snapshot Workflow ✅ COMPLETE
+- [x] **Image Capture**: Export current viewport as PNG/JPG/BMP
+  - Uses COM API (`ComApiBridge.State.DriveImage`)
+  - Configurable image dimensions (default 1920x1080)
+- [x] **ViewPoint Save**: Store camera position to Navisworks SavedViewpoints
+  - Automatic folder creation ("DXTnavis Snapshots")
+  - Timestamp-based naming convention
+- [x] **Combined Capture**: Image + ViewPoint together
+  - Filter condition-based naming
+- [x] **Batch Capture**: Process multiple checked objects
+  - Isolate and capture each object separately
+  - Progress tracking with event-based updates
+
+### Phase 5: Data Validation (Future)
 - [ ] **Unit Mismatch Detection**: Identify inconsistent units across properties
 - [ ] **Validation Report**: Generate warnings and reports
 
@@ -187,7 +197,7 @@ catch (System.AccessViolationException)
 | Service | Purpose | Status |
 |---------|---------|--------|
 | `NavisworksSelectionService.cs` | 3D object selection/visibility control | ✅ Implemented |
-| `SnapshotService.cs` | Image capture and ViewPoint save | 📋 Planned |
+| `SnapshotService.cs` | Image capture and ViewPoint save | ✅ Implemented |
 
 ---
 
