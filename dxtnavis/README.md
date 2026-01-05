@@ -1,147 +1,190 @@
-# DXTnavis
+<div align="center">
+
+# 🏗️ DXTnavis
 
 **Navisworks 2025 Property Viewer & Manager Plugin**
 
-Navisworks Manage 2025용 WPF 기반 속성 뷰어, 계층 구조 탐색, 3D 객체 제어 플러그인
+[![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
+[![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
+[![Platform](https://img.shields.io/badge/Platform-x64-green?style=flat-square)]()
+
+<br/>
+
+*BIM 모델의 속성을 효율적으로 확인하고 관리하기 위한 Navisworks 애드인*
+
+[Features](#-features) • [Quick Start](#-quick-start) • [Installation](#-installation) • [Development](#-development)
+
+</div>
 
 ---
 
-## Overview
+## ✨ Features
 
-DXTnavis는 BIM 모델의 속성을 효율적으로 확인하고 관리하기 위한 Navisworks 애드인입니다.
-
-| 항목 | 내용 |
-|------|------|
-| Platform | Navisworks Manage 2025 |
-| Framework | .NET Framework 4.8 |
-| Architecture | MVVM (WPF) |
-| Target | x64 |
-
----
-
-## Quick Start
-
-1. **빌드**: Visual Studio에서 `DXTnavis.sln` 열고 빌드 (관리자 권한)
-2. **실행**: Navisworks 2025 실행 → Home 탭 → DXTnavis 클릭
-3. **사용**:
-   - `계층 구조 로드` → TreeView에서 모델 탐색
-   - Level/SysPath 필터로 원하는 객체 필터링
-   - `Select in 3D` / `Show Only`로 3D 뷰 제어
-
----
-
-## Features
+<table>
+<tr>
+<td align="center" width="25%">
+<h3>🌳</h3>
+<b>Hierarchy</b><br/>
+<sub>Level-based<br/>expand/collapse</sub>
+</td>
+<td align="center" width="25%">
+<h3>🔍</h3>
+<b>Filtering</b><br/>
+<sub>Level & SysPath<br/>filters</sub>
+</td>
+<td align="center" width="25%">
+<h3>🎯</h3>
+<b>3D Control</b><br/>
+<sub>Select, Show,<br/>Zoom</sub>
+</td>
+<td align="center" width="25%">
+<h3>📤</h3>
+<b>Export</b><br/>
+<sub>CSV, JSON<br/>formats</sub>
+</td>
+</tr>
+</table>
 
 ### Hierarchy Navigation
 - 모델 전체 계층 구조 TreeView 시각화
-- **Level-based Expand/Collapse** - 레벨별 확장/축소 컨트롤
-- **Visual Indicators** - 레벨별 색상 배지, 노드 아이콘, 하위 개수 표시
-- 체크박스 기반 노드 선택
+- **Level-based Expand/Collapse** - 레벨별 확장/축소 (L0~L10)
+- **Visual Indicators** - 색상 배지, 노드 아이콘 (📁/🔷/📄), 하위 개수
 
 ### Property Viewer
-- 실시간 속성 표시 (Category, Property, Value)
-- 읽기/쓰기 권한 상태 표시
+- 실시간 속성 표시 (Category → Property → Value)
 - **Level Filter** - L0, L1, L2... 레벨별 필터링
 - **Sys Path Filter** - 전체 경로 기반 필터링
 
 ### 3D Object Control
-- **Select in 3D** - 필터링된 객체를 Navisworks에서 선택
-- **Show Only** - 필터링된 객체만 표시 (나머지 숨김)
-- **Show All** - 전체 객체 표시 복원
-- **Zoom** - 선택된 객체로 카메라 이동
-
-### Export
-- CSV Export (Flat)
-- JSON Export (Flat / Tree)
-- Full Model Export
-
-### Search Set
-- 선택된 속성으로 검색 세트 자동 생성
-- 폴더 구조 지원
+| 버튼 | 기능 |
+|------|------|
+| `Select in 3D` | 필터링된 객체를 Navisworks에서 선택 |
+| `Show Only` | 필터링된 객체만 표시 (나머지 숨김) |
+| `Show All` | 전체 객체 표시 복원 |
+| `Zoom` | 선택된 객체로 카메라 이동 |
 
 ---
 
-## Project Structure
+## 🚀 Quick Start
+
+```
+1️⃣  Visual Studio에서 DXTnavis.sln 열고 빌드 (관리자 권한)
+2️⃣  Navisworks 2025 실행 → Home 탭 → DXTnavis 클릭
+3️⃣  계층 구조 로드 → 필터링 → 3D 제어
+```
+
+---
+
+## 📦 Installation
+
+### Requirements
+
+| 항목 | 버전 |
+|------|------|
+| Visual Studio | 2022+ |
+| .NET Framework | 4.8 |
+| Navisworks Manage | 2025 |
+
+### Build & Deploy
+
+```bash
+# 빌드 (관리자 권한 필요)
+dotnet build DXTnavis.csproj -c Debug
+```
+
+> 빌드 후 자동 배포: `C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\`
+
+---
+
+## 📊 Development Status
+
+### ✅ Completed
+
+| Phase | Feature | Description |
+|:-----:|---------|-------------|
+| 1 | Level Filter | 레벨별 속성 필터링 |
+| 1 | Sys Path Filter | 경로 기반 필터링 |
+| 2 | Tree Expand/Collapse | 레벨별 확장/축소 |
+| 2 | Visual Level Badges | 색상 코딩 레벨 표시 |
+| 3 | 3D Object Selection | Navisworks 선택 연동 |
+| 3 | Visibility Control | 객체 표시/숨김 |
+| 3 | Zoom to Selection | 카메라 이동 |
+
+### 📋 Planned
+
+| Phase | Feature |
+|:-----:|---------|
+| 2 | Vertical Layout Option |
+| 3 | 3D Snapshot (PNG/ViewPoint) |
+| 4 | Unit Mismatch Detection |
+
+---
+
+## 🗂️ Project Structure
+
+<details>
+<summary><b>📁 Click to expand</b></summary>
 
 ```
 dxtnavis/
-├── Models/
+├── 📁 Models/
 │   ├── HierarchicalPropertyRecord.cs
 │   ├── TreeNodeModel.cs
 │   └── PropertyInfo.cs
-├── ViewModels/
+├── 📁 ViewModels/
 │   ├── DXwindowViewModel.cs
 │   ├── HierarchyNodeViewModel.cs
 │   └── PropertyItemViewModel.cs
-├── Views/
+├── 📁 Views/
 │   ├── DXwindow.xaml
 │   └── DXwindow.xaml.cs
-├── Services/
+├── 📁 Services/
 │   ├── NavisworksDataExtractor.cs
 │   ├── NavisworksSelectionService.cs
 │   ├── HierarchyFileWriter.cs
 │   ├── SetCreationService.cs
 │   ├── FullModelExporterService.cs
 │   └── PropertyFileWriter.cs
-├── Helpers/
+├── 📁 Helpers/
 │   └── RelayCommand.cs
-├── Converters/
+├── 📁 Converters/
 │   └── BoolToVisibilityConverter.cs
-├── Resources/
-│   ├── icon_16x16.png
-│   └── icon_32x32.png
-└── DX.cs                    # Plugin Entry Point
+└── 📄 DX.cs (Plugin Entry Point)
 ```
+
+</details>
 
 ---
 
-## Build & Deploy
+## ⚠️ Guidelines
 
-### Requirements
-- Visual Studio 2022+
-- .NET Framework 4.8 SDK
-- Navisworks Manage 2025
+<details>
+<summary><b>Thread Safety</b></summary>
 
-### Build
-```bash
-dotnet build DXTnavis.csproj -c Debug
+```csharp
+// ✅ Navisworks API는 반드시 UI 스레드에서 호출
+// ❌ Task.Run() 내에서 Application.ActiveDocument 접근 금지
 ```
 
-### Deploy
-빌드 후 자동 배포 (PostBuild Event):
-```
-C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\
+</details>
+
+<details>
+<summary><b>Error Handling</b></summary>
+
+```csharp
+try {
+    var properties = category.Properties;
+} catch (AccessViolationException) {
+    // 일부 PropertyCategory에서 발생 - skip and continue
+}
 ```
 
-> **Note**: Program Files 쓰기 권한 필요 (관리자 권한 실행)
+</details>
 
 ---
 
-## Development Status
-
-### Completed
-
-| Phase | Feature | Status |
-|-------|---------|--------|
-| 1 | Level Filter | ✅ |
-| 1 | Sys Path Filter | ✅ |
-| 2 | Tree Expand/Collapse | ✅ |
-| 2 | Visual Level Badges | ✅ |
-| 3 | 3D Object Selection | ✅ |
-| 3 | Visibility Control | ✅ |
-| 3 | Zoom to Selection | ✅ |
-
-### Planned
-
-| Phase | Feature | Status |
-|-------|---------|--------|
-| 2 | Vertical Layout Option | 📋 |
-| 3 | 3D Snapshot (PNG/ViewPoint) | 📋 |
-| 4 | Unit Mismatch Detection | 📋 |
-
----
-
-## API Dependencies
+## 📄 API Dependencies
 
 ```xml
 <Reference Include="Autodesk.Navisworks.Api"/>
@@ -154,34 +197,15 @@ C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\
 
 ---
 
-## Guidelines
+<div align="center">
 
-### Thread Safety
-```csharp
-// Navisworks API는 반드시 UI 스레드에서 호출
-// Task.Run() 내에서 Application.ActiveDocument 접근 금지
-```
+## 👥 Author
 
-### Error Handling
-```csharp
-try {
-    var properties = category.Properties;
-} catch (AccessViolationException) {
-    // 일부 PropertyCategory에서 발생 - skip and continue
-}
-```
+**Developer** - Yoon Taegwan
+**AI Assistant** - Claude (Anthropic)
 
 ---
 
-## License
+<sub>Internal Development Project • Last Updated: 2026-01-06</sub>
 
-Internal Development Project
-
-## Author
-
-- **Developer**: Yoon Taegwan
-- **AI Assistant**: Claude (Anthropic)
-
----
-
-*Last Updated: 2026-01-05*
+</div>
