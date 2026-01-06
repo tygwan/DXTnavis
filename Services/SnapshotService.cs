@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Autodesk.Navisworks.Api;
 using Autodesk.Navisworks.Api.ComApi;
+using Autodesk.Navisworks.Api.Interop.ComApi;
 using DXTnavis.Models;
 
 namespace DXTnavis.Services
@@ -103,6 +104,7 @@ namespace DXTnavis.Services
 
         /// <summary>
         /// COM API를 사용하여 현재 뷰를 이미지로 내보냅니다.
+        /// DriveIOPlugin("lcodpimage")을 사용하여 뷰포트를 이미지로 캡처합니다.
         /// </summary>
         private void ExportImageUsingComApi(string fullPath)
         {
@@ -111,39 +113,84 @@ namespace DXTnavis.Services
             if (comState == null)
                 throw new InvalidOperationException("COM API에 접근할 수 없습니다.");
 
-            // InwOpState10의 DriveImage 메서드를 사용하여 이미지 내보내기
-            // 이미지 타입 결정 (1: BMP, 2: JPG, 3: PNG, 4: TIF)
-            int imageType = GetComApiImageType(ImageFormat);
-
-            // DriveImage 호출 (width, height, filename, imagetype)
-            // Note: DriveImage 메서드가 존재하지 않으면 대체 방법 사용
             try
             {
-                // 방법 1: InwOpState10.DriveImage 시도
-                dynamic state = comState;
-                state.DriveImage(ImageWidth, ImageHeight, fullPath, imageType);
+                // 이미지 내보내기 옵션 생성
+                var options = CreateExportImageOptions(ImageWidth, ImageHeight, 4, ImageFormat);
+
+                // DriveIOPlugin을 사용하여 이미지 내보내기
+                // "lcodpimage"는 Navisworks의 이미지 내보내기 IO 플러그인 ID
+                var exportStatus = comState.DriveIOPlugin("lcodpimage", fullPath, options);
+
+                // 내보내기 상태 확인
+                if (exportStatus != nwEExportStatus.eExport_OK)
+                {
+                    throw new Exception($"이미지 내보내기 실패: {exportStatus}");
+                }
             }
-            catch (Exception ex) when (ex.GetType().Name.Contains("RuntimeBinder") ||
-                                       ex is MissingMethodException ||
-                                       ex is NotImplementedException)
+            catch (System.Runtime.InteropServices.COMException comEx)
             {
-                // 방법 2: 직접 렌더링 대체 방법 - 빈 이미지 생성 (Navisworks GUI에서만 동작)
-                throw new NotSupportedException(
-                    "이미지 캡처를 위해서는 Navisworks GUI에서 플러그인을 사용해야 합니다.\n" +
-                    "또는 File > Export > Image 메뉴를 사용하세요.");
+                throw new Exception($"COM API 오류: {comEx.Message}", comEx);
             }
         }
 
         /// <summary>
-        /// ImageFormat을 COM API 이미지 타입으로 변환
+        /// 이미지 내보내기 옵션을 생성합니다.
         /// </summary>
-        private int GetComApiImageType(ImageFormat format)
+        /// <param name="width">이미지 너비</param>
+        /// <param name="height">이미지 높이</param>
+        /// <param name="antiAliasLevel">안티앨리어싱 레벨 (4 또는 8 권장)</param>
+        /// <param name="format">이미지 형식</param>
+        /// <returns>COM API 속성 벡터</returns>
+        private InwOaPropertyVec CreateExportImageOptions(int width, int height, int antiAliasLevel, ImageFormat format)
         {
-            if (format.Equals(ImageFormat.Png)) return 3;
-            if (format.Equals(ImageFormat.Jpeg)) return 2;
-            if (format.Equals(ImageFormat.Bmp)) return 1;
-            if (format.Equals(ImageFormat.Tiff)) return 4;
-            return 3; // 기본값: PNG
+            var comState = ComApiBridge.State;
+
+            // 속성 벡터 생성
+            var options = (InwOaPropertyVec)comState.ObjectFactory(
+                nwEObjectType.eObjectType_nwOaPropertyVec, null, null);
+
+            // 이미지 포맷 설정
+            var formatProp = (InwOaProperty)comState.ObjectFactory(
+                nwEObjectType.eObjectType_nwOaProperty, null, null);
+            formatProp.name = "export.image.format";
+            formatProp.value = GetComApiFormatString(format);
+            options.Properties().Add(formatProp);
+
+            // 너비 설정
+            var widthProp = (InwOaProperty)comState.ObjectFactory(
+                nwEObjectType.eObjectType_nwOaProperty, null, null);
+            widthProp.name = "export.image.width";
+            widthProp.value = width;
+            options.Properties().Add(widthProp);
+
+            // 높이 설정
+            var heightProp = (InwOaProperty)comState.ObjectFactory(
+                nwEObjectType.eObjectType_nwOaProperty, null, null);
+            heightProp.name = "export.image.height";
+            heightProp.value = height;
+            options.Properties().Add(heightProp);
+
+            // 안티앨리어싱 레벨 설정
+            var antiAliasProp = (InwOaProperty)comState.ObjectFactory(
+                nwEObjectType.eObjectType_nwOaProperty, null, null);
+            antiAliasProp.name = "export.image.anti-alias.level";
+            antiAliasProp.value = antiAliasLevel;
+            options.Properties().Add(antiAliasProp);
+
+            return options;
+        }
+
+        /// <summary>
+        /// ImageFormat을 COM API 포맷 문자열로 변환
+        /// </summary>
+        private string GetComApiFormatString(ImageFormat format)
+        {
+            if (format.Equals(ImageFormat.Png)) return "lcodpexpng";
+            if (format.Equals(ImageFormat.Jpeg)) return "lcodpexjpg";
+            if (format.Equals(ImageFormat.Bmp)) return "lcodpexbmp";
+            if (format.Equals(ImageFormat.Tiff)) return "lcodpextif";
+            return "lcodpexpng"; // 기본값: PNG
         }
 
         /// <summary>
