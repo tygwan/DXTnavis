@@ -103,33 +103,68 @@
                 <TextBlock Text="Hierarchy Tree" Style="{StaticResource SectionTitle}"/>
                 <TextBlock Text="Level 기반 계층 구조" Style="{StaticResource LabelStyle}"/>
 
-                <!-- 확장/축소 컨트롤 -->
+                <!-- 확장/축소 컨트롤 (P1 Enhanced) -->
                 <Border Background="#F0F0F0" Padding="6" Margin="0,6,0,0" CornerRadius="3">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- 레벨 선택 -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal">
-                            <TextBlock Text="Level:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11"/>
-                            <ComboBox x:Name="ExpandLevelCombo"
-                                      ItemsSource="{Binding AvailableExpandLevels}"
-                                      SelectedItem="{Binding SelectedExpandLevel}"
-                                      Width="60" Height="24" FontSize="11"/>
+                    <StackPanel>
+                        <!-- 레벨별 개별 버튼 (P1 Feature) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Level:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11" FontWeight="SemiBold"/>
+                            <Button Content="L0" ToolTip="L0까지 확장 (Root)"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#0078D4" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="0"/>
+                            <Button Content="L1" ToolTip="L1까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#28A745" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="1"/>
+                            <Button Content="L2" ToolTip="L2까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#FFC107" Foreground="#333" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="2"/>
+                            <Button Content="L3" ToolTip="L3까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#DC3545" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="3"/>
+                            <Button Content="L4" ToolTip="L4까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#6F42C1" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="4"/>
+                            <Button Content="L5" ToolTip="L5까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#20C997" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="5"/>
                         </StackPanel>
 
-                        <!-- 확장/축소 버튼 -->
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="➕" ToolTip="선택 레벨까지 확장"
-                                    Width="28" Height="24" Margin="4,0,2,0" FontSize="12"
-                                    Command="{Binding ExpandToLevelCommand}"/>
-                            <Button Content="➖" ToolTip="모두 축소"
-                                    Width="28" Height="24" Margin="2,0,0,0" FontSize="12"
-                                    Command="{Binding CollapseAllCommand}"/>
-                        </StackPanel>
-                    </Grid>
+                        <!-- 기존 컨트롤 (ComboBox + 전체 확장/축소) -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 레벨 선택 (고급) -->
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock Text="Custom:" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="10" Foreground="#666"/>
+                                <ComboBox x:Name="ExpandLevelCombo"
+                                          ItemsSource="{Binding AvailableExpandLevels}"
+                                          SelectedItem="{Binding SelectedExpandLevel}"
+                                          Width="45" Height="22" FontSize="10"/>
+                                <Button Content="▶" ToolTip="선택 레벨까지 확장"
+                                        Width="22" Height="22" Margin="2,0,0,0" FontSize="10"
+                                        Command="{Binding ExpandToLevelCommand}"/>
+                            </StackPanel>
+
+                            <!-- 전체 확장/축소 버튼 -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="⊕" ToolTip="전체 확장"
+                                        Width="24" Height="22" Margin="4,0,2,0" FontSize="11"
+                                        Command="{Binding ExpandAllCommand}"/>
+                                <Button Content="⊖" ToolTip="전체 축소"
+                                        Width="24" Height="22" Margin="2,0,0,0" FontSize="11"
+                                        Command="{Binding CollapseAllCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
                 </Border>
             </StackPanel>
 

@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] Raw/Refined CSV 동시 관리
 
 ### Enhancements
-- [ ] 트리 레벨별 Expand/Collapse (각 레벨 개별 제어)
+- [x] 트리 레벨별 Expand/Collapse (각 레벨 개별 제어) - L0~L5 버튼
 - [ ] Level 필터링 UI 명세화
 - [ ] CSV 출력 Verbose 로깅
 

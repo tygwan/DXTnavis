@@ -33,7 +33,7 @@
 - [x] ✅ Save ViewPoint 저장 오류 (COM API 기반 구현)
 
 ### New Features (P1-P2)
-- [ ] 🟠 트리 레벨별 Expand/Collapse (각 레벨 개별)
+- [x] ✅ 트리 레벨별 Expand/Collapse (L0~L5 버튼)
 - [ ] 🟠 Selection Properties 출력 (All/Sele × Prop/Hier)
 - [ ] 🟠 DisplayString 파싱 (Refined CSV)
 - [ ] 🟡 관측점 초기화 기능

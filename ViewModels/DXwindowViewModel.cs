@@ -312,6 +312,9 @@ namespace DXTnavis.ViewModels
         public ICommand CollapseAllCommand { get; }
         public ICommand ExpandAllCommand { get; }
 
+        // 레벨별 개별 확장 Command (P1 Feature)
+        public ICommand ExpandLevelCommand { get; }
+
         // Snapshot Commands (Phase 4)
         public ICommand CaptureViewCommand { get; }
         public ICommand SaveViewPointCommand { get; }
@@ -429,6 +432,12 @@ namespace DXTnavis.ViewModels
 
             ExpandAllCommand = new RelayCommand(
                 execute: _ => ExpandAllTreeNodes(),
+                canExecute: _ => ObjectHierarchyRoot.Count > 0);
+
+            // 레벨별 개별 확장 Command (P1 Feature)
+            // Parameter: int level (클릭한 레벨 번호)
+            ExpandLevelCommand = new RelayCommand(
+                execute: param => ExpandToSpecificLevel(Convert.ToInt32(param)),
                 canExecute: _ => ObjectHierarchyRoot.Count > 0);
 
             // Snapshot Commands (Phase 4)
@@ -1207,6 +1216,29 @@ namespace DXTnavis.ViewModels
             ((RelayCommand)ExpandToLevelCommand)?.RaiseCanExecuteChanged();
             ((RelayCommand)CollapseAllCommand)?.RaiseCanExecuteChanged();
             ((RelayCommand)ExpandAllCommand)?.RaiseCanExecuteChanged();
+            ((RelayCommand)ExpandLevelCommand)?.RaiseCanExecuteChanged();
+        }
+
+        /// <summary>
+        /// 특정 레벨까지 정확히 확장 (P1 Feature)
+        /// 클릭한 레벨까지 확장하고, 그 이후 레벨은 축소
+        /// </summary>
+        /// <param name="targetLevel">확장할 레벨 (0부터 시작)</param>
+        private void ExpandToSpecificLevel(int targetLevel)
+        {
+            try
+            {
+                foreach (var node in ObjectHierarchyRoot)
+                {
+                    node.ExpandExactlyToLevel(targetLevel);
+                }
+                StatusMessage = $"Expanded to L{targetLevel} (children collapsed)";
+                SelectedExpandLevel = targetLevel; // ComboBox도 동기화
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
         }
 
         #endregion
