@@ -1,7 +1,7 @@
 # DXTnavis - Navisworks 2025 Property Viewer Plugin
 
 > **Context:** Standalone Navisworks plugin for property viewing and 3D control
-> **Version:** 0.3.0 → 0.4.0 (In Development)
+> **Version:** 0.4.0 (Released 2026-01-08)
 > **Docs Index:** [docs/_INDEX.md](docs/_INDEX.md)
 
 ## Quick Reference
@@ -10,35 +10,35 @@
 - C# .NET Framework 4.8 (locked)
 - WPF MVVM Pattern
 - Navisworks API 2025 (x64 only)
-- ComAPI (Property Write 조사 중)
+- ComAPI (ViewPoint 저장)
 
 ### Current Status
 | Phase | Task | Status |
 |-------|------|--------|
 | 1 | Property Filtering | ✅ 100% |
-| 2 | UI Enhancement | ⚠️ 70% |
+| 2 | UI Enhancement | ✅ 100% |
 | 3 | 3D Object Integration | ✅ 100% |
-| 4 | CSV Enhancement | 🔄 In Progress |
+| 4 | CSV Enhancement | ✅ 100% |
 | 5 | ComAPI Research | 📋 Planned |
 
-**→ Sprint v0.4.0:** [docs/agile/SPRINT-v0.4.0.md](docs/agile/SPRINT-v0.4.0.md)
 **→ Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## v0.4.0 Roadmap
+## v0.4.0 완료 기능
 
-### Bug Fixes (P0 - Critical) ✅ DONE
-- [x] ✅ 검색창 영어 입력 불가능 오류 (IME + PreviewKeyDown)
-- [x] ✅ Save ViewPoint 저장 오류 (COM API 기반 구현)
+### Bug Fixes (P0 - Critical) ✅
+- [x] 검색창 영어 입력 불가능 오류 (IME + PreviewKeyDown)
+- [x] Save ViewPoint 저장 오류 (COM API 기반 구현)
 
-### New Features (P1-P2)
-- [x] ✅ 트리 레벨별 Expand/Collapse (L0~L5 버튼)
-- [ ] 🟠 Selection Properties 출력 (All/Sele × Prop/Hier)
-- [ ] 🟠 DisplayString 파싱 (Refined CSV)
-- [ ] 🟡 관측점 초기화 기능
-- [ ] 🟡 Object 검색 기능
-- [ ] 🟡 Raw/Refined CSV 동시 관리
+### New Features (P1-P2) ✅
+- [x] 트리 레벨별 Expand/Collapse (L0~L5 버튼)
+- [x] 4종 CSV 내보내기 (All/Selection × Properties/Hierarchy)
+- [x] DisplayString 파싱 (Refined CSV)
+- [x] 관측점 초기화 (Reset to Home)
+- [x] Object 검색 기능 (이름/속성값/경로)
+- [x] Raw/Refined CSV 동시 저장
+- [x] CSV Verbose 로깅
 
 ### Research
 - [ ] ComAPI Property Write 가능성 조사
@@ -52,8 +52,10 @@ dxtnavis/
 ├── Services/              # Business logic
 │   ├── NavisworksDataExtractor.cs    # 속성 추출
 │   ├── NavisworksSelectionService.cs # 3D 선택
+│   ├── DisplayStringParser.cs        # VariantData 타입 파싱 (v0.4.0)
+│   ├── SnapshotService.cs            # 뷰포인트/캡처
 │   ├── HierarchyFileWriter.cs        # Hierarchy CSV
-│   └── PropertyFileWriter.cs         # Property CSV
+│   └── PropertyFileWriter.cs         # Property CSV + Verbose 로깅
 ├── ViewModels/            # MVVM ViewModels
 │   ├── DXwindowViewModel.cs          # 메인 VM
 │   └── HierarchyNodeViewModel.cs     # 트리 노드
@@ -62,7 +64,6 @@ dxtnavis/
 ├── Models/                # Data models
 └── docs/
     └── agile/
-        ├── SPRINT-CURRENT.md
         └── SPRINT-v0.4.0.md
 ```
 

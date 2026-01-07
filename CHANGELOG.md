@@ -7,23 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] - v0.4.0
+## [0.4.0] - 2026-01-08
 
 ### Bug Fixes (P0)
 - [x] 검색창 영어 입력 불가능 오류 수정 (IME + PreviewKeyDown 핸들링)
 - [x] Save ViewPoint 저장 오류 수정 (COM API 기반 구현)
 
 ### New Features
-- [ ] 관측점 초기화 기능 (Reset to Home)
-- [ ] Object 검색 기능 (이름/속성 기반)
-- [ ] Selection 기반 Properties 출력 (All/Sele x Prop/Hier)
-- [ ] DisplayString 접두사 파싱 (Refined CSV)
-- [ ] Raw/Refined CSV 동시 관리
+- [x] **4종 CSV 내보내기 버튼** (All/Selection × Properties/Hierarchy)
+- [x] **DisplayString 파싱** - VariantData 타입 접두사 파싱 (Refined CSV)
+- [x] **관측점 초기화** (Reset to Home) - Home 뷰포인트 또는 Zoom Extents
+- [x] **Object 검색 기능** - 이름, 속성값, SysPath로 객체 검색
+- [x] **Raw/Refined CSV 동시 저장** - 한 번에 두 형식 내보내기
+- [x] **CSV Verbose 로깅** - 내보내기 상세 로그 파일 생성
 
 ### Enhancements
-- [x] 트리 레벨별 Expand/Collapse (각 레벨 개별 제어) - L0~L5 버튼
-- [ ] Level 필터링 UI 명세화
-- [ ] CSV 출력 Verbose 로깅
+- [x] 트리 레벨별 Expand/Collapse (L0~L5 버튼)
+- [x] 검색 결과 3D 선택 연동
+- [x] SelectByIds / SelectAndZoomByIds API 추가
+
+### Technical
+- Services/DisplayStringParser.cs - DisplayString 타입 파싱
+- PropertyFileWriter.WriteDualCsv() - 동시 저장
+- SnapshotService.ResetToHome() - 관측점 리셋
 
 ### Research
 - [ ] ComAPI를 통한 외부 Property 기입 가능성 조사
@@ -84,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/tygwan/DXTnavis/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tygwan/DXTnavis/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/tygwan/DXTnavis/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/tygwan/DXTnavis/compare/v0.0.1...v0.1.0

@@ -150,6 +150,7 @@
     <Compile Include="Services\SetCreationService.cs" />
     <Compile Include="Services\NavisworksSelectionService.cs" />
     <Compile Include="Services\SnapshotService.cs" />
+    <Compile Include="Services\DisplayStringParser.cs" />
     <Compile Include="ViewModels\DXwindowViewModel.cs" />
     <Compile Include="ViewModels\HierarchyNodeViewModel.cs" />
     <Compile Include="ViewModels\PropertyItemViewModel.cs" />

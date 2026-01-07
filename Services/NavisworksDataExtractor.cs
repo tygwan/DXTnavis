@@ -473,5 +473,108 @@ namespace DXTnavis.Services
 
             return null;
         }
+
+        /// <summary>
+        /// 선택된 객체들의 속성을 PropertyInfo 리스트로 추출 (Selection × Properties)
+        /// </summary>
+        /// <param name="selectedItems">선택된 ModelItem 컬렉션</param>
+        /// <returns>PropertyInfo 리스트</returns>
+        public List<PropertyInfo> ExtractPropertiesFromSelection(ModelItemCollection selectedItems)
+        {
+            var results = new List<PropertyInfo>();
+
+            if (selectedItems == null || selectedItems.Count == 0)
+                return results;
+
+            int objectIndex = 0;
+            foreach (ModelItem item in selectedItems)
+            {
+                if (item == null) continue;
+
+                objectIndex++;
+                string objectName = GetDisplayName(item);
+
+                try
+                {
+                    foreach (var category in item.PropertyCategories)
+                    {
+                        if (category == null) continue;
+
+                        DataPropertyCollection properties = null;
+                        try
+                        {
+                            properties = category.Properties;
+                        }
+                        catch (System.AccessViolationException)
+                        {
+                            continue;
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+
+                        if (properties == null) continue;
+
+                        foreach (DataProperty property in properties)
+                        {
+                            if (property == null) continue;
+
+                            try
+                            {
+                                results.Add(new PropertyInfo
+                                {
+                                    Category = category.DisplayName ?? string.Empty,
+                                    Name = property.DisplayName ?? string.Empty,
+                                    Value = property.Value?.ToString() ?? string.Empty,
+                                    ObjectId = objectIndex,
+                                    ObjectName = objectName
+                                });
+                            }
+                            catch
+                            {
+                                continue;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Selection Properties 추출 중 오류: {ex.Message}");
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// 전체 모델의 계층 구조를 HierarchicalPropertyRecord 리스트로 추출 (All × Hierarchy)
+        /// </summary>
+        /// <returns>HierarchicalPropertyRecord 리스트</returns>
+        public List<HierarchicalPropertyRecord> ExtractAllHierarchicalRecords()
+        {
+            var results = new List<HierarchicalPropertyRecord>();
+
+            var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+            if (doc == null)
+                return results;
+
+            // 모든 모델의 루트 아이템부터 순회
+            foreach (var model in doc.Models)
+            {
+                if (model?.RootItem == null) continue;
+
+                // 각 모델의 루트에서부터 재귀 순회
+                TraverseAndExtractProperties(model.RootItem, Guid.Empty, 0, results);
+            }
+
+            // 통계 로깅
+            var uniqueObjectIds = results.Select(r => r.ObjectId).Distinct().Count();
+            System.Diagnostics.Debug.WriteLine($"=== [All Hierarchy 통계] ===");
+            System.Diagnostics.Debug.WriteLine($"총 레코드 수: {results.Count}");
+            System.Diagnostics.Debug.WriteLine($"고유 객체 수: {uniqueObjectIds}");
+
+            return results;
+        }
     }
 }

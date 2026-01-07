@@ -316,5 +316,40 @@ namespace DXTnavis.Services
                 .Distinct()
                 .Count();
         }
+
+        /// <summary>
+        /// ObjectId 목록으로 직접 Navisworks 객체를 선택합니다.
+        /// v0.4.0: Object 검색 기능에서 사용
+        /// </summary>
+        /// <param name="objectIds">선택할 ObjectId 목록</param>
+        /// <returns>선택된 객체 수</returns>
+        public int SelectByIds(IEnumerable<Guid> objectIds)
+        {
+            var doc = Application.ActiveDocument;
+            if (doc == null)
+                return 0;
+
+            var modelItems = FindModelItems(objectIds);
+            if (modelItems.Count == 0)
+                return 0;
+
+            doc.CurrentSelection.Clear();
+            doc.CurrentSelection.CopyFrom(modelItems);
+
+            return modelItems.Count;
+        }
+
+        /// <summary>
+        /// ObjectId 목록으로 객체를 선택하고 줌합니다.
+        /// </summary>
+        public int SelectAndZoomByIds(IEnumerable<Guid> objectIds)
+        {
+            int count = SelectByIds(objectIds);
+            if (count > 0)
+            {
+                ZoomToSelection();
+            }
+            return count;
+        }
     }
 }
