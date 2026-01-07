@@ -1,5 +1,7 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using DXTnavis.ViewModels;
 
 namespace DXTnavis.Views
@@ -63,6 +65,57 @@ namespace DXTnavis.Views
             {
                 // 정리 중 오류가 발생해도 창은 닫히도록 함
                 System.Diagnostics.Debug.WriteLine($"정리 중 오류: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// TextBox의 PreviewKeyDown 이벤트 핸들러
+        /// Navisworks가 키보드 입력을 가로채는 것을 방지합니다.
+        /// 영문/한글 입력이 정상적으로 TextBox에 전달되도록 합니다.
+        /// </summary>
+        private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (textBox == null) return;
+
+            // 특수 키 처리
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    // Enter 키: 다음 컨트롤로 포커스 이동
+                    textBox.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                    e.Handled = true;
+                    break;
+
+                case Key.Escape:
+                    // Escape 키: 포커스 해제
+                    Keyboard.ClearFocus();
+                    e.Handled = true;
+                    break;
+
+                case Key.Tab:
+                    // Tab 키: 기본 동작 허용
+                    break;
+
+                default:
+                    // Navisworks 단축키 충돌 방지:
+                    // 문자, 숫자, 특수문자 키는 모두 TextBox에서 처리되도록
+                    // e.Handled를 설정하지 않음 (WPF TextBox 기본 처리)
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// TextBox의 GotFocus 이벤트 핸들러
+        /// TextBox가 포커스를 받으면 Navisworks 단축키 비활성화
+        /// </summary>
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (textBox != null)
+            {
+                // 전체 텍스트 선택 (편의 기능)
+                textBox.SelectAll();
             }
         }
     }

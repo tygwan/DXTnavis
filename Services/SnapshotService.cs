@@ -195,10 +195,12 @@ namespace DXTnavis.Services
 
         /// <summary>
         /// 현재 ViewPoint를 저장합니다.
+        /// COM API를 사용하여 SavedViewpoints 컬렉션에 ViewPoint를 추가합니다.
+        /// (.NET API의 SavedViewpoints는 read-only이므로 COM API 필수)
         /// </summary>
         /// <param name="viewpointName">ViewPoint 이름</param>
         /// <param name="folderName">저장할 폴더 이름 (선택)</param>
-        /// <returns>생성된 SavedViewpoint</returns>
+        /// <returns>생성된 SavedViewpoint (참조용, COM API로 저장됨)</returns>
         public SavedViewpoint SaveCurrentViewPoint(string viewpointName, string folderName = null)
         {
             var doc = Application.ActiveDocument;
@@ -207,33 +209,30 @@ namespace DXTnavis.Services
 
             try
             {
-                // 현재 Viewpoint 복사
-                var currentViewpoint = doc.CurrentViewpoint.CreateCopy();
+                // COM API를 통한 ViewPoint 저장
+                dynamic comState = ComApiBridge.State;
+                if (comState == null)
+                    throw new InvalidOperationException("COM API에 접근할 수 없습니다.");
 
-                // SavedViewpoint 생성
-                var savedViewpoint = new SavedViewpoint(currentViewpoint);
-                savedViewpoint.DisplayName = viewpointName;
+                // 현재 뷰 가져오기
+                dynamic currentView = comState.CurrentView.Copy();
 
-                // 폴더 찾기 또는 생성
-                GroupItem targetFolder = null;
+                // SavedViews 컬렉션 접근
+                dynamic savedViews = comState.SavedViews();
+
+                // 폴더가 지정된 경우 폴더 찾기 또는 생성
+                dynamic targetCollection = savedViews;
                 if (!string.IsNullOrEmpty(folderName))
                 {
-                    targetFolder = FindOrCreateViewpointFolder(doc, folderName);
+                    targetCollection = FindOrCreateViewpointFolderComApi(savedViews, folderName, comState);
                 }
 
-                // SavedViewpoints에 추가
-                using (var transaction = new Transaction(doc, "Save Viewpoint"))
-                {
-                    if (targetFolder != null)
-                    {
-                        targetFolder.Children.Add(savedViewpoint);
-                    }
-                    else
-                    {
-                        doc.SavedViewpoints.AddCopy(savedViewpoint);
-                    }
-                    transaction.Commit();
-                }
+                // 새 ViewPoint 생성 및 이름 설정
+                dynamic newViewpoint = targetCollection.CreateSavedViewpointCopy(currentView);
+                newViewpoint.name = viewpointName;
+
+                // 컬렉션에 추가
+                targetCollection.Add(newViewpoint);
 
                 OnSnapshotProgress(new SnapshotProgressEventArgs
                 {
@@ -242,6 +241,10 @@ namespace DXTnavis.Services
                     Message = $"ViewPoint '{viewpointName}' 저장됨"
                 });
 
+                // .NET API SavedViewpoint 객체 반환 (참조용)
+                var currentViewpoint = doc.CurrentViewpoint.CreateCopy();
+                var savedViewpoint = new SavedViewpoint(currentViewpoint);
+                savedViewpoint.DisplayName = viewpointName;
                 return savedViewpoint;
             }
             catch (Exception ex)
@@ -252,7 +255,7 @@ namespace DXTnavis.Services
                     Status = SnapshotStatus.Failed,
                     ErrorMessage = ex.Message
                 });
-                throw;
+                throw new Exception($"ViewPoint 저장 실패: {ex.Message}", ex);
             }
         }
 
@@ -468,6 +471,60 @@ namespace DXTnavis.Services
             return ".png";
         }
 
+        /// <summary>
+        /// COM API를 사용하여 ViewPoint 폴더를 찾거나 생성합니다.
+        /// dynamic 타입 사용으로 COM interop 호환성 확보
+        /// </summary>
+        /// <param name="savedViews">SavedViews 컬렉션</param>
+        /// <param name="folderName">폴더 이름</param>
+        /// <param name="comState">COM State 객체</param>
+        /// <returns>폴더 컬렉션 (폴더 내부의 SavedViews 컬렉션)</returns>
+        private dynamic FindOrCreateViewpointFolderComApi(dynamic savedViews, string folderName, dynamic comState)
+        {
+            // 기존 폴더 찾기
+            foreach (dynamic item in savedViews)
+            {
+                try
+                {
+                    // 폴더인지 확인 (SavedViews 메서드가 있으면 폴더)
+                    string name = item.name;
+                    if (name == folderName)
+                    {
+                        // 폴더의 SavedViews 컬렉션 반환 시도
+                        try
+                        {
+                            dynamic folderViews = item.SavedViews();
+                            return folderViews;
+                        }
+                        catch
+                        {
+                            // SavedViews가 없으면 뷰포인트 (폴더 아님)
+                            continue;
+                        }
+                    }
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+
+            // 폴더 생성 - FolderItem에 해당하는 COM 객체 생성
+            // nwEObjectType.eObjectType_nwOpFolderView = 46
+            dynamic newFolder = comState.ObjectFactory(
+                (nwEObjectType)46, null, null);
+            newFolder.name = folderName;
+
+            // 루트에 폴더 추가
+            savedViews.Add(newFolder);
+
+            // 생성된 폴더의 SavedViews 컬렉션 반환
+            return newFolder.SavedViews();
+        }
+
+        /// <summary>
+        /// [Legacy] .NET API를 사용한 폴더 찾기 (현재 사용되지 않음 - COM API 사용 권장)
+        /// </summary>
         private GroupItem FindOrCreateViewpointFolder(Document doc, string folderName)
         {
             // 기존 폴더 찾기
@@ -479,25 +536,8 @@ namespace DXTnavis.Services
                 }
             }
 
-            // 폴더 생성
-            var newFolder = new FolderItem();
-            newFolder.DisplayName = folderName;
-
-            using (var transaction = new Transaction(doc, "Create Viewpoint Folder"))
-            {
-                doc.SavedViewpoints.AddCopy(newFolder);
-                transaction.Commit();
-            }
-
-            // 생성된 폴더 찾아서 반환
-            foreach (SavedItem item in doc.SavedViewpoints.Value)
-            {
-                if (item is FolderItem folder && folder.DisplayName == folderName)
-                {
-                    return folder;
-                }
-            }
-
+            // .NET API로는 폴더 생성 불가 (read-only)
+            // COM API 메서드 사용 필요
             return null;
         }
 

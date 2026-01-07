@@ -225,7 +225,10 @@
                         <TextBlock Text="Path" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding SysPathFilter, UpdateSourceTrigger=PropertyChanged}"
                                  Height="28" VerticalContentAlignment="Center"
-                                 ToolTip="System path filter (e.g., Project > Building)"/>
+                                 ToolTip="System path filter (e.g., Project > Building)"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
                     </StackPanel>
 
                     <!-- 카테고리 필터 -->
@@ -240,14 +243,20 @@
                     <StackPanel Grid.Column="3" Margin="0,0,8,0">
                         <TextBlock Text="Property" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding PropertyNameFilter, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="28" VerticalContentAlignment="Center"/>
+                                 Height="28" VerticalContentAlignment="Center"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
                     </StackPanel>
 
                     <!-- 값 필터 -->
                     <StackPanel Grid.Column="4" Margin="0,0,8,0">
                         <TextBlock Text="Value" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding PropertyValueFilter, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="28" VerticalContentAlignment="Center"/>
+                                 Height="28" VerticalContentAlignment="Center"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
                     </StackPanel>
 
                     <!-- 필터 버튼 -->
@@ -400,12 +409,18 @@
                         <!-- 폴더 이름 -->
                         <TextBlock Text="폴더 이름" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding FolderName, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="30" Margin="0,0,0,12" Padding="8,5"/>
+                                 Height="30" Margin="0,0,0,12" Padding="8,5"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
 
                         <!-- 세트 이름 -->
                         <TextBlock Text="세트 이름" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding NewSetName, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="30" Margin="0,0,0,15" Padding="8,5"/>
+                                 Height="30" Margin="0,0,0,15" Padding="8,5"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
 
                         <!-- 선택된 속성 미리보기 -->
                         <TextBlock Text="선택된 속성 미리보기" Style="{StaticResource LabelStyle}"/>

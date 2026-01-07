@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - v0.4.0
 
 ### Bug Fixes (P0)
-- [ ] 검색창 영어 입력 불가능 오류 수정
-- [ ] Save ViewPoint 저장 오류 (read-only) 수정
+- [x] 검색창 영어 입력 불가능 오류 수정 (IME + PreviewKeyDown 핸들링)
+- [x] Save ViewPoint 저장 오류 수정 (COM API 기반 구현)
 
 ### New Features
 - [ ] 관측점 초기화 기능 (Reset to Home)

@@ -28,9 +28,9 @@
 
 ## v0.4.0 Roadmap
 
-### Bug Fixes (P0 - Critical)
-- [ ] 🔴 검색창 영어 입력 불가능 오류
-- [ ] 🔴 Save ViewPoint 저장 오류 (read-only)
+### Bug Fixes (P0 - Critical) ✅ DONE
+- [x] ✅ 검색창 영어 입력 불가능 오류 (IME + PreviewKeyDown)
+- [x] ✅ Save ViewPoint 저장 오류 (COM API 기반 구현)
 
 ### New Features (P1-P2)
 - [ ] 🟠 트리 레벨별 Expand/Collapse (각 레벨 개별)
@@ -92,8 +92,8 @@ dxtnavis/
 
 | Issue | Priority | Status |
 |-------|----------|--------|
-| 검색창 영어 입력 불가 | 🔴 Critical | Open |
-| ViewPoint 저장 read-only | 🔴 Critical | Open |
+| 검색창 영어 입력 불가 | 🔴 Critical | ✅ Fixed |
+| ViewPoint 저장 read-only | 🔴 Critical | ✅ Fixed |
 
 ---
 
