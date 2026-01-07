@@ -5,6 +5,7 @@
 **Navisworks 2025 Property Viewer & Manager Plugin**
 
 [![Version](https://img.shields.io/badge/Version-0.3.0-blue?style=flat-square)]()
+[![Next](https://img.shields.io/badge/Next-v0.4.0-orange?style=flat-square)]()
 [![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
 [![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
@@ -101,7 +102,8 @@ dotnet build DXTnavis.csproj -c Debug
 ## Development Status
 
 ```
-Progress: [==================>     ] 75%
+v0.3.0: [====================] 100% ✅
+v0.4.0: [>                   ] In Development
 ```
 
 | Phase | Feature | Status |
@@ -109,30 +111,40 @@ Progress: [==================>     ] 75%
 | 1 | Property Filtering | ✅ 100% |
 | 2 | UI Enhancement | ⚠️ 70% |
 | 3 | 3D Integration | ✅ 100% |
-| 4 | 3D Snapshot | 📋 Planned |
+| 4 | 3D Snapshot | ⚠️ 50% |
 | 5 | Data Validation | 📋 Planned |
 
-**→ [Sprint Status](docs/agile/SPRINT-CURRENT.md)** | **→ [Changelog](CHANGELOG.md)**
+**→ [Sprint v0.4.0](docs/agile/SPRINT-v0.4.0.md)** | **→ [Changelog](CHANGELOG.md)** | **→ [Docs](docs/_INDEX.md)**
 
 ### Completed (v0.3.0)
 
-| Phase | Feature | Description |
-|:-----:|---------|-------------|
-| 1 | Level Filter | 레벨별 속성 필터링 |
-| 1 | Sys Path Filter | 경로 기반 필터링 |
-| 2 | Tree Expand/Collapse | 레벨별 확장/축소 |
-| 2 | Visual Level Badges | 색상 코딩 레벨 표시 |
-| 3 | 3D Object Selection | Navisworks 선택 연동 |
-| 3 | Visibility Control | 객체 표시/숨김 |
-| 3 | Zoom to Selection | 카메라 이동 |
+| Version | Feature | Description |
+|:-------:|---------|-------------|
+| v0.1.0 | Level Filter | 레벨별 속성 필터링 |
+| v0.1.0 | Sys Path Filter | 경로 기반 필터링 |
+| v0.2.0 | 3D Selection | Navisworks 선택 연동 |
+| v0.2.0 | Visibility Control | 객체 표시/숨김 |
+| v0.3.0 | Tree Expand/Collapse | 레벨별 확장/축소 |
+| v0.3.0 | Visual Level Badges | 색상 코딩 레벨 표시 |
 
-### Planned
+### v0.4.0 Roadmap
 
-| Phase | Feature |
-|:-----:|---------|
-| 2 | Vertical Layout Option |
-| 4 | PNG Snapshot / ViewPoint |
-| 5 | Unit Mismatch Detection |
+| Priority | Feature | Status |
+|:--------:|---------|:------:|
+| 🔴 P0 | 검색창 영어 입력 버그 수정 | 📋 |
+| 🔴 P0 | ViewPoint 저장 오류 수정 | 📋 |
+| 🟠 P1 | 트리 레벨별 Expand/Collapse | 📋 |
+| 🟠 P1 | Selection Properties 출력 | 📋 |
+| 🟠 P1 | DisplayString 파싱 (Refined CSV) | 📋 |
+| 🟡 P2 | 관측점 초기화 기능 | 📋 |
+| 🟡 P2 | Object 검색 기능 | 📋 |
+
+### Known Issues
+
+| Issue | Priority |
+|-------|:--------:|
+| 검색창 영어 입력 불가 | 🔴 Critical |
+| ViewPoint 저장 read-only | 🔴 Critical |
 
 ---
 
@@ -164,8 +176,15 @@ dxtnavis/
 ├── Converters/
 │   └── BoolToVisibilityConverter.cs
 ├── docs/
-│   └── agile/
-│       └── SPRINT-CURRENT.md
+│   ├── _INDEX.md
+│   ├── agile/
+│   │   └── SPRINT-v0.4.0.md
+│   ├── prd/
+│   │   └── v0.4.0-feature-expansion-prd.md
+│   ├── tech-specs/
+│   │   └── v0.4.0-tech-spec.md
+│   └── progress/
+│       └── status.md
 ├── CHANGELOG.md
 └── DX.cs (Plugin Entry Point)
 ```
@@ -221,6 +240,6 @@ try {
 
 ---
 
-<sub>Last Updated: 2026-01-07 • v0.3.0</sub>
+<sub>Last Updated: 2026-01-08 • v0.3.0 → v0.4.0</sub>
 
 </div>

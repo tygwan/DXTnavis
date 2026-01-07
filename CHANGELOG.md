@@ -7,12 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [Unreleased] - v0.4.0
 
-### Planned
-- Vertical layout option for property panel
-- Advanced filter UI improvements
-- Unit mismatch detection (Phase 5)
+### Bug Fixes (P0)
+- [ ] 검색창 영어 입력 불가능 오류 수정
+- [ ] Save ViewPoint 저장 오류 (read-only) 수정
+
+### New Features
+- [ ] 관측점 초기화 기능 (Reset to Home)
+- [ ] Object 검색 기능 (이름/속성 기반)
+- [ ] Selection 기반 Properties 출력 (All/Sele x Prop/Hier)
+- [ ] DisplayString 접두사 파싱 (Refined CSV)
+- [ ] Raw/Refined CSV 동시 관리
+
+### Enhancements
+- [ ] 트리 레벨별 Expand/Collapse (각 레벨 개별 제어)
+- [ ] Level 필터링 UI 명세화
+- [ ] CSV 출력 Verbose 로깅
+
+### Research
+- [ ] ComAPI를 통한 외부 Property 기입 가능성 조사
+
+**→ [Sprint v0.4.0](docs/agile/SPRINT-v0.4.0.md)**
 
 ---
 

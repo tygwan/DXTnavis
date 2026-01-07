@@ -34,9 +34,14 @@ hierachy_data/
 # Old docs
 gitdocs/
 
-# Development documents (keep agile docs)
+# Development documents (keep core docs)
 docs/*
 !docs/agile/
+!docs/prd/
+!docs/tech-specs/
+!docs/phases/
+!docs/progress/
+!docs/_INDEX.md
 
 # Scripts (internal use)
 scripts/
