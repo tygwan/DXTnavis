@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Response
-from typing import Dict
+from typing import Any, Dict
 from datetime import datetime
 import time
 import logging
@@ -23,7 +23,7 @@ REQUEST_LATENCY = Histogram(
 
 
 @router.get("/health")
-async def health() -> Dict[str, any]:
+async def health() -> Dict[str, Any]:
     """
     헬스체크 엔드포인트
 
@@ -41,19 +41,21 @@ async def health() -> Dict[str, any]:
         db_response_time = (time.perf_counter() - start) * 1000  # 밀리초
 
         # 추가 DB 상태 확인
-        pool_status = db.fetch("SELECT COUNT(*) as total FROM metadata")
-        metadata_count = (await pool_status)[0]["total"] if pool_status else 0
+        pool_status = await db.fetch("SELECT COUNT(*) as total FROM metadata")
+        metadata_count = pool_status[0]["total"] if pool_status else 0
 
         db_details = {
             "status": "healthy",
             "response_time_ms": round(db_response_time, 2),
-            "metadata_count": metadata_count
+            "metadata_count": metadata_count,
+            **db.connection_status(),
         }
     except Exception as e:
         db_status = "unhealthy"
         db_details = {
             "status": "unhealthy",
-            "error": str(e)
+            "error": str(e),
+            **db.connection_status(),
         }
         logger.error(f"Health check DB error: {e}")
 
@@ -61,7 +63,7 @@ async def health() -> Dict[str, any]:
 
     return {
         "status": overall_status,
-        "version": "1.0.0",
+        "version": "1.1.0",  # Phase B: AWP 2025 v1.1.0 - Dual-identity schema
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "services": {
             "database": db_details,
@@ -93,4 +95,3 @@ async def metrics_middleware(request, call_next):
         # metrics recording must never break requests
         pass
     return response
-

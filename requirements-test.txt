@@ -1,0 +1,14 @@
+# Test dependencies for AWP 2025 BIM Data Integration System
+# Install with: pip install -r requirements-test.txt
+
+# Include base application dependencies
+-r fastapi_server/requirements.txt
+
+# Testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Test utilities
+pytest-mock>=3.11.0
+faker>=20.0.0

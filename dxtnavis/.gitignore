@@ -2,7 +2,6 @@
 bin/
 obj/
 packages/
-.claude/
 
 # Visual Studio
 .vs/
@@ -10,6 +9,7 @@ packages/
 *.suo
 *.cache
 *.log
+UpgradeLog.htm
 
 # NuGet
 *.nupkg
@@ -22,3 +22,24 @@ packages/
 *.tmp
 *.bak
 *~
+
+# Development logs (not for public repo)
+LOG-debug/
+LOG-error/
+LOG-prd/
+
+# Data files
+hierachy_data/
+
+# Old docs
+gitdocs/
+
+# Development documents (keep agile docs)
+docs/*
+!docs/agile/
+
+# Scripts (internal use)
+scripts/
+
+# Claude Code config
+.claude/

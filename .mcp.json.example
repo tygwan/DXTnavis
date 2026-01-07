@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "dx-platform-postgres": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@bytebase/dbhub", "--stdio"],
+      "env": {
+        "DSN": "postgres://YOUR_USER:YOUR_PASSWORD@localhost:5432/DX_platform?sslmode=disable",
+        "POSTGRES_HOST": "localhost",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DATABASE": "DX_platform",
+        "POSTGRES_USER": "YOUR_USER",
+        "POSTGRES_PASSWORD": "YOUR_PASSWORD"
+      }
+    }
+  }
+}

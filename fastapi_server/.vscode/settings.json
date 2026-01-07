@@ -1,0 +1,5 @@
+{
+  "python.defaultInterpreterPath": ".\\dxplatform\\Scripts\\python.exe",
+  "python.terminal.activateEnvironment": true,
+  "python.languageServer": "Default"
+}

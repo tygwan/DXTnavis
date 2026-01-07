@@ -1,9 +1,10 @@
 <div align="center">
 
-# 🏗️ DXTnavis
+# DXTnavis
 
 **Navisworks 2025 Property Viewer & Manager Plugin**
 
+[![Version](https://img.shields.io/badge/Version-0.3.0-blue?style=flat-square)]()
 [![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
 [![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
@@ -13,13 +14,13 @@
 
 *BIM 모델의 속성을 효율적으로 확인하고 관리하기 위한 Navisworks 애드인*
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Installation](#-installation) • [Development](#-development)
+[Features](#-features) • [Quick Start](#-quick-start) • [Installation](#-installation) • [Changelog](CHANGELOG.md)
 
 </div>
 
 ---
 
-## ✨ Features
+## Features
 
 <table>
 <tr>
@@ -49,7 +50,7 @@
 ### Hierarchy Navigation
 - 모델 전체 계층 구조 TreeView 시각화
 - **Level-based Expand/Collapse** - 레벨별 확장/축소 (L0~L10)
-- **Visual Indicators** - 색상 배지, 노드 아이콘 (📁/🔷/📄), 하위 개수
+- **Visual Indicators** - 색상 배지, 노드 아이콘, 하위 개수
 
 ### Property Viewer
 - 실시간 속성 표시 (Category → Property → Value)
@@ -66,17 +67,17 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```
-1️⃣  Visual Studio에서 DXTnavis.sln 열고 빌드 (관리자 권한)
-2️⃣  Navisworks 2025 실행 → Home 탭 → DXTnavis 클릭
-3️⃣  계층 구조 로드 → 필터링 → 3D 제어
+1. Visual Studio에서 DXTnavis.sln 열고 빌드 (관리자 권한)
+2. Navisworks 2025 실행 → Home 탭 → DXTnavis 클릭
+3. 계층 구조 로드 → 필터링 → 3D 제어
 ```
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Requirements
 
@@ -97,9 +98,23 @@ dotnet build DXTnavis.csproj -c Debug
 
 ---
 
-## 📊 Development Status
+## Development Status
 
-### ✅ Completed
+```
+Progress: [==================>     ] 75%
+```
+
+| Phase | Feature | Status |
+|:-----:|---------|:------:|
+| 1 | Property Filtering | ✅ 100% |
+| 2 | UI Enhancement | ⚠️ 70% |
+| 3 | 3D Integration | ✅ 100% |
+| 4 | 3D Snapshot | 📋 Planned |
+| 5 | Data Validation | 📋 Planned |
+
+**→ [Sprint Status](docs/agile/SPRINT-CURRENT.md)** | **→ [Changelog](CHANGELOG.md)**
+
+### Completed (v0.3.0)
 
 | Phase | Feature | Description |
 |:-----:|---------|-------------|
@@ -111,53 +126,55 @@ dotnet build DXTnavis.csproj -c Debug
 | 3 | Visibility Control | 객체 표시/숨김 |
 | 3 | Zoom to Selection | 카메라 이동 |
 
-### 📋 Planned
+### Planned
 
 | Phase | Feature |
 |:-----:|---------|
 | 2 | Vertical Layout Option |
-| 3 | 3D Snapshot (PNG/ViewPoint) |
-| 4 | Unit Mismatch Detection |
+| 4 | PNG Snapshot / ViewPoint |
+| 5 | Unit Mismatch Detection |
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 <details>
-<summary><b>📁 Click to expand</b></summary>
+<summary><b>Click to expand</b></summary>
 
 ```
 dxtnavis/
-├── 📁 Models/
+├── Models/
 │   ├── HierarchicalPropertyRecord.cs
 │   ├── TreeNodeModel.cs
 │   └── PropertyInfo.cs
-├── 📁 ViewModels/
+├── ViewModels/
 │   ├── DXwindowViewModel.cs
 │   ├── HierarchyNodeViewModel.cs
 │   └── PropertyItemViewModel.cs
-├── 📁 Views/
+├── Views/
 │   ├── DXwindow.xaml
 │   └── DXwindow.xaml.cs
-├── 📁 Services/
+├── Services/
 │   ├── NavisworksDataExtractor.cs
 │   ├── NavisworksSelectionService.cs
 │   ├── HierarchyFileWriter.cs
-│   ├── SetCreationService.cs
-│   ├── FullModelExporterService.cs
 │   └── PropertyFileWriter.cs
-├── 📁 Helpers/
+├── Helpers/
 │   └── RelayCommand.cs
-├── 📁 Converters/
+├── Converters/
 │   └── BoolToVisibilityConverter.cs
-└── 📄 DX.cs (Plugin Entry Point)
+├── docs/
+│   └── agile/
+│       └── SPRINT-CURRENT.md
+├── CHANGELOG.md
+└── DX.cs (Plugin Entry Point)
 ```
 
 </details>
 
 ---
 
-## ⚠️ Guidelines
+## Guidelines
 
 <details>
 <summary><b>Thread Safety</b></summary>
@@ -184,28 +201,26 @@ try {
 
 ---
 
-## 📄 API Dependencies
+## API Dependencies
 
 ```xml
 <Reference Include="Autodesk.Navisworks.Api"/>
 <Reference Include="Autodesk.Navisworks.Automation"/>
-<Reference Include="Autodesk.Navisworks.Clash"/>
 <Reference Include="Autodesk.Navisworks.ComApi"/>
 <Reference Include="Autodesk.Navisworks.Controls"/>
-<Reference Include="Autodesk.Navisworks.Timeliner"/>
 ```
 
 ---
 
 <div align="center">
 
-## 👥 Author
+## Author
 
 **Developer** - Yoon Taegwan
 **AI Assistant** - Claude (Anthropic)
 
 ---
 
-<sub>Internal Development Project • Last Updated: 2026-01-06</sub>
+<sub>Last Updated: 2026-01-07 • v0.3.0</sub>
 
 </div>

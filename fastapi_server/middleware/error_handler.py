@@ -39,7 +39,7 @@ async def validation_exception_handler(request: Request, exc: Union[RequestValid
 
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=response.model_dump()
+        content=response.model_dump(mode='json')
     )
 
 
@@ -70,7 +70,7 @@ async def http_exception_handler(request: Request, exc: Exception):
 
     return JSONResponse(
         status_code=status_code,
-        content=response.model_dump()
+        content=response.model_dump(mode='json')
     )
 
 
@@ -105,7 +105,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=response.model_dump()
+        content=response.model_dump(mode='json')
     )
 
 
@@ -138,5 +138,5 @@ async def database_exception_handler(request: Request, exc: DatabaseError):
 
     return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        content=response.model_dump()
+        content=response.model_dump(mode='json')
     )

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DX Platform Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f6fa; color: #222; }
+    header { margin-bottom: 24px; }
+    h1 { margin: 0 0 8px; }
+    button { padding: 8px 16px; margin-right: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { padding: 8px 12px; border: 1px solid #dfe4ea; text-align: left; }
+    th { background: #f0f3f7; }
+    #status { margin-top: 16px; white-space: pre-wrap; }
+    #detected { margin-top: 16px; white-space: pre-wrap; }
+    form div { margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DX Platform Web Console</h1>
+    <p>Revit · Navisworks 데이터 흐름을 빠르게 확인하고 CSV 업로드를 시험할 수 있는 임시 대시보드입니다.</p>
+    <button id="refresh-projects">프로젝트 새로고침</button>
+  </header>
+
+  <section>
+    <h2>프로젝트 목록</h2>
+    <table>
+      <thead>
+        <tr><th>코드</th><th>이름</th><th>생성일</th></tr>
+      </thead>
+      <tbody id="projects-body"><tr><td colspan="3">불러오는 중...</td></tr></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Navisworks CSV 업로드</h2>
+    <form id="navis-upload-form">
+      <div>
+        <label>프로젝트 코드 (감지 결과가 덮어쓸 수 있음)</label><br />
+        <input type="text" id="project-code" placeholder="예: PROJECT_TEST" />
+      </div>
+      <div>
+        <label>리비전 번호</label><br />
+        <input type="number" id="revision-number" value="1" min="1" />
+      </div>
+      <div>
+        <label>CSV 파일</label><br />
+        <input type="file" id="csv-file" accept=".csv" required />
+      </div>
+      <button type="submit">업로드</button>
+    </form>
+    <pre id="status"></pre>
+    <div id="detected"></div>
+  </section>
+
+  <script>
+    const API_BASE = '/api/v1';
+
+    async function fetchJSON(url, options) {
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(${res.status} \n);
+      }
+      return res.json();
+    }
+
+    async function loadProjects() {
+      const tbody = document.getElementById('projects-body');
+      tbody.innerHTML = '<tr><td colspan="3">불러오는 중...</td></tr>';
+      try {
+        const data = await fetchJSON(${API_BASE}/projects);
+        if (!Array.isArray(data) || !data.length) {
+          tbody.innerHTML = '<tr><td colspan="3">등록된 프로젝트가 없습니다.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.map((p) => 
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        ).join('');
+      } catch (err) {
+        tbody.innerHTML = <tr><td colspan="3">불러오기 실패: </td></tr>;
+      }
+    }
+
+    document.getElementById('refresh-projects').addEventListener('click', loadProjects);
+
+    document.getElementById('navis-upload-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const statusEl = document.getElementById('status');
+      const detectedEl = document.getElementById('detected');
+      statusEl.textContent = '업로드 중...';
+      detectedEl.textContent = '';
+
+      const fileInput = document.getElementById('csv-file');
+      if (!fileInput.files.length) {
+        statusEl.textContent = 'CSV 파일을 선택해 주세요.';
+        return;
+      }
+
+      const projectCode = document.getElementById('project-code').value.trim() || 'UNKNOWN';
+      const revisionNumber = document.getElementById('revision-number').value.trim() || '1';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const response = await fetchJSON(
+          ${API_BASE}/navisworks/projects//revisions//hierarchy,
+          { method: 'POST', body: formData }
+        );
+        statusEl.textContent = JSON.stringify(response, null, 2);
+        if (response.detected) {
+          detectedEl.innerHTML = <strong>감지된 프로젝트</strong><pre></pre>;
+        }
+        loadProjects();
+      } catch (err) {
+        statusEl.textContent = 업로드 실패: ;
+      }
+    });
+
+    loadProjects();
+  </script>
+</body>
+</html>

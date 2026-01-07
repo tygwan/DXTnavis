@@ -109,6 +109,13 @@ BIM 객체 데이터 저장
 - JSONB 컬럼: `properties`, `bounding_box`
 
 #### relationships
+
+#### revision_versions
+Revit/Navisworks 소스에서 추출된 `model_version` 값과 실제 `revisions` 레코드를 연결하는 매핑 테이블입니다.
+- Primary Key: `model_version`
+- 주요 컬럼: `revision_id`, `source_type` (`revit|navisworks|both`), `source_file_path`, `extracted_at`
+- 용도: DXrevit/DXnavis ingest 시 동일 리비전을 재사용하고, 소스별 스냅샷 추적
+
 객체 간 관계 저장
 - Primary Key: `id` (BIGSERIAL)
 - Unique Key: (`model_version`, `source_object_id`, `target_object_id`, `relation_type`)

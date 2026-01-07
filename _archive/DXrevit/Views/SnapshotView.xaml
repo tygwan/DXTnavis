@@ -1,0 +1,315 @@
+<Window x:Class="DXrevit.Views.SnapshotView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="BIM 데이터 스냅샷 - DX Platform v2.0"
+        Width="600" Height="650"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F5F5F5">
+
+    <Window.Resources>
+        <!-- 버튼 스타일 -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#0078D4"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="4" 
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#005A9E"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#CCCCCC"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#E0E0E0"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="4" 
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#D0D0D0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- GroupBox 스타일 -->
+        <Style x:Key="ModernGroupBox" TargetType="GroupBox">
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupBox">
+                        <Border CornerRadius="5" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Background="{TemplateBinding Background}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="{TemplateBinding Header}" 
+                                           FontWeight="Bold" 
+                                           FontSize="13"
+                                           Margin="5,8,5,12"/>
+                                <ContentPresenter Grid.Row="1" Margin="{TemplateBinding Padding}"/>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- TextBox 스타일 -->
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border CornerRadius="4" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Background="{TemplateBinding Background}">
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ProgressBar 스타일 -->
+        <Style x:Key="ModernProgressBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="BorderBrush" Value="#0078D4"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#0078D4"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border CornerRadius="4" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Background="{TemplateBinding Background}">
+                            <Grid Margin="2">
+                                <Border x:Name="PART_Track" 
+                                        CornerRadius="3"/>
+                                <Border x:Name="PART_Indicator" 
+                                        CornerRadius="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{TemplateBinding Foreground}"/>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 제목 -->
+            <TextBlock Grid.Row="0"
+                       Text="📊 BIM 모델 스냅샷 저장 (v2.0)"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Foreground="#0078D4"
+                       Margin="0,0,0,20"/>
+
+            <!-- 프로젝트 정보 섹션 -->
+            <GroupBox Grid.Row="1" Header="📋 프로젝트 정보" Style="{StaticResource ModernGroupBox}">
+                <StackPanel>
+                    <!-- 프로젝트 코드 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="프로젝트 코드:" Width="120" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ProjectCode, FallbackValue='자동 감지됨'}"
+                                   FontSize="14" Foreground="#0078D4" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- 프로젝트 이름 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="프로젝트 이름:" Width="120" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ProjectName, FallbackValue='Revit 파일명 기반'}"
+                                   FontSize="12" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- 현재 리비전 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="현재 리비전:" Width="120" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock FontSize="12" VerticalAlignment="Center">
+                            <Run Text="{Binding CurrentRevisionNumber, FallbackValue='없음', StringFormat='#{0}'}"/>
+                            <Run Text=" (" Foreground="Gray"/>
+                            <Run Text="{Binding CurrentRevisionDisplay, FallbackValue='첫 리비전'}" Foreground="Gray"/>
+                            <Run Text=")" Foreground="Gray"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- 통계 정보 -->
+                    <Border BorderBrush="#E0E0E0" BorderThickness="1" Background="#F9F9F9" Padding="10" Margin="0,5,0,0">
+                        <StackPanel>
+                            <TextBlock Text="📈 프로젝트 통계" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBlock FontSize="11" Foreground="#666666">
+                                <Run Text="총 리비전:"/>
+                                <Run Text="{Binding ProjectStats.TotalRevisions, FallbackValue='0'}" FontWeight="Bold"/>
+                                <Run Text="  |  총 객체:"/>
+                                <Run Text="{Binding ProjectStats.TotalObjects, FallbackValue='0'}" FontWeight="Bold"/>
+                                <Run Text="  |  카테고리:"/>
+                                <Run Text="{Binding ProjectStats.TotalCategories, FallbackValue='0'}" FontWeight="Bold"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- 새 리비전 정보 섹션 -->
+            <GroupBox Grid.Row="2" Header="📝 새 리비전 정보" Style="{StaticResource ModernGroupBox}">
+                <StackPanel>
+                    <!-- 버전 태그 -->
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="버전 태그 *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding VersionTag, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanInput}"
+                                 Style="{StaticResource ModernTextBox}"
+                                 ToolTip="예: v1.0, v2.0 (자동 제안됨)"/>
+                        <TextBlock Text="💡 다음 버전으로 자동 설정됨"
+                                   FontSize="10" Foreground="Gray" Margin="0,3,0,0"/>
+                    </StackPanel>
+
+                    <!-- 설명 -->
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="설명" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanInput}"
+                                 Style="{StaticResource ModernTextBox}"
+                                 Height="70"
+                                 TextWrapping="Wrap" AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+
+                    <!-- 작성자 -->
+                    <StackPanel>
+                        <TextBlock Text="작성자" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding CreatedBy, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="False"
+                                 Style="{StaticResource ModernTextBox}"
+                                 Background="#F0F0F0"
+                                 ToolTip="현재 Windows 사용자"/>
+                        <TextBlock Text="✓ Windows 사용자 계정으로 자동 설정됨"
+                                   FontSize="10" Foreground="Green" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- 데이터 추출 정보 -->
+            <GroupBox Grid.Row="3" Header="🔍 데이터 추출 설정" Style="{StaticResource ModernGroupBox}">
+                <StackPanel>
+                    <Border BorderBrush="#0078D4" BorderThickness="1" Background="#E6F3FF" Padding="10">
+                        <StackPanel>
+                            <TextBlock Text="자동 추출 항목:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBlock FontSize="11" TextWrapping="Wrap">
+                                • 모든 Revit 요소 (형상 요소)<LineBreak/>
+                                • Element ID (Navisworks 매칭용)<LineBreak/>
+                                • 카테고리, 패밀리, 타입<LineBreak/>
+                                • 모든 파라미터 (JSONB 형식)<LineBreak/>
+                                • Bounding Box 정보<LineBreak/>
+                                • Activity ID (4D 시뮬레이션용)
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- 진행률 표시 -->
+            <StackPanel Grid.Row="4" Margin="0,0,0,15">
+                <TextBlock Text="{Binding StatusMessage, FallbackValue='준비됨'}"
+                           FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <ProgressBar Value="{Binding ProgressValue}"
+                             Minimum="0" Maximum="100"
+                             Style="{StaticResource ModernProgressBar}"/>
+                <TextBlock Text="{Binding ProgressValue, StringFormat={}{0}% 완료}"
+                           FontSize="10" Foreground="Gray" Margin="0,3,0,0" HorizontalAlignment="Right"/>
+            </StackPanel>
+
+            <!-- 경고 및 안내 -->
+            <Border Grid.Row="5" BorderBrush="#FFA500" BorderThickness="2" Background="#FFF9E6"
+                    Padding="12" Margin="0,0,0,15">
+                <StackPanel>
+                    <TextBlock Text="⚠️ 중요 안내" FontWeight="Bold" Foreground="#FF8C00" Margin="0,0,0,5"/>
+                    <TextBlock FontSize="11" TextWrapping="Wrap" Foreground="#666666">
+                        • 프로젝트가 존재하지 않으면 자동으로 생성됩니다.<LineBreak/>
+                        • 리비전 번호는 자동으로 증가합니다.<LineBreak/>
+                        • 파일 해시를 계산하여 무결성을 보장합니다.<LineBreak/>
+                        • API 서버 연결을 확인해주세요 (http://localhost:8000)
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!-- 버튼 -->
+            <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="💾 저장 및 업로드"
+                        Width="180" Height="45"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding SaveCommand}"/>
+                <Button Content="취소"
+                        Width="100" Height="45"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding CancelCommand}"/>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Window>

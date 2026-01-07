@@ -7,9 +7,82 @@
 
 ## [Unreleased]
 
-### Phase 3 (계획)
-- DXserver API 서버 개발
-- DXnavis Navisworks 애드인 개발
+### Future Enhancements
+- Advanced analytics and reporting features
+- Multi-user collaboration features
+- Real-time synchronization capabilities
+
+## [1.1.0] - 2025-11-01
+
+### Added - Phase A-G: BIM Data Integration System
+
+#### Phase A & B: Backend Unified Schema (Dual-Identity Pattern)
+- **Unified Objects Table**: Dual-identity schema with `unique_key` and `object_guid`
+- **Backward Compatibility**: Legacy `unique_id` auto-migration to `unique_key`
+- **Phase B Ingest API**: `/api/v1/ingest` with IngestRequestV2 schema
+- **Phase B Detection API**: `/api/v1/projects/detect-by-objects` with dual-identity matching
+- **Response Caching**: Detection endpoint with TTL=300s for performance optimization
+- **Database View**: `v_unified_objects_latest` for efficient latest-revision queries
+
+#### Phase C & D: DXrevit Plugin V2 (Dual-Identity TDD)
+- **DataExtractorV2**: Dual-identity extraction with `unique_key` + `object_guid`
+- **SnapshotViewModelV2**: Updated UI supporting Phase B payload format
+- **ProjectManager**: Project and revision management service
+- **RevisionManager**: Revision metadata and versioning service
+- **TDD Implementation**: 6 passing tests for dual-identity pattern validation
+
+#### Phase E: DXnavis Plugin (Navisworks Integration)
+- **HierarchyUploader**: CSV parsing and Navisworks object sampling
+- **SampleObjectIdsFromCsv**: Extract object IDs from CSV files (max 100 samples)
+- **StripPrefixes**: Normalize Navisworks property values (DisplayString, NamedConstant, etc.)
+- **TestableViewModel**: MVVM pattern with `INotifyPropertyChanged` for UI independence
+- **TDD Implementation**: 4 passing tests for hierarchy upload functionality
+
+#### Phase F: Scripts & Monitoring
+- **check_system.py**: Database schema validation and API health checks
+  - `check_missing_columns()`: Verify table schemas against expected columns
+  - `check_api_health()`: API endpoint availability verification
+- **deploy_all.py**: Deployment automation utilities
+  - `generate_backup_filename()`: Timestamped backup file generation
+- **run_system_check.py**: Comprehensive system health validation script
+
+#### Phase G: Performance Testing & Integration
+- **Performance Tests**:
+  - `test_ingest_throughput.py`: Batch processing 4,605 obj/sec (227x faster than threshold)
+  - `test_detection_latency.py`: p95 latency 3.28ms (61x faster than 200ms threshold)
+- **Integration Tests**:
+  - `test_end_to_end.py`: Complete Revit → API → DB → Navisworks workflow validation
+- **Performance Report**: Comprehensive metrics documentation (PERFORMANCE_METRICS_G.md)
+
+### Changed - Database & API Improvements
+- **Constraint Update**: `unified_objects` unique constraint changed to `(revision_id, source_type, unique_key)`
+- **Batch Operations**: Optimized executemany for high-performance ingestion
+- **Connection Pooling**: asyncpg pool with retry mechanism (3 retries, exponential backoff)
+- **API Response Format**: Standardized IngestResponseV2 and DetectResponse schemas
+
+### Performance
+- **Ingest Throughput**: 4,605 objects/sec processing speed
+- **Detection Latency**: p95 = 3.28ms, p99 = 4.61ms
+- **End-to-End Workflow**: Fully automated and validated
+- **Database Queries**: Optimized with latest-revision view and JSONB indexing
+
+### Testing
+- **Unit Tests**: 10 tests covering dual-identity pattern (Phases D, E)
+- **Performance Tests**: 2 tests validating throughput and latency requirements
+- **Integration Tests**: 1 test validating complete BIM data pipeline
+- **System Health**: Automated schema validation and health checks
+- **Test Coverage**: All Phase A-G functionality verified with TDD methodology
+
+### Documentation
+- **PERFORMANCE_METRICS_G.md**: Comprehensive performance analysis and recommendations
+- **TODO.md**: Complete Phase A-G task tracking with TDD Red→Green→Refactor cycles
+- **Technical Specifications**: Updated schemas, APIs, and dual-identity pattern documentation
+
+### Infrastructure
+- **pytest Configuration**: Python path setup for module imports
+- **Test Fixtures**: Shared async HTTP client and database pool fixtures
+- **Database Migrations**: Phase B schema migration scripts
+- **Deployment Scripts**: Automated backup and system validation utilities
 
 ## [0.1.0] - 2025-10-13
 

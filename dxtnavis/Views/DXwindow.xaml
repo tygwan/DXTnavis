@@ -302,6 +302,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -341,8 +342,29 @@
                                 ToolTip="필터링된 객체로 카메라 줌"/>
                     </StackPanel>
 
+                    <!-- 스냅샷 버튼 (Phase 4) -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,6,0,0">
+                        <TextBlock Text="📸 Snapshot:" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>
+                        <Button Content="📷 Capture View"
+                                Style="{StaticResource ActionButton}"
+                                Command="{Binding CaptureViewCommand}"
+                                ToolTip="현재 3D 뷰를 이미지로 캡처"/>
+                        <Button Content="📍 Save ViewPoint"
+                                Style="{StaticResource ActionButton}"
+                                Command="{Binding SaveViewPointCommand}"
+                                ToolTip="현재 뷰포인트를 저장"/>
+                        <Button Content="📸 Capture + ViewPoint"
+                                Style="{StaticResource SuccessButton}"
+                                Command="{Binding CaptureWithViewPointCommand}"
+                                ToolTip="이미지 캡처와 뷰포인트를 함께 저장"/>
+                        <Button Content="🎬 Batch Capture"
+                                Style="{StaticResource ActionButton}"
+                                Command="{Binding BatchCaptureCommand}"
+                                ToolTip="필터링된 객체들을 개별 캡처"/>
+                    </StackPanel>
+
                     <!-- 상태 메시지 -->
-                    <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                    <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
                                Text="{Binding StatusMessage}"
                                VerticalAlignment="Center" Margin="0,6,0,0"
                                FontSize="11" Foreground="#666666"/>
