@@ -1,206 +1,121 @@
 # DXTnavis - Navisworks 2025 Property Viewer Plugin
 
-## Project Overview
-- **Purpose**: Standalone Navisworks property viewer and CSV exporter plugin
-- **Tech Stack**: C# .NET Framework 4.8, WPF, Navisworks API 2025
-- **Architecture**: MVVM pattern with modular services
+> **Context:** Standalone Navisworks plugin for property viewing and 3D control
+> **Version:** 0.3.0
+> **Docs Index:** [docs/_INDEX.md](docs/_INDEX.md)
 
-## Critical Version Constraints
-**These versions MUST NOT be changed:**
-- Navisworks 2025 (locked)
-- .NET Framework 4.8 (required by Navisworks 2025)
-- Target x64 platform
+## Quick Reference
+
+### Tech Stack
+- C# .NET Framework 4.8 (locked)
+- WPF MVVM Pattern
+- Navisworks API 2025 (x64 only)
+
+### Current Status (v0.3.0)
+| Phase | Task | Status |
+|-------|------|--------|
+| 1 | Property Filtering | ✅ 100% |
+| 2 | UI Enhancement | ⚠️ 70% |
+| 3 | 3D Object Integration | ✅ 100% |
+| 4 | 3D Snapshot | 📋 Planned |
+| 5 | Data Validation | 📋 Planned |
+
+**→ Sprint:** [docs/agile/SPRINT-CURRENT.md](docs/agile/SPRINT-CURRENT.md)
+**→ Changelog:** [CHANGELOG.md](CHANGELOG.md)
+
+---
 
 ## Project Structure
+
 ```
 dxtnavis/
-├── Converters/           # WPF value converters
-│   └── BoolToVisibilityConverter.cs
-├── Helpers/              # MVVM helper classes
-│   └── RelayCommand.cs
-├── Models/               # Data models
+├── Services/              # Business logic
+│   ├── NavisworksDataExtractor.cs    # Phase 1: 속성 추출
+│   ├── NavisworksSelectionService.cs # Phase 3: 3D 선택
+│   └── HierarchyFileWriter.cs        # CSV/JSON 내보내기
+├── ViewModels/            # MVVM ViewModels
+│   ├── DXwindowViewModel.cs          # 메인 VM
+│   └── HierarchyNodeViewModel.cs     # 트리 노드
+├── Views/                 # WPF Views
+│   └── DXwindow.xaml                 # 메인 UI
+├── Models/                # Data models
 │   ├── HierarchicalPropertyRecord.cs
-│   ├── PropertyInfo.cs
 │   └── TreeNodeModel.cs
-├── Properties/           # Assembly info
-│   └── AssemblyInfo.cs
-├── Resources/            # Plugin icons
-│   ├── icon_16x16.png
-│   └── icon_32x32.png
-├── Services/             # Business logic services
-│   ├── FullModelExporterService.cs
-│   ├── HierarchyFileWriter.cs
-│   ├── NavisworksDataExtractor.cs
-│   ├── NavisworksSelectionService.cs
-│   ├── PropertyFileWriter.cs
-│   └── SetCreationService.cs
-├── ViewModels/           # MVVM ViewModels
-│   ├── DXwindowViewModel.cs
-│   ├── HierarchyNodeViewModel.cs
-│   └── PropertyItemViewModel.cs
-├── Views/                # WPF Views
-│   ├── DXwindow.xaml
-│   └── DXwindow.xaml.cs
-├── DX.cs                 # Main plugin entry point
-├── DXTnavis.csproj       # Project file
-└── DXTnavis.sln          # Solution file
+└── docs/
+    ├── _INDEX.md          # Navigation
+    └── agile/             # Agile documents
+        └── SPRINT-CURRENT.md
 ```
 
-## Core Features
+---
 
-### 1. Plugin Entry Point (DX.cs)
-- `[Plugin("DXTnavis.DX")]` Navisworks AddInPlugin
-- Singleton window pattern for UI management
-- Plugin lifecycle management
+## Completed Features
 
-### 2. Property Extraction (NavisworksDataExtractor.cs)
-- Recursive hierarchy traversal
-- PropertyCategories and DataProperty extraction
-- AccessViolationException handling for stable API access
+### Phase 1: Property Filtering
+- Level Filter (L0~L10) - 레벨별 필터링
+- SysPath Filter - 경로 기반 필터링
+- TreeView Hierarchy - 계층 구조 시각화
+- Visual Level Badges - 색상 코딩
 
-### 3. CSV Export Services
-- **FullModelExporterService**: Export all model properties
-- **HierarchyFileWriter**: Export hierarchy as CSV/JSON
-- **PropertyFileWriter**: Basic property file export
+### Phase 2: UI Enhancement (70%)
+- Level-based Expand/Collapse (L0~L10)
+- Expand All / Collapse All
+- Node Icons (📁/🔷/📄)
 
-### 4. Search Set Creation (SetCreationService.cs)
-- Create Navisworks Search Sets from selected properties
-- Folder organization support
+### Phase 3: 3D Integration
+- Select in 3D - 필터링된 객체 선택
+- Show Only / Show All - 가시성 제어
+- Zoom to Selection - 카메라 이동
 
-### 5. UI (DXwindow.xaml)
-- Three-panel layout:
-  - Left: Object hierarchy TreeView
-  - Center: Property DataGrid with checkboxes
-  - Right: Search Set creation / Settings tabs
+---
 
-## Build & Deployment
+## Critical Constraints
 
-### Build Requirements
-- Visual Studio 2022+
-- Navisworks Manage 2025 installed
-- .NET Framework 4.8 SDK
-
-### PostBuild Deployment
-Automatic deployment to Navisworks plugins folder:
-```
-C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\DXTnavis\
-```
-
-**Note**: Requires Visual Studio to run as Administrator for write access to Program Files.
-
-Files deployed:
-- DXTnavis.dll (main plugin)
-- Newtonsoft.Json.dll
-- System.Text.Json.dll
-- System.Text.Encodings.Web.dll
-- Microsoft.Bcl.AsyncInterfaces.dll
-- System.Buffers.dll
-- System.Memory.dll
-- System.Numerics.Vectors.dll
-- System.Runtime.CompilerServices.Unsafe.dll
-- System.Threading.Tasks.Extensions.dll
-- System.ValueTuple.dll
-
-## API Dependencies
-```xml
-<Reference Include="Autodesk.Navisworks.Api"/>
-<Reference Include="Autodesk.Navisworks.Automation"/>
-<Reference Include="Autodesk.Navisworks.Clash"/>
-<Reference Include="Autodesk.Navisworks.ComApi"/>
-<Reference Include="Autodesk.Navisworks.Controls"/>
-<Reference Include="Autodesk.Navisworks.Timeliner"/>
-```
-
-## Development Guidelines
-
-### Navisworks API Thread Safety
-- All Navisworks API calls must be on UI thread
-- Never use `Task.Run()` with `Application.ActiveDocument`
-- Use Dispatcher for cross-thread UI updates
-
-### Error Handling Pattern
+### Thread Safety
 ```csharp
-try
-{
-    var properties = category.Properties;
-}
-catch (System.AccessViolationException)
-{
-    // Log and skip - common with some Navisworks property categories
-    continue;
-}
+// ❌ NEVER: Background thread with Navisworks API
+Task.Run(() => Application.ActiveDocument.xxx);
+
+// ✅ ALWAYS: UI thread only
+Application.ActiveDocument.CurrentSelection.Add(items);
 ```
 
-### MVVM Best Practices
-- Use RelayCommand for ICommand implementations
-- Use AsyncRelayCommand for async operations
-- Implement INotifyPropertyChanged for all bindable properties
-
-## Current Status
-- Standalone version with no external dependencies
-- CSV/JSON export fully functional
-- Search Set creation working
-- Settings UI present (but disabled in standalone mode)
-- **Phase 1 Complete**: Level/SysPath filtering implemented
-- **Phase 2 Partial**: Tree expand/collapse functionality implemented
-- **Phase 3 Complete**: 3D object selection and visibility control
-- **Phase 4 Complete**: 3D Snapshot capture and ViewPoint save
+### COM API for Image Export
+```csharp
+// Use DriveIOPlugin, NOT DriveImage
+comState.DriveIOPlugin("lcodpimage", path, options);
+```
 
 ---
 
-## Development Roadmap
+## Key Files
 
-### Phase 1: Filtering Enhancement ✅ COMPLETE
-- [x] **Level Filter**: ComboBox with (All), L0, L1, L2... options
-- [x] **Sys Path Filter**: Full hierarchical path with `>` separator
-  - Format: `Project > Building > Level 1 > Wall`
-  - Distinguishes same-named objects at different locations
-- [ ] **Property Exclusion**: Filter out unnecessary values (DisplayString, etc.)
-
-### Phase 2: UI/Layout Improvements (Partial)
-- [x] **Tree Expand/Collapse**: Level-based expand/collapse controls
-  - Level selector ComboBox (1-10 levels)
-  - Expand to level (➕) and Collapse all (➖) buttons
-  - Color-coded level badges for visual hierarchy
-  - Node icons (📁/🔷/📄) based on content type
-  - Child count display for parent nodes
-- [ ] **Vertical Layout Option**: PropertyGrid-style stacked display
-- [ ] **Full Path Display**: Show complete hierarchy path in TreeView
-
-### Phase 3: 3D Object Integration ✅ COMPLETE
-- [x] **Conditional 3D Display**: Show only filtered objects in Navisworks view
-  - Uses `Models.SetHidden()` API for visibility control
-  - "Show Only" button hides non-filtered objects
-  - "Show All" button resets visibility
-- [x] **Object List Selection**: Sync FilteredProperties to Navisworks selection
-  - "Select in 3D" button selects filtered/checked objects
-  - "Zoom" button zooms camera to selected objects
-
-### Phase 4: 3D Snapshot Workflow ✅ COMPLETE
-- [x] **Image Capture**: Export current viewport as PNG/JPG/BMP
-  - Uses COM API (`ComApiBridge.State.DriveImage`)
-  - Configurable image dimensions (default 1920x1080)
-- [x] **ViewPoint Save**: Store camera position to Navisworks SavedViewpoints
-  - Automatic folder creation ("DXTnavis Snapshots")
-  - Timestamp-based naming convention
-- [x] **Combined Capture**: Image + ViewPoint together
-  - Filter condition-based naming
-- [x] **Batch Capture**: Process multiple checked objects
-  - Isolate and capture each object separately
-  - Progress tracking with event-based updates
-
-### Phase 5: Data Validation (Future)
-- [ ] **Unit Mismatch Detection**: Identify inconsistent units across properties
-- [ ] **Validation Report**: Generate warnings and reports
-
-### Implemented Services
-| Service | Purpose | Status |
-|---------|---------|--------|
-| `NavisworksSelectionService.cs` | 3D object selection/visibility control | ✅ Implemented |
-| `SnapshotService.cs` | Image capture and ViewPoint save | ✅ Implemented |
+| Task | File | Line |
+|------|------|------|
+| 3D selection | NavisworksSelectionService.cs | :45 |
+| Filter apply | DXwindowViewModel.cs | :441 |
+| Tree expand | DXwindowViewModel.cs | :520 |
+| Level filter | DXwindowViewModel.cs | :380 |
 
 ---
 
-## Git Repository
-- Remote: https://github.com/tygwan/DXTnavis.git
+## Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| [Sprint](docs/agile/SPRINT-CURRENT.md) | Current sprint status |
+| [Changelog](CHANGELOG.md) | Version history |
+| [_INDEX.md](docs/_INDEX.md) | Full navigation |
+
+---
+
+## Git
+- Repo: https://github.com/tygwan/DXTnavis.git
 - Branch: main
+
+---
+
+## Recent Changes (v0.3.0)
+- feat: Level-based tree expand/collapse
+- feat: 3D object selection and visibility control
+- feat: Level and SysPath filtering
