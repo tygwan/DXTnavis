@@ -4,7 +4,8 @@
 |-------|-------|
 | **Sprint Name** | DXTnavis Feature Expansion v0.4.0 |
 | **Start Date** | 2026-01-08 |
-| **Status** | Planning |
+| **End Date** | 2026-01-08 |
+| **Status** | ✅ Completed |
 | **Goal** | ViewPoint, Search, CSV Enhancement, Property Write |
 
 ---
@@ -31,9 +32,9 @@ Enhancements: 2
 | Description | 검색창에서 영어 입력이 안되는 문제 |
 
 **Root Cause Analysis:**
-- [ ] IME 관련 이슈 확인
-- [ ] TextBox InputMethod 설정 확인
-- [ ] KeyDown/PreviewKeyDown 이벤트 확인
+- [x] IME 관련 이슈 확인
+- [x] TextBox InputMethod 설정 확인
+- [x] KeyDown/PreviewKeyDown 이벤트 확인
 
 ### 1.2 Save ViewPoint 저장 오류 (Read-Only)
 | Field | Value |
@@ -44,9 +45,9 @@ Enhancements: 2
 | Description | ViewPoint 저장 시 read-only 오류 발생 |
 
 **Investigation:**
-- [ ] Document.SavedViewpoints 접근 권한 확인
-- [ ] ComAPI를 통한 ViewPoint 저장 방법 검토
-- [ ] Transaction/DocumentLock 필요 여부 확인
+- [x] Document.SavedViewpoints 접근 권한 확인
+- [x] ComAPI를 통한 ViewPoint 저장 방법 검토
+- [x] Transaction/DocumentLock 필요 여부 확인
 
 ---
 
@@ -64,10 +65,10 @@ Enhancements: 2
 **Target State:** Navisworks 트리와 동일한 구조
 
 **Tasks:**
-- [ ] 레벨별 Expand/Collapse 버튼 UI 추가
-- [ ] `ExpandToLevel(int level)` 메서드 구현
-- [ ] `CollapseFromLevel(int level)` 메서드 구현
-- [ ] 레벨 선택 드롭다운 또는 버튼 그룹
+- [x] 레벨별 Expand/Collapse 버튼 UI 추가
+- [x] `ExpandToLevel(int level)` 메서드 구현
+- [x] `CollapseFromLevel(int level)` 메서드 구현
+- [x] 레벨 선택 드롭다운 또는 버튼 그룹
 
 ### 2.2 Level 필터링 명세화
 | Field | Value |
@@ -78,9 +79,9 @@ Enhancements: 2
 | Description | 왼쪽 계층 트리 패널의 레벨 필터링 기능 명확화 |
 
 **Tasks:**
-- [ ] 필터 UI 개선 (Level 선택 명확화)
-- [ ] 필터 적용 시 시각적 피드백
-- [ ] 필터 상태 표시
+- [x] 필터 UI 개선 (Level 선택 명확화)
+- [x] 필터 적용 시 시각적 피드백
+- [x] 필터 상태 표시
 
 ---
 
@@ -95,9 +96,9 @@ Enhancements: 2
 | Description | 현재 뷰를 초기 상태로 리셋 |
 
 **Tasks:**
-- [ ] Home ViewPoint 저장 기능
-- [ ] Reset to Home ViewPoint 기능
-- [ ] UI 버튼 추가 (🏠 아이콘)
+- [x] Home ViewPoint 저장 기능
+- [x] Reset to Home ViewPoint 기능
+- [x] UI 버튼 추가 (🏠 아이콘)
 
 ### 3.2 Object 검색 기능
 | Field | Value |
@@ -108,11 +109,11 @@ Enhancements: 2
 | Description | 이름/속성으로 Object 검색 |
 
 **Tasks:**
-- [ ] 검색 UI 구현 (SearchBox)
-- [ ] 이름 기반 검색
-- [ ] 속성 기반 검색
-- [ ] 검색 결과 하이라이트
-- [ ] 검색 결과 목록 표시
+- [x] 검색 UI 구현 (SearchBox)
+- [x] 이름 기반 검색
+- [x] 속성 기반 검색
+- [x] 검색 결과 하이라이트
+- [x] 검색 결과 목록 표시
 
 ---
 
@@ -141,9 +142,9 @@ Enhancements: 2
 ```
 
 **Tasks:**
-- [ ] `ExportSelectionProperties()` 메서드 구현
-- [ ] UI 버튼 분리 (All | Selection)
-- [ ] 4개 출력 옵션 완성
+- [x] `ExportSelectionProperties()` 메서드 구현
+- [x] UI 버튼 분리 (All | Selection)
+- [x] 4개 출력 옵션 완성
 
 ### 4.2 DisplayString 접두사 처리 (Refined CSV)
 | Field | Value |
@@ -160,9 +161,9 @@ After:  DisplayString | 171.18 | ft^2  (3개 셀)
 ```
 
 **Tasks:**
-- [ ] DisplayString 파싱 로직 구현
-- [ ] 값/단위 분리 정규식
-- [ ] Refined CSV 출력 포맷 정의
+- [x] DisplayString 파싱 로직 구현
+- [x] 값/단위 분리 정규식
+- [x] Refined CSV 출력 포맷 정의
 
 ### 4.3 Raw/Refined CSV 동시 관리
 | Field | Value |
@@ -182,10 +183,10 @@ After:  DisplayString | 171.18 | ft^2  (3개 셀)
    - 외부 도구로 분석
 
 **Tasks:**
-- [ ] Dual export 기능 (`ExportBothFormats()`)
-- [ ] CSV Viewer UI (DataGrid)
-- [ ] Raw/Refined 탭 또는 드롭다운
-- [ ] CSV 파일 선택 및 로드
+- [x] Dual export 기능 (`WriteDualCsv()`)
+- [ ] CSV Viewer UI (DataGrid) - 향후 개선
+- [ ] Raw/Refined 탭 또는 드롭다운 - 향후 개선
+- [ ] CSV 파일 선택 및 로드 - 향후 개선
 
 ### 4.4 CSV 출력 Verbose 로깅
 | Field | Value |
@@ -196,10 +197,10 @@ After:  DisplayString | 171.18 | ft^2  (3개 셀)
 | Description | CSV 출력 과정 상세 로그 |
 
 **Tasks:**
-- [ ] 로그 레벨 설정 (Verbose 옵션)
-- [ ] 출력 행 수, 컬럼 수 로깅
-- [ ] 오류 상세 정보 출력
-- [ ] UI 로그 뷰어 (Optional)
+- [x] 로그 레벨 설정 (Verbose 옵션)
+- [x] 출력 행 수, 컬럼 수 로깅
+- [x] 오류 상세 정보 출력
+- [ ] UI 로그 뷰어 (Optional) - 향후 개선
 
 ---
 
@@ -294,13 +295,13 @@ After:  DisplayString | 171.18 | ft^2  (3개 셀)
 
 ## Success Criteria
 
-- [ ] 검색창 영어 입력 정상 작동
-- [ ] ViewPoint 저장 성공
-- [ ] 모든 레벨에 Expand/Collapse 작동
-- [ ] All/Selection × Prop/Hier 4종 출력
-- [ ] DisplayString 분리된 Refined CSV 출력
-- [ ] Raw/Refined CSV 동시 관리 가능
-- [ ] ComAPI Property Write 가능 여부 결론
+- [x] 검색창 영어 입력 정상 작동
+- [x] ViewPoint 저장 성공
+- [x] 모든 레벨에 Expand/Collapse 작동
+- [x] All/Selection × Prop/Hier 4종 출력
+- [x] DisplayString 분리된 Refined CSV 출력
+- [x] Raw/Refined CSV 동시 관리 가능
+- [ ] ComAPI Property Write 가능 여부 결론 - 향후 Research
 
 ---
 
