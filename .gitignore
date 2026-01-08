@@ -175,3 +175,4 @@ env/
 ENV/
 .venv/
 .worktrees/
+dxtnavis/
