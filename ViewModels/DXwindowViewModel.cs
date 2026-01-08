@@ -1333,7 +1333,7 @@ namespace DXTnavis.ViewModels
 
         /// <summary>
         /// 모델 전체 계층 구조를 TreeView로 로드
-        /// Error7 최적화로 인해 비동기 호출이 제거되었지만, Command 호환성을 위해 Task 반환 유지
+        /// v0.4.1: ModelItem 계층 구조를 직접 사용하여 모든 레벨 노드 포함
         /// </summary>
         private Task LoadModelHierarchyAsync()
         {
@@ -1348,67 +1348,46 @@ namespace DXTnavis.ViewModels
                     return Task.CompletedTask;
                 }
 
-                // *** Error7 최적화: Navisworks API 호출은 반드시 UI 스레드에서 실행 ***
-                // doc.Models와 model.RootItem은 Navisworks API 객체이므로 UI 스레드에서만 접근 가능
-                var extractor = new NavisworksDataExtractor();
-                var allData = new List<HierarchicalPropertyRecord>();
+                // *** v0.4.1: ModelItem에서 직접 TreeView 구조 생성 ***
+                // 컨테이너 노드(속성 없음)도 포함하여 완전한 계층 구조 유지
+                ObjectHierarchyRoot.Clear();
+                var allNodes = new List<TreeNodeModel>();
+                int totalNodeCount = 0;
 
-                // UI 스레드에서 모든 Navisworks API 데이터 추출
                 foreach (var model in doc.Models)
                 {
-                    extractor.TraverseAndExtractProperties(model.RootItem, Guid.Empty, 0, allData);
+                    if (model?.RootItem == null) continue;
+
+                    var rootNode = BuildTreeFromModelItem(model.RootItem, 0, allNodes);
+                    if (rootNode != null)
+                    {
+                        ObjectHierarchyRoot.Add(rootNode);
+                    }
                 }
 
-                if (allData == null || allData.Count == 0)
+                totalNodeCount = allNodes.Count;
+
+                if (totalNodeCount == 0)
                 {
                     MessageBox.Show("모델에서 데이터를 추출할 수 없습니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
                     return Task.CompletedTask;
                 }
 
-                // TreeView 구조 생성
-                ObjectHierarchyRoot.Clear();
-                var nodeMap = new Dictionary<Guid, TreeNodeModel>();
-
-                // 모든 노드 생성
-                foreach (var record in allData.GroupBy(r => r.ObjectId))
-                {
-                    var firstRecord = record.First();
-                    var node = new TreeNodeModel
-                    {
-                        ObjectId = firstRecord.ObjectId,
-                        DisplayName = firstRecord.DisplayName,
-                        Level = firstRecord.Level,
-                        HasGeometry = true
-                    };
-                    nodeMap[firstRecord.ObjectId] = node;
-                }
-
-                // 계층 구조 연결
-                foreach (var record in allData.GroupBy(r => r.ObjectId))
-                {
-                    var firstRecord = record.First();
-                    if (nodeMap.TryGetValue(firstRecord.ObjectId, out var node))
-                    {
-                        if (firstRecord.ParentId == Guid.Empty)
-                        {
-                            // 루트 노드
-                            ObjectHierarchyRoot.Add(node);
-                        }
-                        else if (nodeMap.TryGetValue(firstRecord.ParentId, out var parentNode))
-                        {
-                            // 자식 노드
-                            parentNode.Children.Add(node);
-                        }
-                    }
-                }
-
                 // TreeView 선택 이벤트 구독 (IsSelected 속성 변경 감지)
-                foreach (var node in nodeMap.Values)
+                foreach (var node in allNodes)
                 {
                     node.PropertyChanged += OnTreeNodeSelectionChanged;
                 }
 
-                // *** 중앙 패널에 전체 데이터 출력 (Export Hierarchy와 동일한 형태) ***
+                // *** 중앙 패널용 HierarchicalPropertyRecord 데이터 추출 ***
+                var extractor = new NavisworksDataExtractor();
+                var allData = new List<HierarchicalPropertyRecord>();
+
+                foreach (var model in doc.Models)
+                {
+                    extractor.TraverseAndExtractProperties(model.RootItem, Guid.Empty, 0, allData);
+                }
+
                 AllHierarchicalProperties.Clear();
                 foreach (var record in allData)
                 {
@@ -1425,7 +1404,7 @@ namespace DXTnavis.ViewModels
                 ExpandTreeToLevel(SelectedExpandLevel);
 
                 ExportStatusMessage = $"Hierarchy loaded!";
-                StatusMessage = $"Loaded: {allData.Count} properties from {nodeMap.Count} objects";
+                StatusMessage = $"Loaded: {allData.Count} properties from {totalNodeCount} nodes (including containers)";
 
                 return Task.CompletedTask;
             }
@@ -1439,6 +1418,83 @@ namespace DXTnavis.ViewModels
                     MessageBoxImage.Error);
 
                 return Task.CompletedTask;
+            }
+        }
+
+        /// <summary>
+        /// v0.4.1: ModelItem에서 직접 TreeNodeModel 트리를 재귀적으로 구축
+        /// 속성 유무와 관계없이 모든 노드를 포함하여 완전한 계층 구조 생성
+        /// </summary>
+        /// <param name="item">현재 ModelItem</param>
+        /// <param name="level">현재 레벨 (0부터 시작)</param>
+        /// <param name="allNodes">모든 노드 수집용 리스트</param>
+        /// <returns>TreeNodeModel (숨김 상태면 null)</returns>
+        private TreeNodeModel BuildTreeFromModelItem(ModelItem item, int level, List<TreeNodeModel> allNodes)
+        {
+            if (item == null || item.IsHidden)
+                return null;
+
+            // 현재 노드 생성
+            var node = new TreeNodeModel
+            {
+                ObjectId = item.InstanceGuid,
+                DisplayName = GetDisplayNameFromModelItem(item),
+                Level = level,
+                HasGeometry = item.HasGeometry
+            };
+
+            allNodes.Add(node);
+
+            // 재귀적으로 모든 자식 노드 추가 (속성 유무 무관)
+            foreach (ModelItem child in item.Children)
+            {
+                var childNode = BuildTreeFromModelItem(child, level + 1, allNodes);
+                if (childNode != null)
+                {
+                    node.Children.Add(childNode);
+                }
+            }
+
+            return node;
+        }
+
+        /// <summary>
+        /// ModelItem에서 표시 이름 추출
+        /// </summary>
+        private string GetDisplayNameFromModelItem(ModelItem item)
+        {
+            try
+            {
+                // 먼저 DisplayName 속성 시도
+                if (!string.IsNullOrWhiteSpace(item.DisplayName))
+                    return item.DisplayName;
+
+                // "Item" 카테고리의 "Name" 속성 찾기
+                foreach (var category in item.PropertyCategories)
+                {
+                    if (category?.DisplayName == "Item")
+                    {
+                        try
+                        {
+                            var properties = category.Properties;
+                            foreach (DataProperty property in properties)
+                            {
+                                if (property?.DisplayName == "Name")
+                                {
+                                    return property.Value?.ToString() ?? item.InstanceGuid.ToString();
+                                }
+                            }
+                        }
+                        catch { continue; }
+                    }
+                }
+
+                // 이름을 찾지 못하면 GUID 사용
+                return item.InstanceGuid.ToString();
+            }
+            catch
+            {
+                return "Unknown";
             }
         }
 

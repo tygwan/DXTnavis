@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.1] - 2026-01-08
+
+### Bug Fixes (Critical)
+- **트리 계층 구조 수정** - Navisworks와 동일한 완전한 계층 트리 구조
+  - 컨테이너 노드(속성 없음)도 트리에 포함
+  - ModelItem.Children을 직접 사용하여 정확한 부모-자식 관계 유지
+  - 누락되던 중간 레벨(L1, L3, L6, L7 등) 노드 표시
+
+### Technical
+- `BuildTreeFromModelItem()` - ModelItem에서 직접 재귀적 트리 구축
+- `GetDisplayNameFromModelItem()` - 헬퍼 메서드 추가
+- 상태 메시지에 컨테이너 노드 수 표시
+
+**→ [Sprint v0.4.1](docs/agile/SPRINT-v0.4.1.md)**
+
+---
+
 ## [0.4.0] - 2026-01-08
 
 ### Bug Fixes (P0)
@@ -90,7 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/tygwan/DXTnavis/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/tygwan/DXTnavis/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tygwan/DXTnavis/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/tygwan/DXTnavis/compare/v0.1.0...v0.2.0
