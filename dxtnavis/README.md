@@ -4,7 +4,7 @@
 
 **Navisworks 2025 Property Viewer & Manager Plugin**
 
-[![Version](https://img.shields.io/badge/Version-0.3.0-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.4.0-blue?style=flat-square)]()
 [![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
 [![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
@@ -24,25 +24,30 @@
 
 <table>
 <tr>
-<td align="center" width="25%">
+<td align="center" width="20%">
 <h3>🌳</h3>
 <b>Hierarchy</b><br/>
 <sub>Level-based<br/>expand/collapse</sub>
 </td>
-<td align="center" width="25%">
+<td align="center" width="20%">
 <h3>🔍</h3>
-<b>Filtering</b><br/>
-<sub>Level & SysPath<br/>filters</sub>
+<b>Search</b><br/>
+<sub>Object search<br/>by name/path</sub>
 </td>
-<td align="center" width="25%">
+<td align="center" width="20%">
 <h3>🎯</h3>
 <b>3D Control</b><br/>
-<sub>Select, Show,<br/>Zoom</sub>
+<sub>Select, Show,<br/>Zoom, Reset</sub>
 </td>
-<td align="center" width="25%">
+<td align="center" width="20%">
 <h3>📤</h3>
 <b>Export</b><br/>
-<sub>CSV, JSON<br/>formats</sub>
+<sub>Raw + Refined<br/>CSV dual export</sub>
+</td>
+<td align="center" width="20%">
+<h3>📸</h3>
+<b>Snapshot</b><br/>
+<sub>ViewPoint<br/>Save & Reset</sub>
 </td>
 </tr>
 </table>
@@ -64,6 +69,22 @@
 | `Show Only` | 필터링된 객체만 표시 (나머지 숨김) |
 | `Show All` | 전체 객체 표시 복원 |
 | `Zoom` | 선택된 객체로 카메라 이동 |
+| `Reset Home` | 초기 뷰포인트로 리셋 (v0.4.0) |
+
+### Object Search (v0.4.0)
+- 객체 이름, 속성값, SysPath로 검색
+- 검색 결과 자동 3D 선택 연동
+- 검색 결과로 Zoom 기능
+
+### CSV Export (v0.4.0)
+| 버튼 | 설명 |
+|------|------|
+| `All Properties` | 전체 모델 속성 내보내기 |
+| `All Hierarchy` | 전체 계층 구조 내보내기 |
+| `Selection Properties` | 선택 객체 속성 내보내기 |
+| `Selection Hierarchy` | 선택 객체 계층 내보내기 |
+
+> Raw CSV + Refined CSV (DisplayString 파싱) 동시 저장
 
 ---
 
@@ -101,38 +122,40 @@ dotnet build DXTnavis.csproj -c Debug
 ## Development Status
 
 ```
-Progress: [==================>     ] 75%
+v0.4.0: [====================] 100% ✅ Released 2026-01-08
 ```
 
 | Phase | Feature | Status |
 |:-----:|---------|:------:|
 | 1 | Property Filtering | ✅ 100% |
-| 2 | UI Enhancement | ⚠️ 70% |
+| 2 | UI Enhancement | ✅ 100% |
 | 3 | 3D Integration | ✅ 100% |
-| 4 | 3D Snapshot | 📋 Planned |
-| 5 | Data Validation | 📋 Planned |
+| 4 | CSV Enhancement | ✅ 100% |
+| 5 | ComAPI Research | 📋 Planned |
 
-**→ [Sprint Status](docs/agile/SPRINT-CURRENT.md)** | **→ [Changelog](CHANGELOG.md)**
+**→ [Changelog](CHANGELOG.md)**
 
-### Completed (v0.3.0)
+### Release History
 
-| Phase | Feature | Description |
-|:-----:|---------|-------------|
-| 1 | Level Filter | 레벨별 속성 필터링 |
-| 1 | Sys Path Filter | 경로 기반 필터링 |
-| 2 | Tree Expand/Collapse | 레벨별 확장/축소 |
-| 2 | Visual Level Badges | 색상 코딩 레벨 표시 |
-| 3 | 3D Object Selection | Navisworks 선택 연동 |
-| 3 | Visibility Control | 객체 표시/숨김 |
-| 3 | Zoom to Selection | 카메라 이동 |
+| Version | Features | Date |
+|:-------:|----------|:----:|
+| v0.4.0 | Object Search, 4종 CSV, Reset Home, Dual Export, Verbose Log | 2026-01-08 |
+| v0.3.0 | Tree Expand/Collapse, Level Badges | 2026-01-06 |
+| v0.2.0 | 3D Selection, Visibility Control, Zoom | 2026-01-05 |
+| v0.1.0 | Level Filter, SysPath Filter, TreeView | 2026-01-03 |
 
-### Planned
+### v0.4.0 완료 기능
 
-| Phase | Feature |
-|:-----:|---------|
-| 2 | Vertical Layout Option |
-| 4 | PNG Snapshot / ViewPoint |
-| 5 | Unit Mismatch Detection |
+| Priority | Feature | Status |
+|:--------:|---------|:------:|
+| 🔴 P0 | 검색창 영어 입력 버그 수정 | ✅ |
+| 🔴 P0 | ViewPoint 저장 오류 수정 | ✅ |
+| 🟠 P1 | 4종 CSV 내보내기 버튼 | ✅ |
+| 🟠 P1 | DisplayString 파싱 (Refined CSV) | ✅ |
+| 🟡 P2 | 관측점 초기화 (Reset Home) | ✅ |
+| 🟡 P2 | Object 검색 기능 | ✅ |
+| 🟡 P2 | Raw/Refined CSV 동시 저장 | ✅ |
+| 🟢 P3 | CSV Verbose 로깅 | ✅ |
 
 ---
 
@@ -157,15 +180,17 @@ dxtnavis/
 ├── Services/
 │   ├── NavisworksDataExtractor.cs
 │   ├── NavisworksSelectionService.cs
+│   ├── DisplayStringParser.cs      # v0.4.0: VariantData 파싱
+│   ├── SnapshotService.cs          # ViewPoint 저장/리셋
 │   ├── HierarchyFileWriter.cs
-│   └── PropertyFileWriter.cs
+│   └── PropertyFileWriter.cs       # Dual CSV + Verbose Log
 ├── Helpers/
 │   └── RelayCommand.cs
 ├── Converters/
 │   └── BoolToVisibilityConverter.cs
 ├── docs/
 │   └── agile/
-│       └── SPRINT-CURRENT.md
+│       └── SPRINT-v0.4.0.md
 ├── CHANGELOG.md
 └── DX.cs (Plugin Entry Point)
 ```
@@ -221,6 +246,6 @@ try {
 
 ---
 
-<sub>Last Updated: 2026-01-07 • v0.3.0</sub>
+<sub>Last Updated: 2026-01-08 • v0.4.0</sub>
 
 </div>

@@ -49,6 +49,9 @@ namespace DXTnavis.ViewModels
         // Tree Expand/Collapse (Phase 2)
         private int _selectedExpandLevel;
 
+        // Object Search (v0.4.0)
+        private string _objectSearchQuery;
+
         #endregion
 
         #region Properties
@@ -288,14 +291,30 @@ namespace DXTnavis.ViewModels
             }
         }
 
+        /// <summary>
+        /// 객체 검색 쿼리 (v0.4.0)
+        /// </summary>
+        public string ObjectSearchQuery
+        {
+            get => _objectSearchQuery;
+            set
+            {
+                _objectSearchQuery = value;
+                OnPropertyChanged(nameof(ObjectSearchQuery));
+            }
+        }
+
         #endregion
 
         #region Commands
 
         public ICommand SaveAsCsvCommand { get; }
         public ICommand SaveAsJsonCommand { get; }
-        public ICommand ExportAllToCsvCommand { get; }
-        public ICommand ExportSelectionHierarchyCommand { get; }
+        // CSV Export Commands (4종 버튼 체계)
+        public ICommand ExportAllPropertiesCommand { get; }      // All × Properties
+        public ICommand ExportSelectionPropertiesCommand { get; } // Selection × Properties
+        public ICommand ExportAllHierarchyCommand { get; }        // All × Hierarchy
+        public ICommand ExportSelectionHierarchyCommand { get; }  // Selection × Hierarchy
         public ICommand CreateSearchSetCommand { get; }
         public ICommand LoadHierarchyCommand { get; }
         public ICommand ApplyFilterCommand { get; }
@@ -312,11 +331,20 @@ namespace DXTnavis.ViewModels
         public ICommand CollapseAllCommand { get; }
         public ICommand ExpandAllCommand { get; }
 
+        // 레벨별 개별 확장 Command (P1 Feature)
+        public ICommand ExpandLevelCommand { get; }
+
         // Snapshot Commands (Phase 4)
         public ICommand CaptureViewCommand { get; }
         public ICommand SaveViewPointCommand { get; }
         public ICommand CaptureWithViewPointCommand { get; }
         public ICommand BatchCaptureCommand { get; }
+        public ICommand ResetToHomeCommand { get; }  // v0.4.0: 관측점 초기화
+
+        // Object Search Command (v0.4.0)
+        public ICommand SearchObjectCommand { get; }
+        public ICommand ClearSearchCommand { get; }
+        public ICommand ZoomToSearchResultCommand { get; }
 
         #endregion
 
@@ -383,11 +411,20 @@ namespace DXTnavis.ViewModels
                 execute: _ => SaveToFile(FileType.JSON),
                 canExecute: _ => SelectedObjectProperties.Count > 0);
 
-            ExportAllToCsvCommand = new AsyncRelayCommand(
-                execute: async _ => await ExportAllToCsvAsync());
+            // CSV Export Commands (4종 버튼 체계)
+            ExportAllPropertiesCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportAllPropertiesAsync());
+
+            ExportSelectionPropertiesCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportSelectionPropertiesAsync(),
+                canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
+
+            ExportAllHierarchyCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportAllHierarchyAsync());
 
             ExportSelectionHierarchyCommand = new AsyncRelayCommand(
-                execute: async _ => await ExportSelectionHierarchyAsync());
+                execute: async _ => await ExportSelectionHierarchyAsync(),
+                canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
 
             CreateSearchSetCommand = new RelayCommand(
                 execute: _ => CreateSearchSetFromSelectedProperty(),
@@ -431,6 +468,12 @@ namespace DXTnavis.ViewModels
                 execute: _ => ExpandAllTreeNodes(),
                 canExecute: _ => ObjectHierarchyRoot.Count > 0);
 
+            // 레벨별 개별 확장 Command (P1 Feature)
+            // Parameter: int level (클릭한 레벨 번호)
+            ExpandLevelCommand = new RelayCommand(
+                execute: param => ExpandToSpecificLevel(Convert.ToInt32(param)),
+                canExecute: _ => ObjectHierarchyRoot.Count > 0);
+
             // Snapshot Commands (Phase 4)
             CaptureViewCommand = new RelayCommand(
                 execute: _ => CaptureCurrentView(),
@@ -447,6 +490,24 @@ namespace DXTnavis.ViewModels
             BatchCaptureCommand = new RelayCommand(
                 execute: _ => BatchCaptureFiltered(),
                 canExecute: _ => FilteredHierarchicalProperties.Any(p => p.IsSelected));
+
+            // v0.4.0: 관측점 초기화 명령
+            ResetToHomeCommand = new RelayCommand(
+                execute: _ => ResetToHome(),
+                canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument != null);
+
+            // v0.4.0: 객체 검색 명령
+            SearchObjectCommand = new RelayCommand(
+                execute: _ => SearchObjects(),
+                canExecute: _ => !string.IsNullOrWhiteSpace(ObjectSearchQuery) && AllHierarchicalProperties.Count > 0);
+
+            ClearSearchCommand = new RelayCommand(
+                execute: _ => ClearSearch(),
+                canExecute: _ => !string.IsNullOrWhiteSpace(ObjectSearchQuery) || FilteredHierarchicalProperties.Count != AllHierarchicalProperties.Count);
+
+            ZoomToSearchResultCommand = new RelayCommand(
+                execute: _ => ZoomToSearchResult(),
+                canExecute: _ => FilteredHierarchicalProperties.Count > 0 && FilteredHierarchicalProperties.Count <= 100);
         }
 
         private void OnPropertyRecordChanged(object sender, PropertyChangedEventArgs e)
@@ -522,6 +583,128 @@ namespace DXTnavis.ViewModels
             OnPropertyChanged(nameof(SelectedPropertiesCount));
             ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
             RefreshSelectionCommands();
+        }
+
+        /// <summary>
+        /// 객체 검색 (v0.4.0)
+        /// 이름 또는 속성 값으로 객체를 검색하고 결과를 필터링합니다.
+        /// </summary>
+        private void SearchObjects()
+        {
+            if (string.IsNullOrWhiteSpace(ObjectSearchQuery))
+                return;
+
+            FilteredHierarchicalProperties.Clear();
+            string query = ObjectSearchQuery.ToLowerInvariant();
+
+            foreach (var prop in AllHierarchicalProperties)
+            {
+                // 객체 이름 검색
+                bool matchName = prop.DisplayName?.ToLowerInvariant().Contains(query) ?? false;
+
+                // 속성 값 검색
+                bool matchValue = prop.PropertyValue?.ToLowerInvariant().Contains(query) ?? false;
+
+                // 속성 이름 검색
+                bool matchPropertyName = prop.PropertyName?.ToLowerInvariant().Contains(query) ?? false;
+
+                // SysPath 검색
+                bool matchPath = prop.SysPath?.ToLowerInvariant().Contains(query) ?? false;
+
+                if (matchName || matchValue || matchPropertyName || matchPath)
+                {
+                    FilteredHierarchicalProperties.Add(prop);
+                }
+            }
+
+            // 검색 결과가 있으면 해당 객체들을 3D에서 선택 (옵션)
+            if (FilteredHierarchicalProperties.Count > 0 && FilteredHierarchicalProperties.Count <= 100)
+            {
+                SelectFilteredIn3D();
+            }
+
+            StatusMessage = $"Search '{ObjectSearchQuery}': {FilteredHierarchicalProperties.Count} results found";
+            OnPropertyChanged(nameof(SelectedPropertiesCount));
+            ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
+            RefreshSelectionCommands();
+        }
+
+        /// <summary>
+        /// 검색 결과 초기화 (v0.4.0)
+        /// </summary>
+        private void ClearSearch()
+        {
+            ObjectSearchQuery = string.Empty;
+
+            // 기존 필터 조건 유지하면서 검색 초기화
+            FilteredHierarchicalProperties.Clear();
+            foreach (var prop in AllHierarchicalProperties)
+            {
+                FilteredHierarchicalProperties.Add(prop);
+            }
+
+            StatusMessage = $"Search cleared. Total: {AllHierarchicalProperties.Count} items";
+            OnPropertyChanged(nameof(SelectedPropertiesCount));
+            ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
+            RefreshSelectionCommands();
+        }
+
+        /// <summary>
+        /// 필터링된 객체를 3D에서 선택 (내부 헬퍼)
+        /// </summary>
+        private void SelectFilteredIn3D()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null) return;
+
+                // 필터링된 레코드에서 고유 ObjectId 추출
+                var objectIds = FilteredHierarchicalProperties
+                    .Where(p => p.ObjectId != Guid.Empty)
+                    .Select(p => p.ObjectId)
+                    .Distinct()
+                    .ToList();
+
+                if (objectIds.Count > 0)
+                {
+                    _selectionService.SelectByIds(objectIds);
+                }
+            }
+            catch
+            {
+                // 3D 선택 실패 시 조용히 무시
+            }
+        }
+
+        /// <summary>
+        /// 검색 결과 객체로 줌 (v0.4.0)
+        /// </summary>
+        private void ZoomToSearchResult()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null) return;
+
+                // 필터링된 레코드에서 고유 ObjectId 추출
+                var objectIds = FilteredHierarchicalProperties
+                    .Where(p => p.ObjectId != Guid.Empty)
+                    .Select(p => p.ObjectId)
+                    .Distinct()
+                    .ToList();
+
+                if (objectIds.Count > 0)
+                {
+                    // 선택 후 줌
+                    int count = _selectionService.SelectAndZoomByIds(objectIds);
+                    StatusMessage = $"Zoomed to {count} objects";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Zoom failed: {ex.Message}";
+            }
         }
 
         /// <summary>
@@ -727,6 +910,7 @@ namespace DXTnavis.ViewModels
 
         /// <summary>
         /// 현재 UI에 표시된 속성을 파일로 저장
+        /// v0.4.0: CSV 저장 시 Raw/Refined 두 파일 동시 생성
         /// </summary>
         private void SaveToFile(FileType fileType)
         {
@@ -752,13 +936,25 @@ namespace DXTnavis.ViewModels
                     var properties = SelectedObjectProperties.ToList();
                     var writer = new PropertyFileWriter();
 
-                    writer.WriteFile(saveDialog.FileName, properties, fileType);
-
-                    MessageBox.Show(
-                        "파일이 성공적으로 저장되었습니다.",
-                        "저장 완료",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    if (fileType == FileType.CSV)
+                    {
+                        // v0.4.0: Raw CSV + Refined CSV 동시 저장
+                        var (rawPath, refinedPath) = writer.WriteDualCsv(saveDialog.FileName, properties);
+                        MessageBox.Show(
+                            $"2개 파일이 저장되었습니다:\n\n• Raw: {System.IO.Path.GetFileName(rawPath)}\n• Refined: {System.IO.Path.GetFileName(refinedPath)}",
+                            "저장 완료",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        writer.WriteFile(saveDialog.FileName, properties, fileType);
+                        MessageBox.Show(
+                            "파일이 성공적으로 저장되었습니다.",
+                            "저장 완료",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
                 }
             }
             catch (Exception ex)
@@ -772,9 +968,9 @@ namespace DXTnavis.ViewModels
         }
 
         /// <summary>
-        /// 모델 전체 속성을 CSV로 내보내기
+        /// 모델 전체 속성을 CSV로 내보내기 (All × Properties)
         /// </summary>
-        private async Task ExportAllToCsvAsync()
+        private async Task ExportAllPropertiesAsync()
         {
             try
             {
@@ -932,6 +1128,162 @@ namespace DXTnavis.ViewModels
                     "오류",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 현재 선택된 객체의 속성을 CSV로 내보내기 (Selection × Properties)
+        /// </summary>
+        private async Task ExportSelectionPropertiesAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("활성 문서가 없습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var selectedItems = doc.CurrentSelection.SelectedItems;
+                if (selectedItems == null || selectedItems.Count == 0)
+                {
+                    MessageBox.Show("먼저 객체를 선택해주세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var saveDialog = new SaveFileDialog
+                {
+                    Filter = "CSV 파일|*.csv",
+                    DefaultExt = "csv",
+                    FileName = $"SelectionProperties_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                if (saveDialog.ShowDialog() != true) return;
+
+                IsExporting = true;
+                ExportStatusMessage = "선택 객체 속성 추출 중...";
+
+                // UI 스레드에서 Navisworks API 호출
+                var extractor = new NavisworksDataExtractor();
+                var properties = extractor.ExtractPropertiesFromSelection(selectedItems);
+
+                if (properties == null || properties.Count == 0)
+                {
+                    ExportStatusMessage = "";
+                    MessageBox.Show("선택된 객체에서 속성을 추출할 수 없습니다.", "데이터 없음", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // 파일 저장
+                await Task.Run(() =>
+                {
+                    var writer = new PropertyFileWriter();
+                    writer.WriteFile(saveDialog.FileName, properties, FileType.CSV);
+                });
+
+                ExportStatusMessage = "✅ Selection Properties 내보내기 완료!";
+                StatusMessage = $"Exported: {properties.Count} properties";
+
+                MessageBox.Show(
+                    $"선택 객체 속성이 저장되었습니다.\n\n속성 개수: {properties.Count}",
+                    "내보내기 완료",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = $"❌ 오류: {ex.Message}";
+                MessageBox.Show(
+                    $"Selection Properties 내보내기 중 오류:\n\n{ex.Message}",
+                    "오류",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        /// <summary>
+        /// 전체 모델의 계층 구조를 CSV/JSON으로 내보내기 (All × Hierarchy)
+        /// </summary>
+        private async Task ExportAllHierarchyAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("활성 문서가 없습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var saveDialog = new SaveFileDialog
+                {
+                    Filter = "CSV 파일|*.csv|JSON (Flat)|*.json|JSON (Tree)|*.json",
+                    DefaultExt = "csv",
+                    FileName = $"AllHierarchy_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                if (saveDialog.ShowDialog() != true) return;
+
+                IsExporting = true;
+                ExportStatusMessage = "전체 모델 계층 구조 추출 중...";
+
+                // UI 스레드에서 전체 모델 계층 추출
+                var extractor = new NavisworksDataExtractor();
+                var hierarchicalData = extractor.ExtractAllHierarchicalRecords();
+
+                if (hierarchicalData == null || hierarchicalData.Count == 0)
+                {
+                    ExportStatusMessage = "";
+                    MessageBox.Show("모델에서 계층 데이터를 추출할 수 없습니다.", "데이터 없음", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // 파일 저장
+                await Task.Run(() =>
+                {
+                    var writer = new HierarchyFileWriter();
+                    int filterIndex = saveDialog.FilterIndex;
+
+                    if (filterIndex == 1) // CSV
+                    {
+                        writer.WriteToCsv(saveDialog.FileName, hierarchicalData);
+                    }
+                    else if (filterIndex == 2) // JSON Flat
+                    {
+                        writer.WriteToJsonFlat(saveDialog.FileName, hierarchicalData);
+                    }
+                    else // JSON Tree
+                    {
+                        writer.WriteToJsonTree(saveDialog.FileName, hierarchicalData);
+                    }
+                });
+
+                ExportStatusMessage = "✅ All Hierarchy 내보내기 완료!";
+                StatusMessage = $"Exported: {hierarchicalData.Count} items";
+
+                MessageBox.Show(
+                    $"전체 모델 계층 구조가 저장되었습니다.\n\n항목 개수: {hierarchicalData.Count}",
+                    "내보내기 완료",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = $"❌ 오류: {ex.Message}";
+                MessageBox.Show(
+                    $"All Hierarchy 내보내기 중 오류:\n\n{ex.Message}",
+                    "오류",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
             }
         }
 
@@ -1207,6 +1559,29 @@ namespace DXTnavis.ViewModels
             ((RelayCommand)ExpandToLevelCommand)?.RaiseCanExecuteChanged();
             ((RelayCommand)CollapseAllCommand)?.RaiseCanExecuteChanged();
             ((RelayCommand)ExpandAllCommand)?.RaiseCanExecuteChanged();
+            ((RelayCommand)ExpandLevelCommand)?.RaiseCanExecuteChanged();
+        }
+
+        /// <summary>
+        /// 특정 레벨까지 정확히 확장 (P1 Feature)
+        /// 클릭한 레벨까지 확장하고, 그 이후 레벨은 축소
+        /// </summary>
+        /// <param name="targetLevel">확장할 레벨 (0부터 시작)</param>
+        private void ExpandToSpecificLevel(int targetLevel)
+        {
+            try
+            {
+                foreach (var node in ObjectHierarchyRoot)
+                {
+                    node.ExpandExactlyToLevel(targetLevel);
+                }
+                StatusMessage = $"Expanded to L{targetLevel} (children collapsed)";
+                SelectedExpandLevel = targetLevel; // ComboBox도 동기화
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
         }
 
         #endregion
@@ -1462,6 +1837,30 @@ namespace DXTnavis.ViewModels
                 StatusMessage = $"Error: {ex.Message}";
                 MessageBox.Show(
                     $"Error saving ViewPoint:\n\n{ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 관측점을 초기 상태(Home)로 리셋합니다.
+        /// Home 뷰포인트가 있으면 해당 뷰로 이동, 없으면 Zoom Extents 수행
+        /// </summary>
+        private void ResetToHome()
+        {
+            try
+            {
+                string resetMethod = _snapshotService.ResetToHome();
+                StatusMessage = resetMethod.StartsWith("SavedViewpoint:")
+                    ? $"View reset to: {resetMethod.Replace("SavedViewpoint: ", "")}"
+                    : "View reset to Zoom Extents (no Home viewpoint found)";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+                MessageBox.Show(
+                    $"Error resetting view:\n\n{ex.Message}",
                     "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);

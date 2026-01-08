@@ -195,10 +195,12 @@ namespace DXTnavis.Services
 
         /// <summary>
         /// 현재 ViewPoint를 저장합니다.
+        /// COM API를 사용하여 SavedViewpoints 컬렉션에 ViewPoint를 추가합니다.
+        /// (.NET API의 SavedViewpoints는 read-only이므로 COM API 필수)
         /// </summary>
         /// <param name="viewpointName">ViewPoint 이름</param>
         /// <param name="folderName">저장할 폴더 이름 (선택)</param>
-        /// <returns>생성된 SavedViewpoint</returns>
+        /// <returns>생성된 SavedViewpoint (참조용, COM API로 저장됨)</returns>
         public SavedViewpoint SaveCurrentViewPoint(string viewpointName, string folderName = null)
         {
             var doc = Application.ActiveDocument;
@@ -207,33 +209,30 @@ namespace DXTnavis.Services
 
             try
             {
-                // 현재 Viewpoint 복사
-                var currentViewpoint = doc.CurrentViewpoint.CreateCopy();
+                // COM API를 통한 ViewPoint 저장
+                dynamic comState = ComApiBridge.State;
+                if (comState == null)
+                    throw new InvalidOperationException("COM API에 접근할 수 없습니다.");
 
-                // SavedViewpoint 생성
-                var savedViewpoint = new SavedViewpoint(currentViewpoint);
-                savedViewpoint.DisplayName = viewpointName;
+                // 현재 뷰 가져오기
+                dynamic currentView = comState.CurrentView.Copy();
 
-                // 폴더 찾기 또는 생성
-                GroupItem targetFolder = null;
+                // SavedViews 컬렉션 접근
+                dynamic savedViews = comState.SavedViews();
+
+                // 폴더가 지정된 경우 폴더 찾기 또는 생성
+                dynamic targetCollection = savedViews;
                 if (!string.IsNullOrEmpty(folderName))
                 {
-                    targetFolder = FindOrCreateViewpointFolder(doc, folderName);
+                    targetCollection = FindOrCreateViewpointFolderComApi(savedViews, folderName, comState);
                 }
 
-                // SavedViewpoints에 추가
-                using (var transaction = new Transaction(doc, "Save Viewpoint"))
-                {
-                    if (targetFolder != null)
-                    {
-                        targetFolder.Children.Add(savedViewpoint);
-                    }
-                    else
-                    {
-                        doc.SavedViewpoints.AddCopy(savedViewpoint);
-                    }
-                    transaction.Commit();
-                }
+                // 새 ViewPoint 생성 및 이름 설정
+                dynamic newViewpoint = targetCollection.CreateSavedViewpointCopy(currentView);
+                newViewpoint.name = viewpointName;
+
+                // 컬렉션에 추가
+                targetCollection.Add(newViewpoint);
 
                 OnSnapshotProgress(new SnapshotProgressEventArgs
                 {
@@ -242,6 +241,10 @@ namespace DXTnavis.Services
                     Message = $"ViewPoint '{viewpointName}' 저장됨"
                 });
 
+                // .NET API SavedViewpoint 객체 반환 (참조용)
+                var currentViewpoint = doc.CurrentViewpoint.CreateCopy();
+                var savedViewpoint = new SavedViewpoint(currentViewpoint);
+                savedViewpoint.DisplayName = viewpointName;
                 return savedViewpoint;
             }
             catch (Exception ex)
@@ -252,7 +255,7 @@ namespace DXTnavis.Services
                     Status = SnapshotStatus.Failed,
                     ErrorMessage = ex.Message
                 });
-                throw;
+                throw new Exception($"ViewPoint 저장 실패: {ex.Message}", ex);
             }
         }
 
@@ -457,6 +460,132 @@ namespace DXTnavis.Services
             return result;
         }
 
+        /// <summary>
+        /// 뷰를 초기 상태(Home)로 리셋합니다.
+        /// 1. "Home" 또는 "홈" 이름의 저장된 뷰포인트가 있으면 해당 뷰로 이동
+        /// 2. 없으면 전체 모델을 화면에 맞춤 (Zoom Extents)
+        /// </summary>
+        /// <returns>리셋 방식 ("SavedViewpoint: [name]" 또는 "ZoomExtents")</returns>
+        public string ResetToHome()
+        {
+            var doc = Application.ActiveDocument;
+            if (doc == null)
+                throw new InvalidOperationException("활성화된 Navisworks 문서가 없습니다.");
+
+            try
+            {
+                // 1. 저장된 뷰포인트에서 "Home" 찾기
+                var homeViewpoint = FindHomeViewpoint(doc);
+                if (homeViewpoint != null)
+                {
+                    // Home 뷰포인트로 이동
+                    doc.CurrentViewpoint.CopyFrom(homeViewpoint.Viewpoint);
+
+                    OnSnapshotProgress(new SnapshotProgressEventArgs
+                    {
+                        Status = SnapshotStatus.Completed,
+                        Message = $"'{homeViewpoint.DisplayName}' 뷰포인트로 이동했습니다."
+                    });
+
+                    return $"SavedViewpoint: {homeViewpoint.DisplayName}";
+                }
+
+                // 2. Home 뷰포인트가 없으면 Zoom Extents (전체 모델 맞춤)
+                ZoomExtents();
+
+                OnSnapshotProgress(new SnapshotProgressEventArgs
+                {
+                    Status = SnapshotStatus.Completed,
+                    Message = "전체 모델을 화면에 맞췄습니다 (Zoom Extents)."
+                });
+
+                return "ZoomExtents";
+            }
+            catch (Exception ex)
+            {
+                OnSnapshotProgress(new SnapshotProgressEventArgs
+                {
+                    Status = SnapshotStatus.Failed,
+                    ErrorMessage = ex.Message
+                });
+                throw new Exception($"뷰 초기화 실패: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// 저장된 뷰포인트 목록을 반환합니다.
+        /// </summary>
+        /// <returns>저장된 뷰포인트 이름 목록</returns>
+        public List<string> GetSavedViewpointNames()
+        {
+            var doc = Application.ActiveDocument;
+            if (doc == null)
+                return new List<string>();
+
+            var names = new List<string>();
+            CollectViewpointNames(doc.SavedViewpoints.Value, names, string.Empty);
+            return names;
+        }
+
+        /// <summary>
+        /// 저장된 뷰포인트로 이동합니다.
+        /// </summary>
+        /// <param name="viewpointName">뷰포인트 이름 (경로 포함 가능: "FolderName/ViewpointName")</param>
+        /// <returns>이동 성공 여부</returns>
+        public bool NavigateToViewpoint(string viewpointName)
+        {
+            var doc = Application.ActiveDocument;
+            if (doc == null)
+                throw new InvalidOperationException("활성화된 Navisworks 문서가 없습니다.");
+
+            var viewpoint = FindViewpointByName(doc.SavedViewpoints.Value, viewpointName);
+            if (viewpoint != null)
+            {
+                doc.CurrentViewpoint.CopyFrom(viewpoint.Viewpoint);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 전체 모델을 화면에 맞춤 (Zoom Extents)
+        /// </summary>
+        public void ZoomExtents()
+        {
+            var doc = Application.ActiveDocument;
+            if (doc == null)
+                throw new InvalidOperationException("활성화된 Navisworks 문서가 없습니다.");
+
+            try
+            {
+                // COM API를 통한 Zoom Extents
+                dynamic comState = ComApiBridge.State;
+                if (comState != null)
+                {
+                    // ZoomExtents 명령 실행
+                    comState.ZoomExtents();
+                }
+                else
+                {
+                    // .NET API fallback: 모든 모델의 바운딩박스로 줌
+                    ZoomToAllModels(doc);
+                }
+            }
+            catch (Exception ex)
+            {
+                // COM API 실패 시 .NET API 시도
+                try
+                {
+                    ZoomToAllModels(doc);
+                }
+                catch
+                {
+                    throw new Exception($"Zoom Extents 실패: {ex.Message}", ex);
+                }
+            }
+        }
+
         #region Helper Methods
 
         private string GetExtensionForFormat(ImageFormat format)
@@ -468,6 +597,60 @@ namespace DXTnavis.Services
             return ".png";
         }
 
+        /// <summary>
+        /// COM API를 사용하여 ViewPoint 폴더를 찾거나 생성합니다.
+        /// dynamic 타입 사용으로 COM interop 호환성 확보
+        /// </summary>
+        /// <param name="savedViews">SavedViews 컬렉션</param>
+        /// <param name="folderName">폴더 이름</param>
+        /// <param name="comState">COM State 객체</param>
+        /// <returns>폴더 컬렉션 (폴더 내부의 SavedViews 컬렉션)</returns>
+        private dynamic FindOrCreateViewpointFolderComApi(dynamic savedViews, string folderName, dynamic comState)
+        {
+            // 기존 폴더 찾기
+            foreach (dynamic item in savedViews)
+            {
+                try
+                {
+                    // 폴더인지 확인 (SavedViews 메서드가 있으면 폴더)
+                    string name = item.name;
+                    if (name == folderName)
+                    {
+                        // 폴더의 SavedViews 컬렉션 반환 시도
+                        try
+                        {
+                            dynamic folderViews = item.SavedViews();
+                            return folderViews;
+                        }
+                        catch
+                        {
+                            // SavedViews가 없으면 뷰포인트 (폴더 아님)
+                            continue;
+                        }
+                    }
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+
+            // 폴더 생성 - FolderItem에 해당하는 COM 객체 생성
+            // nwEObjectType.eObjectType_nwOpFolderView = 46
+            dynamic newFolder = comState.ObjectFactory(
+                (nwEObjectType)46, null, null);
+            newFolder.name = folderName;
+
+            // 루트에 폴더 추가
+            savedViews.Add(newFolder);
+
+            // 생성된 폴더의 SavedViews 컬렉션 반환
+            return newFolder.SavedViews();
+        }
+
+        /// <summary>
+        /// [Legacy] .NET API를 사용한 폴더 찾기 (현재 사용되지 않음 - COM API 사용 권장)
+        /// </summary>
         private GroupItem FindOrCreateViewpointFolder(Document doc, string folderName)
         {
             // 기존 폴더 찾기
@@ -479,25 +662,8 @@ namespace DXTnavis.Services
                 }
             }
 
-            // 폴더 생성
-            var newFolder = new FolderItem();
-            newFolder.DisplayName = folderName;
-
-            using (var transaction = new Transaction(doc, "Create Viewpoint Folder"))
-            {
-                doc.SavedViewpoints.AddCopy(newFolder);
-                transaction.Commit();
-            }
-
-            // 생성된 폴더 찾아서 반환
-            foreach (SavedItem item in doc.SavedViewpoints.Value)
-            {
-                if (item is FolderItem folder && folder.DisplayName == folderName)
-                {
-                    return folder;
-                }
-            }
-
+            // .NET API로는 폴더 생성 불가 (read-only)
+            // COM API 메서드 사용 필요
             return null;
         }
 
@@ -513,6 +679,148 @@ namespace DXTnavis.Services
             foreach (ModelItem child in currentItem.Children)
             {
                 CollectAllModelItems(child, collection);
+            }
+        }
+
+        /// <summary>
+        /// "Home" 또는 "홈" 이름의 저장된 뷰포인트를 찾습니다.
+        /// </summary>
+        private SavedViewpoint FindHomeViewpoint(Document doc)
+        {
+            // Home 뷰포인트 이름 후보
+            var homeNames = new[] { "Home", "home", "홈", "HOME", "Initial", "initial", "Start", "start", "Default", "default" };
+
+            foreach (SavedItem item in doc.SavedViewpoints.Value)
+            {
+                var viewpoint = FindViewpointByNameInCollection(item, homeNames);
+                if (viewpoint != null)
+                    return viewpoint;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 저장된 뷰포인트 컬렉션에서 특정 이름들 중 하나와 일치하는 뷰포인트를 찾습니다.
+        /// </summary>
+        private SavedViewpoint FindViewpointByNameInCollection(SavedItem item, string[] names)
+        {
+            if (item is SavedViewpoint viewpoint)
+            {
+                if (names.Contains(viewpoint.DisplayName))
+                    return viewpoint;
+            }
+            else if (item is FolderItem folder)
+            {
+                foreach (SavedItem child in folder.Children)
+                {
+                    var found = FindViewpointByNameInCollection(child, names);
+                    if (found != null)
+                        return found;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 저장된 뷰포인트 이름을 재귀적으로 수집합니다.
+        /// </summary>
+        private void CollectViewpointNames(SavedItemCollection items, List<string> names, string prefix)
+        {
+            foreach (SavedItem item in items)
+            {
+                if (item is SavedViewpoint viewpoint)
+                {
+                    string fullName = string.IsNullOrEmpty(prefix)
+                        ? viewpoint.DisplayName
+                        : $"{prefix}/{viewpoint.DisplayName}";
+                    names.Add(fullName);
+                }
+                else if (item is FolderItem folder)
+                {
+                    string folderPrefix = string.IsNullOrEmpty(prefix)
+                        ? folder.DisplayName
+                        : $"{prefix}/{folder.DisplayName}";
+
+                    CollectViewpointNames(folder.Children, names, folderPrefix);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 이름으로 뷰포인트를 찾습니다 (경로 지원: "Folder/Viewpoint").
+        /// </summary>
+        private SavedViewpoint FindViewpointByName(SavedItemCollection items, string name)
+        {
+            // 경로 분리
+            string[] parts = name.Split(new[] { '/', '\\' }, 2);
+
+            foreach (SavedItem item in items)
+            {
+                if (parts.Length == 1)
+                {
+                    // 단일 이름 검색
+                    if (item is SavedViewpoint viewpoint && viewpoint.DisplayName == name)
+                        return viewpoint;
+                }
+                else
+                {
+                    // 폴더 경로 검색
+                    if (item is FolderItem folder && folder.DisplayName == parts[0])
+                    {
+                        return FindViewpointByName(folder.Children, parts[1]);
+                    }
+                }
+
+                // 폴더인 경우 하위 검색 (단일 이름인 경우에도)
+                if (parts.Length == 1 && item is FolderItem subFolder)
+                {
+                    var found = FindViewpointByName(subFolder.Children, name);
+                    if (found != null)
+                        return found;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 전체 모델의 바운딩박스로 뷰를 맞춤 (.NET API 방식)
+        /// </summary>
+        private void ZoomToAllModels(Document doc)
+        {
+            // 모든 루트 아이템 수집
+            var allRootItems = new ModelItemCollection();
+            foreach (var model in doc.Models)
+            {
+                if (model?.RootItem != null)
+                {
+                    allRootItems.Add(model.RootItem);
+                }
+            }
+
+            if (allRootItems.Count > 0)
+            {
+                // 선택 후 줌
+                doc.CurrentSelection.Clear();
+                doc.CurrentSelection.AddRange(allRootItems);
+
+                // COM API를 통한 ZoomSelected
+                try
+                {
+                    dynamic comState = ComApiBridge.State;
+                    if (comState != null)
+                    {
+                        comState.ZoomSelected();
+                    }
+                }
+                catch
+                {
+                    // 실패 시 아무것도 하지 않음
+                }
+
+                doc.CurrentSelection.Clear();
             }
         }
 

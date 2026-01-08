@@ -103,33 +103,68 @@
                 <TextBlock Text="Hierarchy Tree" Style="{StaticResource SectionTitle}"/>
                 <TextBlock Text="Level 기반 계층 구조" Style="{StaticResource LabelStyle}"/>
 
-                <!-- 확장/축소 컨트롤 -->
+                <!-- 확장/축소 컨트롤 (P1 Enhanced) -->
                 <Border Background="#F0F0F0" Padding="6" Margin="0,6,0,0" CornerRadius="3">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- 레벨 선택 -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal">
-                            <TextBlock Text="Level:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11"/>
-                            <ComboBox x:Name="ExpandLevelCombo"
-                                      ItemsSource="{Binding AvailableExpandLevels}"
-                                      SelectedItem="{Binding SelectedExpandLevel}"
-                                      Width="60" Height="24" FontSize="11"/>
+                    <StackPanel>
+                        <!-- 레벨별 개별 버튼 (P1 Feature) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Level:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11" FontWeight="SemiBold"/>
+                            <Button Content="L0" ToolTip="L0까지 확장 (Root)"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#0078D4" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="0"/>
+                            <Button Content="L1" ToolTip="L1까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#28A745" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="1"/>
+                            <Button Content="L2" ToolTip="L2까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#FFC107" Foreground="#333" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="2"/>
+                            <Button Content="L3" ToolTip="L3까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#DC3545" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="3"/>
+                            <Button Content="L4" ToolTip="L4까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#6F42C1" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="4"/>
+                            <Button Content="L5" ToolTip="L5까지 확장"
+                                    Width="28" Height="22" Margin="1,0" FontSize="9" FontWeight="Bold"
+                                    Background="#20C997" Foreground="White" BorderThickness="0"
+                                    Command="{Binding ExpandLevelCommand}" CommandParameter="5"/>
                         </StackPanel>
 
-                        <!-- 확장/축소 버튼 -->
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="➕" ToolTip="선택 레벨까지 확장"
-                                    Width="28" Height="24" Margin="4,0,2,0" FontSize="12"
-                                    Command="{Binding ExpandToLevelCommand}"/>
-                            <Button Content="➖" ToolTip="모두 축소"
-                                    Width="28" Height="24" Margin="2,0,0,0" FontSize="12"
-                                    Command="{Binding CollapseAllCommand}"/>
-                        </StackPanel>
-                    </Grid>
+                        <!-- 기존 컨트롤 (ComboBox + 전체 확장/축소) -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 레벨 선택 (고급) -->
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock Text="Custom:" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="10" Foreground="#666"/>
+                                <ComboBox x:Name="ExpandLevelCombo"
+                                          ItemsSource="{Binding AvailableExpandLevels}"
+                                          SelectedItem="{Binding SelectedExpandLevel}"
+                                          Width="45" Height="22" FontSize="10"/>
+                                <Button Content="▶" ToolTip="선택 레벨까지 확장"
+                                        Width="22" Height="22" Margin="2,0,0,0" FontSize="10"
+                                        Command="{Binding ExpandToLevelCommand}"/>
+                            </StackPanel>
+
+                            <!-- 전체 확장/축소 버튼 -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="⊕" ToolTip="전체 확장"
+                                        Width="24" Height="22" Margin="4,0,2,0" FontSize="11"
+                                        Command="{Binding ExpandAllCommand}"/>
+                                <Button Content="⊖" ToolTip="전체 축소"
+                                        Width="24" Height="22" Margin="2,0,0,0" FontSize="11"
+                                        Command="{Binding CollapseAllCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
                 </Border>
             </StackPanel>
 
@@ -190,6 +225,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -225,7 +261,10 @@
                         <TextBlock Text="Path" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding SysPathFilter, UpdateSourceTrigger=PropertyChanged}"
                                  Height="28" VerticalContentAlignment="Center"
-                                 ToolTip="System path filter (e.g., Project > Building)"/>
+                                 ToolTip="System path filter (e.g., Project > Building)"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
                     </StackPanel>
 
                     <!-- 카테고리 필터 -->
@@ -240,14 +279,20 @@
                     <StackPanel Grid.Column="3" Margin="0,0,8,0">
                         <TextBlock Text="Property" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding PropertyNameFilter, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="28" VerticalContentAlignment="Center"/>
+                                 Height="28" VerticalContentAlignment="Center"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
                     </StackPanel>
 
                     <!-- 값 필터 -->
                     <StackPanel Grid.Column="4" Margin="0,0,8,0">
                         <TextBlock Text="Value" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding PropertyValueFilter, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="28" VerticalContentAlignment="Center"/>
+                                 Height="28" VerticalContentAlignment="Center"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
                     </StackPanel>
 
                     <!-- 필터 버튼 -->
@@ -260,8 +305,49 @@
                 </Grid>
             </Border>
 
+            <!-- Object 검색 영역 (v0.4.0) -->
+            <Border Grid.Row="2" Background="#FFF8E6" Padding="8" Margin="0,0,0,8" CornerRadius="4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="🔎 Object Search:"
+                               VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,8,0"/>
+
+                    <TextBox Grid.Column="1"
+                             Text="{Binding ObjectSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             Height="28" Padding="6,4"
+                             VerticalContentAlignment="Center"
+                             ToolTip="객체 이름, 속성값, SysPath로 검색 (Enter로 검색)"
+                             InputMethod.IsInputMethodEnabled="True"
+                             PreviewKeyDown="TextBox_PreviewKeyDown"
+                             GotFocus="TextBox_GotFocus"/>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
+                        <Button Content="🔍 Search"
+                                Style="{StaticResource ActionButton}"
+                                Command="{Binding SearchObjectCommand}"
+                                ToolTip="입력한 키워드로 객체 검색"
+                                Width="80"/>
+                        <Button Content="✕ Clear"
+                                Style="{StaticResource FilterButton}"
+                                Command="{Binding ClearSearchCommand}"
+                                ToolTip="검색 결과 초기화"
+                                Width="60"/>
+                        <Button Content="🔍 Zoom"
+                                Style="{StaticResource ActionButton}"
+                                Command="{Binding ZoomToSearchResultCommand}"
+                                ToolTip="검색 결과 객체로 줌"
+                                Width="70"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- DataGrid -->
-            <Border Grid.Row="2" BorderBrush="#DDDDDD" BorderThickness="1" Background="White">
+            <Border Grid.Row="3" BorderBrush="#DDDDDD" BorderThickness="1" Background="White">
                 <DataGrid x:Name="HierarchyDataGrid"
                           ItemsSource="{Binding FilteredHierarchicalProperties}"
                           AutoGenerateColumns="False"
@@ -297,7 +383,7 @@
             </Border>
 
             <!-- 내보내기 및 3D 선택 버튼 -->
-            <Border Grid.Row="3" Background="#F8F9FA" Padding="8" Margin="0,8,0,0" CornerRadius="4">
+            <Border Grid.Row="4" Background="#F8F9FA" Padding="8" Margin="0,8,0,0" CornerRadius="4">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -310,16 +396,36 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- 내보내기 버튼 -->
-                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
-                        <Button Content="📊 All Properties (CSV)"
-                                Style="{StaticResource ActionButton}"
-                                Command="{Binding ExportAllToCsvCommand}"
-                                ToolTip="전체 모델의 모든 속성을 CSV로 내보내기"/>
-                        <Button Content="📁 Export Hierarchy"
-                                Style="{StaticResource SuccessButton}"
-                                Command="{Binding ExportSelectionHierarchyCommand}"
-                                ToolTip="현재 Hierarchy 데이터를 CSV/JSON으로 내보내기"/>
+                    <!-- CSV 내보내기 버튼 (4종 버튼 체계) -->
+                    <StackPanel Grid.Row="0" Grid.Column="0">
+                        <!-- Row 1: All (전체 모델) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="All:" VerticalAlignment="Center" Width="60" FontWeight="SemiBold" FontSize="11"/>
+                            <Button Content="📊 Properties"
+                                    Style="{StaticResource ActionButton}"
+                                    Command="{Binding ExportAllPropertiesCommand}"
+                                    ToolTip="전체 모델의 모든 속성을 CSV로 내보내기"
+                                    Width="100"/>
+                            <Button Content="📁 Hierarchy"
+                                    Style="{StaticResource SuccessButton}"
+                                    Command="{Binding ExportAllHierarchyCommand}"
+                                    ToolTip="전체 모델의 계층 구조를 CSV/JSON으로 내보내기"
+                                    Width="100"/>
+                        </StackPanel>
+                        <!-- Row 2: Selection (선택 객체) -->
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Selection:" VerticalAlignment="Center" Width="60" FontWeight="SemiBold" FontSize="11"/>
+                            <Button Content="📊 Properties"
+                                    Style="{StaticResource ActionButton}"
+                                    Command="{Binding ExportSelectionPropertiesCommand}"
+                                    ToolTip="선택된 객체의 속성을 CSV로 내보내기 (Navisworks에서 객체 선택 필요)"
+                                    Width="100"/>
+                            <Button Content="📁 Hierarchy"
+                                    Style="{StaticResource SuccessButton}"
+                                    Command="{Binding ExportSelectionHierarchyCommand}"
+                                    ToolTip="선택된 객체의 계층 구조를 CSV/JSON으로 내보내기"
+                                    Width="100"/>
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- 3D 선택 버튼 (Phase 3) -->
@@ -361,6 +467,10 @@
                                 Style="{StaticResource ActionButton}"
                                 Command="{Binding BatchCaptureCommand}"
                                 ToolTip="필터링된 객체들을 개별 캡처"/>
+                        <Button Content="🏠 Reset Home"
+                                Style="{StaticResource FilterButton}"
+                                Command="{Binding ResetToHomeCommand}"
+                                ToolTip="관측점을 초기 상태로 리셋 (Home 뷰포인트 또는 Zoom Extents)"/>
                     </StackPanel>
 
                     <!-- 상태 메시지 -->
@@ -400,12 +510,18 @@
                         <!-- 폴더 이름 -->
                         <TextBlock Text="폴더 이름" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding FolderName, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="30" Margin="0,0,0,12" Padding="8,5"/>
+                                 Height="30" Margin="0,0,0,12" Padding="8,5"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
 
                         <!-- 세트 이름 -->
                         <TextBlock Text="세트 이름" Style="{StaticResource LabelStyle}"/>
                         <TextBox Text="{Binding NewSetName, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="30" Margin="0,0,0,15" Padding="8,5"/>
+                                 Height="30" Margin="0,0,0,15" Padding="8,5"
+                                 InputMethod.IsInputMethodEnabled="True"
+                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                 GotFocus="TextBox_GotFocus"/>
 
                         <!-- 선택된 속성 미리보기 -->
                         <TextBlock Text="선택된 속성 미리보기" Style="{StaticResource LabelStyle}"/>
@@ -440,20 +556,20 @@
                             <StackPanel>
                                 <TextBlock Text="주요 기능" FontWeight="Bold" FontSize="13" Margin="0,0,0,12"/>
 
-                                <TextBlock Text="• All Properties (CSV)" FontWeight="SemiBold" Margin="0,0,0,3"/>
-                                <TextBlock Text="  전체 모델의 모든 속성을 CSV로 내보내기"
+                                <TextBlock Text="• CSV Export (4종 버튼)" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                                <TextBlock Text="  All/Selection × Properties/Hierarchy 조합"
                                            FontSize="10" Foreground="#666666" Margin="0,0,0,10"/>
 
-                                <TextBlock Text="• Export Hierarchy" FontWeight="SemiBold" Margin="0,0,0,3"/>
-                                <TextBlock Text="  계층 구조 데이터를 CSV/JSON으로 저장"
+                                <TextBlock Text="• Level 기반 트리 제어" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                                <TextBlock Text="  L0~L5 버튼으로 트리 레벨별 확장/축소"
                                            FontSize="10" Foreground="#666666" Margin="0,0,0,10"/>
 
                                 <TextBlock Text="• Category/Property 필터" FontWeight="SemiBold" Margin="0,0,0,3"/>
                                 <TextBlock Text="  카테고리, 속성명, 값으로 데이터 필터링"
                                            FontSize="10" Foreground="#666666" Margin="0,0,0,10"/>
 
-                                <TextBlock Text="• Search Set 생성" FontWeight="SemiBold" Margin="0,0,0,3"/>
-                                <TextBlock Text="  필터링된 결과로 Navisworks 검색 세트 자동 생성"
+                                <TextBlock Text="• 3D 선택 및 뷰포인트" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                                <TextBlock Text="  Select in 3D, Show Only, Zoom, ViewPoint 저장"
                                            FontSize="10" Foreground="#666666"/>
                             </StackPanel>
                         </Border>

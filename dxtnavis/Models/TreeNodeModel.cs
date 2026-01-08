@@ -148,6 +148,66 @@ namespace DXTnavis.Models
             }
         }
 
+        /// <summary>
+        /// 특정 레벨의 노드만 확장/축소 (부모 레벨은 자동으로 확장)
+        /// </summary>
+        /// <param name="targetLevel">대상 레벨</param>
+        /// <param name="expand">true=확장, false=축소</param>
+        public void SetLevelExpansion(int targetLevel, bool expand)
+        {
+            if (Level < targetLevel)
+            {
+                // 부모 레벨: 대상 레벨에 도달하기 위해 확장
+                IsExpanded = true;
+                foreach (var child in Children)
+                {
+                    child.SetLevelExpansion(targetLevel, expand);
+                }
+            }
+            else if (Level == targetLevel)
+            {
+                // 대상 레벨: 확장/축소 설정
+                IsExpanded = expand;
+                if (!expand)
+                {
+                    // 축소 시 하위 레벨도 모두 축소
+                    foreach (var child in Children)
+                    {
+                        child.CollapseAll();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 특정 레벨까지만 확장 (그 이후 레벨은 축소)
+        /// </summary>
+        /// <param name="maxLevel">최대 확장 레벨</param>
+        public void ExpandExactlyToLevel(int maxLevel)
+        {
+            if (Level < maxLevel)
+            {
+                IsExpanded = true;
+                foreach (var child in Children)
+                {
+                    child.ExpandExactlyToLevel(maxLevel);
+                }
+            }
+            else if (Level == maxLevel)
+            {
+                IsExpanded = true;
+                // 자식은 축소
+                foreach (var child in Children)
+                {
+                    child.CollapseAll();
+                }
+            }
+            else
+            {
+                IsExpanded = false;
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
