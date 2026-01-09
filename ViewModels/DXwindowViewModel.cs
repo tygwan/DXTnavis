@@ -63,6 +63,11 @@ namespace DXTnavis.ViewModels
         #region Properties
 
         /// <summary>
+        /// CSV Viewer ViewModel (v0.5.0)
+        /// </summary>
+        public CsvViewerViewModel CsvViewer { get; }
+
+        /// <summary>
         /// UI에 표시될 속성 목록
         /// ObservableCollection을 사용하여 자동 UI 업데이트
         /// </summary>
@@ -404,6 +409,9 @@ namespace DXTnavis.ViewModels
 
             // Snapshot Service 초기화 (Phase 4)
             _snapshotService = new SnapshotService();
+
+            // CSV Viewer 초기화 (v0.5.0)
+            CsvViewer = new CsvViewerViewModel();
 
             // 초기 상태 메시지
             StatusMessage = "Ready - Select objects to view hierarchy";

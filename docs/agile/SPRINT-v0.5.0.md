@@ -117,15 +117,17 @@ propNode.SetUserDefined(0, "DXTnavis Schedule", "Internal_Name", propVec);
 |-------|-------|
 | Priority | 🟡 Medium |
 | Type | New Feature |
-| Files | `Views/CsvViewerControl.xaml`, `ViewModels/CsvViewerViewModel.cs` |
+| Files | `Views/DXwindow.xaml`, `ViewModels/CsvViewerViewModel.cs` |
 | Description | 애드인 내에서 CSV 파일 로드 및 뷰어 |
+| Status | ✅ Completed |
 
 **Features:**
-- [ ] CSV 파일 선택 및 로드
-- [ ] DataGrid에서 CSV 데이터 표시
-- [ ] Raw/Refined 탭 전환
-- [ ] 기본 필터/정렬 기능
-- [ ] 컬럼 숨기기/표시
+- [x] CSV 파일 선택 및 로드
+- [x] DataGrid에서 CSV 데이터 표시 (자동 컬럼 생성)
+- [x] 기본 필터/정렬 기능 (컬럼별 필터, 텍스트 검색)
+- [x] 필터링된 데이터 Export
+- [x] 인코딩 자동 감지 (UTF-8, EUC-KR)
+- [ ] Raw/Refined 탭 전환 (향후 개선)
 
 ---
 
@@ -135,13 +137,14 @@ propNode.SetUserDefined(0, "DXTnavis Schedule", "Internal_Name", propVec);
 - [x] 1.1 버전 정보 불일치 수정
 - [x] 2.1 ViewModel 리팩토링 (7개 Partial Class 분리)
 - [x] 3.1 ComAPI Property Write Research (ADR 작성 완료)
+- [x] 4.1 CSV Viewer UI (TabItem + ViewModel)
 
 ### In Progress 🔄
-- [ ] 4.1 CSV Viewer UI
+- [ ] 2.2 중복 코드 제거
 
 ### Pending 📋
-- [ ] 2.2 중복 코드 제거
 - [ ] 3.2 PropertyWriteService 구현 (ComAPI 기반)
+- [ ] 4.2 Raw/Refined 탭 전환
 
 ---
 

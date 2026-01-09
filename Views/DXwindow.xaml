@@ -558,7 +558,101 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 탭 2: 정보 -->
+            <!-- 탭 2: CSV Viewer (v0.5.0) -->
+            <TabItem Header="📊 CSV Viewer">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 헤더 -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="CSV Viewer" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="{Binding CsvViewer.FileName, FallbackValue='(No file loaded)'}"
+                                   Style="{StaticResource LabelStyle}" FontStyle="Italic"/>
+                    </StackPanel>
+
+                    <!-- 로드/필터 컨트롤 -->
+                    <Border Grid.Row="1" Background="#E8F4FD" Padding="8" Margin="0,0,0,8" CornerRadius="4">
+                        <StackPanel>
+                            <!-- 파일 로드 버튼 -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="📂 Load CSV"
+                                        Style="{StaticResource ActionButton}"
+                                        Command="{Binding CsvViewer.LoadCsvCommand}"
+                                        Width="90"/>
+                                <Button Content="✕ Clear"
+                                        Style="{StaticResource FilterButton}"
+                                        Command="{Binding CsvViewer.ClearDataCommand}"
+                                        Width="60"/>
+                                <Button Content="📤 Export"
+                                        Style="{StaticResource SuccessButton}"
+                                        Command="{Binding CsvViewer.ExportFilteredCommand}"
+                                        ToolTip="Export filtered data to new CSV"
+                                        Width="70"/>
+                            </StackPanel>
+
+                            <!-- 필터 -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Filter:" VerticalAlignment="Center"
+                                           FontWeight="SemiBold" Margin="0,0,6,0"/>
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding CsvViewer.ColumnNames}"
+                                          SelectedItem="{Binding CsvViewer.SelectedFilterColumn}"
+                                          Height="26" Margin="0,0,4,0" FontSize="10"/>
+                                <TextBox Grid.Column="2"
+                                         Text="{Binding CsvViewer.FilterText, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="26" Padding="6,4"
+                                         VerticalContentAlignment="Center"
+                                         InputMethod.IsInputMethodEnabled="True"
+                                         PreviewKeyDown="TextBox_PreviewKeyDown"
+                                         GotFocus="TextBox_GotFocus"/>
+                                <Button Grid.Column="3" Content="✕"
+                                        Width="26" Height="26" Margin="4,0,0,0"
+                                        Command="{Binding CsvViewer.ClearFilterCommand}"
+                                        ToolTip="Clear filter"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- DataGrid -->
+                    <Border Grid.Row="2" BorderBrush="#DDDDDD" BorderThickness="1" Background="White">
+                        <DataGrid ItemsSource="{Binding CsvViewer.FilteredView}"
+                                  AutoGenerateColumns="True"
+                                  IsReadOnly="True"
+                                  SelectionMode="Extended"
+                                  SelectionUnit="FullRow"
+                                  AlternatingRowBackground="#FAFAFA"
+                                  RowBackground="White"
+                                  ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
+                                  GridLinesVisibility="Horizontal"
+                                  BorderThickness="0"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  FontSize="11"/>
+                    </Border>
+
+                    <!-- 상태 표시줄 -->
+                    <TextBlock Grid.Row="3"
+                               Text="{Binding CsvViewer.StatusMessage, FallbackValue='Ready'}"
+                               Margin="0,6,0,0" FontSize="10" Foreground="#666666"/>
+                </Grid>
+            </TabItem>
+
+            <!-- 탭 3: 정보 -->
             <TabItem Header="ℹ️ Info">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12">
@@ -593,7 +687,7 @@
                                 Padding="15" CornerRadius="4">
                             <StackPanel>
                                 <TextBlock Text="버전 정보" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <TextBlock Text="Version: 0.4.3" FontSize="11" Margin="0,0,0,3"/>
+                                <TextBlock Text="Version: 0.5.0" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="Target: Navisworks Manage 2025" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="Framework: .NET Framework 4.8" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="GitHub: github.com/tygwan/DXTnavis"
