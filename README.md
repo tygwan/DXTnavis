@@ -4,7 +4,7 @@
 
 **Navisworks 2025 Property Viewer & Manager Plugin**
 
-[![Version](https://img.shields.io/badge/Version-0.4.0-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.5.0-blue?style=flat-square)]()
 [![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
 [![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
@@ -24,30 +24,35 @@
 
 <table>
 <tr>
-<td align="center" width="20%">
+<td align="center" width="16%">
 <h3>🌳</h3>
 <b>Hierarchy</b><br/>
 <sub>Level-based<br/>expand/collapse</sub>
 </td>
-<td align="center" width="20%">
+<td align="center" width="16%">
 <h3>🔍</h3>
 <b>Search</b><br/>
 <sub>Object search<br/>by name/path</sub>
 </td>
-<td align="center" width="20%">
+<td align="center" width="16%">
 <h3>🎯</h3>
 <b>3D Control</b><br/>
 <sub>Select, Show,<br/>Zoom, Reset</sub>
 </td>
-<td align="center" width="20%">
+<td align="center" width="16%">
 <h3>📤</h3>
 <b>Export</b><br/>
 <sub>Raw + Refined<br/>CSV dual export</sub>
 </td>
-<td align="center" width="20%">
+<td align="center" width="16%">
 <h3>📸</h3>
 <b>Snapshot</b><br/>
 <sub>ViewPoint<br/>Save & Reset</sub>
+</td>
+<td align="center" width="16%">
+<h3>📊</h3>
+<b>CSV Viewer</b><br/>
+<sub>Load, Filter,<br/>Export CSV</sub>
 </td>
 </tr>
 </table>
@@ -86,6 +91,12 @@
 
 > Raw CSV + Refined CSV (DisplayString 파싱) 동시 저장
 
+### CSV Viewer (v0.5.0)
+- 외부 CSV 파일 로드 및 DataGrid 표시
+- **컬럼별 필터링** - 전체 컬럼 또는 특정 컬럼 검색
+- **필터링된 데이터 Export** - 필터 결과를 새 CSV로 저장
+- **인코딩 자동 감지** - UTF-8, EUC-KR 지원
+
 ---
 
 ## Quick Start
@@ -122,7 +133,7 @@ dotnet build DXTnavis.csproj -c Debug
 ## Development Status
 
 ```
-v0.4.0: [====================] 100% ✅ Released 2026-01-08
+v0.5.0: [====================] 100% ✅ Released 2026-01-09
 ```
 
 | Phase | Feature | Status |
@@ -131,7 +142,9 @@ v0.4.0: [====================] 100% ✅ Released 2026-01-08
 | 2 | UI Enhancement | ✅ 100% |
 | 3 | 3D Integration | ✅ 100% |
 | 4 | CSV Enhancement | ✅ 100% |
-| 5 | ComAPI Research | 📋 Planned |
+| 5 | ComAPI Research | ✅ 100% |
+| 6 | Code Quality | ✅ 100% |
+| 7 | CSV Viewer | ✅ 100% |
 
 **→ [Changelog](CHANGELOG.md)**
 
@@ -139,23 +152,22 @@ v0.4.0: [====================] 100% ✅ Released 2026-01-08
 
 | Version | Features | Date |
 |:-------:|----------|:----:|
-| v0.4.0 | Object Search, 4종 CSV, Reset Home, Dual Export, Verbose Log | 2026-01-08 |
+| v0.5.0 | ViewModel Refactoring, CSV Viewer, ComAPI Research | 2026-01-09 |
+| v0.4.x | Auto Filter, Show Only Toggle, Unit Column | 2026-01-09 |
+| v0.4.0 | Object Search, 4종 CSV, Reset Home, Dual Export | 2026-01-08 |
 | v0.3.0 | Tree Expand/Collapse, Level Badges | 2026-01-06 |
 | v0.2.0 | 3D Selection, Visibility Control, Zoom | 2026-01-05 |
 | v0.1.0 | Level Filter, SysPath Filter, TreeView | 2026-01-03 |
 
-### v0.4.0 완료 기능
+### v0.5.0 주요 변경
 
-| Priority | Feature | Status |
+| Category | Feature | Status |
 |:--------:|---------|:------:|
-| 🔴 P0 | 검색창 영어 입력 버그 수정 | ✅ |
-| 🔴 P0 | ViewPoint 저장 오류 수정 | ✅ |
-| 🟠 P1 | 4종 CSV 내보내기 버튼 | ✅ |
-| 🟠 P1 | DisplayString 파싱 (Refined CSV) | ✅ |
-| 🟡 P2 | 관측점 초기화 (Reset Home) | ✅ |
-| 🟡 P2 | Object 검색 기능 | ✅ |
-| 🟡 P2 | Raw/Refined CSV 동시 저장 | ✅ |
-| 🟢 P3 | CSV Verbose 로깅 | ✅ |
+| 🔧 Quality | ViewModel 7개 Partial Class 분리 | ✅ |
+| 🔧 Quality | 2213줄 → 각 파일 500줄 이하 | ✅ |
+| 🆕 Feature | CSV Viewer UI (Load/Filter/Export) | ✅ |
+| 🔬 Research | ComAPI Property Write 가능 확인 | ✅ |
+| 📝 Docs | ADR-001 아키텍처 결정 기록 | ✅ |
 
 ---
 
@@ -170,27 +182,37 @@ dxtnavis/
 │   ├── HierarchicalPropertyRecord.cs
 │   ├── TreeNodeModel.cs
 │   └── PropertyInfo.cs
-├── ViewModels/
-│   ├── DXwindowViewModel.cs
+├── ViewModels/                      # MVVM (Partial Class 패턴)
+│   ├── DXwindowViewModel.cs         # Core (1020줄)
+│   ├── DXwindowViewModel.Filter.cs  # 필터 기능
+│   ├── DXwindowViewModel.Search.cs  # 검색 기능
+│   ├── DXwindowViewModel.Selection.cs # 3D 선택
+│   ├── DXwindowViewModel.Snapshot.cs  # 스냅샷
+│   ├── DXwindowViewModel.Tree.cs    # 트리 조작
+│   ├── DXwindowViewModel.Export.cs  # 내보내기
+│   ├── CsvViewerViewModel.cs        # CSV 뷰어 (v0.5.0)
 │   ├── HierarchyNodeViewModel.cs
 │   └── PropertyItemViewModel.cs
 ├── Views/
-│   ├── DXwindow.xaml
+│   ├── DXwindow.xaml               # 메인 UI + CSV Viewer 탭
 │   └── DXwindow.xaml.cs
 ├── Services/
 │   ├── NavisworksDataExtractor.cs
 │   ├── NavisworksSelectionService.cs
-│   ├── DisplayStringParser.cs      # v0.4.0: VariantData 파싱
-│   ├── SnapshotService.cs          # ViewPoint 저장/리셋
+│   ├── DisplayStringParser.cs
+│   ├── SnapshotService.cs
 │   ├── HierarchyFileWriter.cs
-│   └── PropertyFileWriter.cs       # Dual CSV + Verbose Log
+│   └── PropertyFileWriter.cs
 ├── Helpers/
 │   └── RelayCommand.cs
 ├── Converters/
 │   └── BoolToVisibilityConverter.cs
 ├── docs/
-│   └── agile/
-│       └── SPRINT-v0.4.0.md
+│   ├── agile/
+│   │   ├── SPRINT-v0.4.0.md
+│   │   └── SPRINT-v0.5.0.md
+│   └── adr/
+│       └── ADR-001-ComAPI-Property-Write.md
 ├── CHANGELOG.md
 └── DX.cs (Plugin Entry Point)
 ```
@@ -246,6 +268,6 @@ try {
 
 ---
 
-<sub>Last Updated: 2026-01-08 • v0.4.0</sub>
+<sub>Last Updated: 2026-01-09 • v0.5.0</sub>
 
 </div>
