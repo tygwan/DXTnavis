@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-01-09
+
+### Code Quality
+- **ViewModel 리팩토링** - 2213줄 DXwindowViewModel을 7개 Partial Class로 분리
+  - `DXwindowViewModel.cs` (Core: 1020줄)
+  - `DXwindowViewModel.Filter.cs` (144줄)
+  - `DXwindowViewModel.Search.cs` (110줄)
+  - `DXwindowViewModel.Selection.cs` (219줄)
+  - `DXwindowViewModel.Snapshot.cs` (311줄)
+  - `DXwindowViewModel.Tree.cs` (181줄)
+  - `DXwindowViewModel.Export.cs` (397줄)
+
+### New Features
+- **CSV Viewer UI** - 우측 패널에 CSV 뷰어 탭 추가
+  - CSV 파일 로드 및 DataGrid 표시
+  - 컬럼별 필터링 (전체/특정 컬럼)
+  - 필터링된 데이터 CSV Export
+  - UTF-8/EUC-KR 인코딩 자동 감지
+
+### Research Completed
+- **ComAPI Property Write 가능성 조사** - ✅ 완료
+  - .NET API는 Property Read-Only (Write 불가)
+  - ComAPI `SetUserDefined()` 메서드로 Custom Property 추가 가능
+  - ADR-001 문서 작성 완료
+
+### Bug Fixes
+- **버전 정보 불일치** - XAML 버전 1.1.0 → 0.5.0 수정
+
+### Technical
+- `CsvViewerViewModel.cs` - CSV 뷰어 전용 ViewModel 신규 생성
+- `DXwindow.xaml` - CSV Viewer TabItem 추가
+- `docs/adr/ADR-001-ComAPI-Property-Write.md` - 아키텍처 결정 기록
+
+**→ [Sprint v0.5.0](docs/agile/SPRINT-v0.5.0.md)**
+
+---
+
 ## [0.4.3] - 2026-01-09
 
 ### New Features
@@ -158,7 +195,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/tygwan/DXTnavis/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/tygwan/DXTnavis/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/tygwan/DXTnavis/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/tygwan/DXTnavis/compare/v0.4.0...v0.4.1
