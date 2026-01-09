@@ -85,24 +85,28 @@ Documentation: 1
 | Priority | 🟡 Medium |
 | Type | Research/POC |
 | Description | Navisworks에 외부 데이터(공정일 등) 추가 기입 가능 여부 |
+| Status | ✅ Completed |
+| ADR | [ADR-001-ComAPI-Property-Write.md](../adr/ADR-001-ComAPI-Property-Write.md) |
 
-**Research Questions:**
-- [ ] Navisworks Property Read-Only 제약 확인
-- [ ] ComAPI로 Property Write 가능 여부
-- [ ] User Data Extension 활용 가능성
-- [ ] Custom Property Tab 생성 가능성
+**Research Conclusion:** ✅ **ComAPI로 Custom Property Write 가능**
 
-**Potential Solutions:**
-1. ComAPI `InwOpState.ObjectProps` 활용
-2. User Data (`InwUserData`) 활용
-3. Custom Properties via API
-4. External Database 연동 후 조회
+**Key Findings:**
+- [x] .NET API는 Property Read-Only (Write 불가)
+- [x] ComAPI `SetUserDefined()` 메서드로 Custom Property 추가 가능
+- [x] User Data Extension 형태로 저장됨
+- [x] Category 생성, 수정, 삭제 모두 지원
 
-**Tasks:**
-- [ ] ComAPI 문서 조사
-- [ ] POC 코드 작성
-- [ ] Read-Only 우회 방법 테스트
-- [ ] 결과 문서화 (ADR)
+**Implementation Path:**
+```csharp
+// ComAPI를 통한 Property Write
+InwGUIPropertyNode2 propNode = comState.GetGUIPropertyNode(comPath, true);
+propNode.SetUserDefined(0, "DXTnavis Schedule", "Internal_Name", propVec);
+```
+
+**Next Steps:**
+- [ ] PropertyWriteService 클래스 구현
+- [ ] CSV Import → Property Write 연동
+- [ ] UI 통합 (Import Schedule Data 버튼)
 
 ---
 
@@ -130,13 +134,14 @@ Documentation: 1
 ### Completed ✅
 - [x] 1.1 버전 정보 불일치 수정
 - [x] 2.1 ViewModel 리팩토링 (7개 Partial Class 분리)
+- [x] 3.1 ComAPI Property Write Research (ADR 작성 완료)
 
 ### In Progress 🔄
-- [ ] 3.1 ComAPI Property Write Research
+- [ ] 4.1 CSV Viewer UI
 
 ### Pending 📋
 - [ ] 2.2 중복 코드 제거
-- [ ] 4.1 CSV Viewer UI
+- [ ] 3.2 PropertyWriteService 구현 (ComAPI 기반)
 
 ---
 
