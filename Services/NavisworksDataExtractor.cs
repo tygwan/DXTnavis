@@ -14,6 +14,10 @@ namespace DXTnavis.Services
     public class NavisworksDataExtractor
     {
         /// <summary>
+        /// DisplayString 파서 인스턴스 (v0.4.2)
+        /// </summary>
+        private readonly DisplayStringParser _displayStringParser = new DisplayStringParser();
+        /// <summary>
         /// 선택된 객체부터 시작하여 모든 하위 계층을 재귀적으로 탐색하고 속성을 추출합니다.
         /// </summary>
         /// <param name="currentItem">현재 처리 중인 ModelItem</param>
@@ -107,6 +111,12 @@ namespace DXTnavis.Services
                         string propertyValue = string.Empty;
                         string readWriteStatus = "알 수 없음";
 
+                        // v0.4.2: 파싱된 값 변수
+                        string dataType = string.Empty;
+                        string rawValue = string.Empty;
+                        double? numericValue = null;
+                        string unit = string.Empty;
+
                         try
                         {
                             categoryName = category.DisplayName ?? string.Empty;
@@ -132,6 +142,13 @@ namespace DXTnavis.Services
                             if (value != null)
                             {
                                 propertyValue = value.ToString();
+
+                                // v0.4.2: DisplayString 파싱
+                                var parsed = _displayStringParser.Parse(propertyValue);
+                                dataType = parsed.DataType;
+                                rawValue = parsed.RawValue;
+                                numericValue = parsed.NumericValue;
+                                unit = parsed.Unit;
                             }
                         }
                         catch (System.AccessViolationException)
@@ -168,7 +185,11 @@ namespace DXTnavis.Services
                             propertyName: propertyName,
                             propertyValue: propertyValue,
                             readWriteStatus: readWriteStatus,
-                            sysPath: currentPath
+                            sysPath: currentPath,
+                            dataType: dataType,
+                            rawValue: rawValue,
+                            numericValue: numericValue,
+                            unit: unit
                         );
 
                         results.Add(record);
@@ -413,10 +434,16 @@ namespace DXTnavis.Services
 
                         try
                         {
+                            var valueStr = property.Value?.ToString() ?? string.Empty;
+
+                            // v0.4.2: DisplayString 파싱
+                            var parsed = _displayStringParser.Parse(valueStr);
+
                             var propertyItem = new PropertyItemViewModel(
                                 category: category.DisplayName ?? string.Empty,
                                 name: property.DisplayName ?? string.Empty,
-                                value: property.Value?.ToString() ?? string.Empty
+                                value: valueStr,
+                                unit: parsed.Unit
                             );
 
                             results.Add(propertyItem);

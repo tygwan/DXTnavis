@@ -46,9 +46,34 @@ namespace DXTnavis.Models
         public string PropertyName { get; set; }
 
         /// <summary>
-        /// 속성 값
+        /// 속성 값 (원본 DisplayString)
         /// </summary>
         public string PropertyValue { get; set; }
+
+        /// <summary>
+        /// 데이터 타입 (예: "Double", "Int32", "DisplayLength")
+        /// v0.4.2: DisplayString 파싱 결과
+        /// </summary>
+        public string DataType { get; set; }
+
+        /// <summary>
+        /// 파싱된 원본 값 (타입 접두사 제거됨)
+        /// v0.4.2: DisplayString 파싱 결과
+        /// </summary>
+        public string RawValue { get; set; }
+
+        /// <summary>
+        /// 숫자 값 (파싱 가능한 경우)
+        /// v0.4.2: DisplayString 파싱 결과
+        /// </summary>
+        public double? NumericValue { get; set; }
+
+        /// <summary>
+        /// 단위 (예: "m", "mm", "sq m")
+        /// 단위가 없으면 빈 문자열
+        /// v0.4.2: DisplayString 파싱 결과
+        /// </summary>
+        public string Unit { get; set; }
 
         /// <summary>
         /// 속성 권한 상태 (PRD v7: 읽기/쓰기 권한 표시)
@@ -84,6 +109,10 @@ namespace DXTnavis.Models
         public HierarchicalPropertyRecord()
         {
             IsSelected = false;
+            DataType = string.Empty;
+            RawValue = string.Empty;
+            NumericValue = null;
+            Unit = string.Empty;
         }
 
         /// <summary>
@@ -98,7 +127,11 @@ namespace DXTnavis.Models
             string propertyName,
             string propertyValue,
             string readWriteStatus = "알 수 없음",
-            string sysPath = "")
+            string sysPath = "",
+            string dataType = "",
+            string rawValue = "",
+            double? numericValue = null,
+            string unit = "")
         {
             ObjectId = objectId;
             ParentId = parentId;
@@ -109,6 +142,10 @@ namespace DXTnavis.Models
             PropertyName = propertyName;
             PropertyValue = propertyValue;
             ReadWriteStatus = readWriteStatus;
+            DataType = dataType;
+            RawValue = rawValue;
+            NumericValue = numericValue;
+            Unit = unit;
         }
     }
 }

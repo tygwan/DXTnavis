@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.2] - 2026-01-09
+
+### New Features
+- **Unit 컬럼 추가** - 중앙 패널 DataGrid에 Unit 컬럼 표시
+  - 추출 시점에 DisplayString 파싱 적용
+  - 단위가 있는 데이터에 단위 분리 표시
+  - 단위가 없는 데이터는 빈 셀
+- **CSV Export Unit 포함** - Hierarchy CSV에 DataType, Unit 컬럼 추가
+- **JSON Export Unit 포함** - TreeNode의 PropertyData에 DataType, Unit 필드 추가
+
+### Technical
+- `HierarchicalPropertyRecord` - DataType, RawValue, NumericValue, Unit 필드 추가
+- `NavisworksDataExtractor` - 추출 시점에 DisplayStringParser 사용
+- `PropertyItemViewModel` - Unit 프로퍼티 추가
+- `HierarchyFileWriter.WriteToCsv()` - includeUnit 파라미터 추가
+- `DXwindow.xaml` - DataGrid Unit 컬럼 추가
+
+**→ [Sprint v0.4.2](docs/agile/SPRINT-v0.4.2.md)**
+
+---
+
 ## [0.4.1] - 2026-01-08
 
 ### Bug Fixes (Critical)
@@ -107,7 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/tygwan/DXTnavis/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/tygwan/DXTnavis/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/tygwan/DXTnavis/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tygwan/DXTnavis/compare/v0.2.0...v0.3.0

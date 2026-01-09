@@ -12,6 +12,7 @@ namespace DXTnavis.ViewModels
         private string _category;
         private string _name;
         private string _value;
+        private string _unit;
 
         /// <summary>
         /// 속성 카테고리 (예: "재료", "Element", "Identity Data")
@@ -61,15 +62,32 @@ namespace DXTnavis.ViewModels
             }
         }
 
+        /// <summary>
+        /// 단위 (v0.4.2)
+        /// </summary>
+        public string Unit
+        {
+            get => _unit;
+            set
+            {
+                if (_unit != value)
+                {
+                    _unit = value;
+                    OnPropertyChanged(nameof(Unit));
+                }
+            }
+        }
+
         public PropertyItemViewModel()
         {
         }
 
-        public PropertyItemViewModel(string category, string name, string value)
+        public PropertyItemViewModel(string category, string name, string value, string unit = "")
         {
             Category = category;
             Name = name;
             Value = value;
+            Unit = unit;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

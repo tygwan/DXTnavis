@@ -1,7 +1,7 @@
 # DXTnavis - Navisworks 2025 Property Viewer Plugin
 
 > **Context:** Standalone Navisworks plugin for property viewing and 3D control
-> **Version:** 0.4.1 (Released 2026-01-08)
+> **Version:** 0.4.2 (Released 2026-01-09)
 > **Docs Index:** [docs/_INDEX.md](docs/_INDEX.md)
 
 ## Quick Reference

@@ -368,16 +368,19 @@
                                             Width="50" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Object"
                                             Binding="{Binding DisplayName}"
-                                            Width="150" IsReadOnly="True"/>
+                                            Width="130" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Category"
                                             Binding="{Binding Category}"
-                                            Width="120" IsReadOnly="True"/>
+                                            Width="100" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Property"
                                             Binding="{Binding PropertyName}"
-                                            Width="120" IsReadOnly="True"/>
+                                            Width="100" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Value"
                                             Binding="{Binding PropertyValue}"
                                             Width="*" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Unit"
+                                            Binding="{Binding Unit}"
+                                            Width="60" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
