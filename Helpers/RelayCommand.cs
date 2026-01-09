@@ -23,6 +23,16 @@ namespace DXTnavis.Helpers
         }
 
         /// <summary>
+        /// 파라미터 없는 RelayCommand 생성자
+        /// </summary>
+        /// <param name="execute">명령이 실행될 때 호출될 액션</param>
+        /// <param name="canExecute">명령 실행 가능 여부를 결정하는 함수 (옵션)</param>
+        public RelayCommand(Action execute, Func<bool> canExecute = null)
+            : this(_ => execute(), canExecute == null ? null : new Func<object, bool>(_ => canExecute()))
+        {
+        }
+
+        /// <summary>
         /// 명령 실행 가능 여부가 변경되었음을 알리는 이벤트
         /// </summary>
         public event EventHandler CanExecuteChanged

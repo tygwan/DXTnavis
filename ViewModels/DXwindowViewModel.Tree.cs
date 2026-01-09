@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Autodesk.Navisworks.Api;
+using DXTnavis.Helpers;
 using DXTnavis.Models;
 
 namespace DXTnavis.ViewModels
