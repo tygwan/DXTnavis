@@ -40,6 +40,12 @@ namespace DXTnavis.ViewModels
         private string _propertyValueFilter;
         private string _statusMessage;
 
+        // Show Only Toggle state (v0.4.3)
+        private bool _isShowOnlyActive;
+
+        // Filter debounce timer (v0.4.3)
+        private System.Windows.Threading.DispatcherTimer _filterDebounceTimer;
+
         // 3D Selection Service (Phase 3)
         private readonly NavisworksSelectionService _selectionService;
 
@@ -196,7 +202,7 @@ namespace DXTnavis.ViewModels
         public ObservableCollection<string> AvailableLevels { get; }
 
         /// <summary>
-        /// 선택된 레벨 필터
+        /// 선택된 레벨 필터 (v0.4.3: 자동 필터 적용)
         /// </summary>
         public string SelectedLevelFilter
         {
@@ -205,11 +211,12 @@ namespace DXTnavis.ViewModels
             {
                 _selectedLevelFilter = value;
                 OnPropertyChanged(nameof(SelectedLevelFilter));
+                TriggerFilterDebounce();
             }
         }
 
         /// <summary>
-        /// 선택된 카테고리 필터
+        /// 선택된 카테고리 필터 (v0.4.3: 자동 필터 적용)
         /// </summary>
         public string SelectedCategoryFilter
         {
@@ -218,11 +225,12 @@ namespace DXTnavis.ViewModels
             {
                 _selectedCategoryFilter = value;
                 OnPropertyChanged(nameof(SelectedCategoryFilter));
+                TriggerFilterDebounce();
             }
         }
 
         /// <summary>
-        /// 시스템 경로 필터 (예: "Project > Building")
+        /// 시스템 경로 필터 (예: "Project > Building") (v0.4.3: 자동 필터 적용)
         /// </summary>
         public string SysPathFilter
         {
@@ -231,11 +239,12 @@ namespace DXTnavis.ViewModels
             {
                 _sysPathFilter = value;
                 OnPropertyChanged(nameof(SysPathFilter));
+                TriggerFilterDebounce();
             }
         }
 
         /// <summary>
-        /// 속성 이름 필터
+        /// 속성 이름 필터 (v0.4.3: 자동 필터 적용)
         /// </summary>
         public string PropertyNameFilter
         {
@@ -244,11 +253,12 @@ namespace DXTnavis.ViewModels
             {
                 _propertyNameFilter = value;
                 OnPropertyChanged(nameof(PropertyNameFilter));
+                TriggerFilterDebounce();
             }
         }
 
         /// <summary>
-        /// 속성 값 필터
+        /// 속성 값 필터 (v0.4.3: 자동 필터 적용)
         /// </summary>
         public string PropertyValueFilter
         {
@@ -257,8 +267,34 @@ namespace DXTnavis.ViewModels
             {
                 _propertyValueFilter = value;
                 OnPropertyChanged(nameof(PropertyValueFilter));
+                TriggerFilterDebounce();
             }
         }
+
+        /// <summary>
+        /// Show Only 토글 상태 (v0.4.3: On/Off 토글)
+        /// </summary>
+        public bool IsShowOnlyActive
+        {
+            get => _isShowOnlyActive;
+            set
+            {
+                _isShowOnlyActive = value;
+                OnPropertyChanged(nameof(IsShowOnlyActive));
+                OnPropertyChanged(nameof(ShowOnlyButtonText));
+                OnPropertyChanged(nameof(ShowOnlyButtonColor));
+            }
+        }
+
+        /// <summary>
+        /// Show Only 버튼 텍스트 (토글 상태에 따라 변경)
+        /// </summary>
+        public string ShowOnlyButtonText => _isShowOnlyActive ? "👁️ Show Only: ON" : "👁️ Show Only: OFF";
+
+        /// <summary>
+        /// Show Only 버튼 배경색 (토글 상태에 따라 변경)
+        /// </summary>
+        public string ShowOnlyButtonColor => _isShowOnlyActive ? "#FF5722" : "#0078D4";
 
         /// <summary>
         /// 상태 메시지 (StatusBar 표시용)
@@ -400,6 +436,17 @@ namespace DXTnavis.ViewModels
             {
                 _debounceTimer.Stop();
                 LoadSelectedObjectPropertiesSafe();
+            };
+
+            // v0.4.3: 필터 자동 적용 디바운스 타이머 (200ms 지연)
+            _filterDebounceTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(200)
+            };
+            _filterDebounceTimer.Tick += (s, e) =>
+            {
+                _filterDebounceTimer.Stop();
+                ApplyFilter();
             };
 
             // Command 초기화
@@ -560,6 +607,20 @@ namespace DXTnavis.ViewModels
             OnPropertyChanged(nameof(SelectedPropertiesCount));
             ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
             RefreshSelectionCommands();
+        }
+
+        /// <summary>
+        /// v0.4.3: 필터 디바운스 트리거
+        /// 필터 값 변경 시 호출되어 200ms 후 자동 필터 적용
+        /// </summary>
+        private void TriggerFilterDebounce()
+        {
+            // 데이터가 없으면 필터 적용 안함
+            if (AllHierarchicalProperties.Count == 0)
+                return;
+
+            _filterDebounceTimer?.Stop();
+            _filterDebounceTimer?.Start();
         }
 
         /// <summary>
@@ -1692,37 +1753,52 @@ namespace DXTnavis.ViewModels
         }
 
         /// <summary>
-        /// 필터링된 객체만 표시하고 나머지는 숨깁니다.
-        /// 체크박스로 선택된 항목이 있으면 해당 항목만, 없으면 전체 필터링된 항목 표시
+        /// v0.4.3: Show Only 토글 (On/Off)
+        /// 필터링된 객체만 표시하거나 모든 객체를 표시합니다.
         /// </summary>
         private void ShowOnlyFiltered()
         {
             try
             {
-                int visibleCount;
-                var checkedCount = _selectionService.GetCheckedObjectCount(FilteredHierarchicalProperties);
-
-                if (checkedCount > 0)
+                // 토글 상태 전환
+                if (_isShowOnlyActive)
                 {
-                    // 체크된 항목만 표시
-                    visibleCount = _selectionService.ShowOnlyCheckedObjects(FilteredHierarchicalProperties);
-                    StatusMessage = $"Showing {visibleCount} checked objects only";
+                    // OFF: 모든 객체 표시
+                    _selectionService.ShowAllObjects();
+                    IsShowOnlyActive = false;
+                    StatusMessage = "All objects visible (Show Only: OFF)";
                 }
                 else
                 {
-                    // 전체 필터링된 항목 표시
-                    visibleCount = _selectionService.ShowOnlyFilteredObjects(FilteredHierarchicalProperties);
-                    StatusMessage = $"Showing {visibleCount} filtered objects only";
-                }
+                    // ON: 필터링된 객체만 표시
+                    int visibleCount;
+                    var checkedCount = _selectionService.GetCheckedObjectCount(FilteredHierarchicalProperties);
 
-                if (visibleCount == 0)
-                {
-                    MessageBox.Show(
-                        "No objects could be shown.\n\n" +
-                        "Please check the filter settings.",
-                        "Visibility",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    if (checkedCount > 0)
+                    {
+                        // 체크된 항목만 표시
+                        visibleCount = _selectionService.ShowOnlyCheckedObjects(FilteredHierarchicalProperties);
+                        StatusMessage = $"Showing {visibleCount} checked objects only (Show Only: ON)";
+                    }
+                    else
+                    {
+                        // 전체 필터링된 항목 표시
+                        visibleCount = _selectionService.ShowOnlyFilteredObjects(FilteredHierarchicalProperties);
+                        StatusMessage = $"Showing {visibleCount} filtered objects only (Show Only: ON)";
+                    }
+
+                    if (visibleCount == 0)
+                    {
+                        MessageBox.Show(
+                            "No objects could be shown.\n\n" +
+                            "Please check the filter settings.",
+                            "Visibility",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                        return; // 상태 변경 안함
+                    }
+
+                    IsShowOnlyActive = true;
                 }
             }
             catch (Exception ex)
@@ -2122,6 +2198,13 @@ namespace DXTnavis.ViewModels
             {
                 _debounceTimer.Stop();
                 _debounceTimer = null;
+            }
+
+            // v0.4.3: 필터 타이머 정리
+            if (_filterDebounceTimer != null)
+            {
+                _filterDebounceTimer.Stop();
+                _filterDebounceTimer = null;
             }
         }
 

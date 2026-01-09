@@ -437,14 +437,26 @@
                                 Style="{StaticResource ActionButton}"
                                 Command="{Binding SelectIn3DCommand}"
                                 ToolTip="필터링된 객체를 Navisworks 3D 뷰에서 선택"/>
-                        <Button Content="👁️ Show Only"
-                                Style="{StaticResource ActionButton}"
+                        <!-- v0.4.3: Show Only 토글 버튼 -->
+                        <Button Content="{Binding ShowOnlyButtonText}"
                                 Command="{Binding ShowOnlyFilteredCommand}"
-                                ToolTip="필터링된 객체만 표시 (나머지 숨김)"/>
-                        <Button Content="👀 Show All"
-                                Style="{StaticResource FilterButton}"
-                                Command="{Binding ShowAllObjectsCommand}"
-                                ToolTip="모든 객체 표시 (숨김 해제)"/>
+                                ToolTip="Show Only 토글 (On: 필터링 객체만 표시 / Off: 전체 표시)"
+                                Padding="12,8" Margin="3" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand"
+                                Foreground="White">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#0078D4"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsShowOnlyActive}" Value="True">
+                                            <Setter Property="Background" Value="#FF5722"/>
+                                        </DataTrigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#005A9E"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                         <Button Content="🔍 Zoom"
                                 Style="{StaticResource ActionButton}"
                                 Command="{Binding ZoomToFilteredCommand}"
@@ -581,7 +593,7 @@
                                 Padding="15" CornerRadius="4">
                             <StackPanel>
                                 <TextBlock Text="버전 정보" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <TextBlock Text="Version: 1.1.0" FontSize="11" Margin="0,0,0,3"/>
+                                <TextBlock Text="Version: 0.4.3" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="Target: Navisworks Manage 2025" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="Framework: .NET Framework 4.8" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="GitHub: github.com/tygwan/DXTnavis"

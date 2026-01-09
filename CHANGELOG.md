@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.3] - 2026-01-09
+
+### New Features
+- **필터 자동 적용** - 중앙 패널 필터가 DataGrid에 실시간 연동
+  - Level, Path, Category, Property, Value 필터 변경 시 자동 적용
+  - 200ms 디바운스로 성능 최적화
+- **Show Only 토글 버튼** - On/Off 상태 전환 가능
+  - ON: 필터링된 객체만 표시 (오렌지색 버튼)
+  - OFF: 모든 객체 표시 (파란색 버튼)
+
+### Bug Fixes
+- **Save ViewPoint 오류 수정** - "Invalid object" COM API 오류 해결
+  - COM API 대신 .NET API `DocumentSavedViewpoints.AddCopy()` 사용
+  - `SavedViewpoint` 객체를 현재 뷰에서 직접 생성
+  - ViewPoint 저장 안정성 대폭 향상
+
+### Technical
+- `DXwindowViewModel` - TriggerFilterDebounce() 메서드 추가
+- `DXwindowViewModel` - IsShowOnlyActive, ShowOnlyButtonText, ShowOnlyButtonColor 프로퍼티 추가
+- `SnapshotService.SaveCurrentViewPoint()` - .NET API 방식으로 완전 재작성
+- `DXwindow.xaml` - Show Only 버튼 동적 스타일 바인딩
+
+---
+
 ## [0.4.2] - 2026-01-09
 
 ### New Features
@@ -134,7 +158,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/tygwan/DXTnavis/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/tygwan/DXTnavis/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/tygwan/DXTnavis/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/tygwan/DXTnavis/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/tygwan/DXTnavis/compare/v0.3.0...v0.4.0
