@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Security;
 using Autodesk.Navisworks.Api;
 using DXTnavis.Models;
 using DXTnavis.ViewModels;
@@ -25,6 +27,8 @@ namespace DXTnavis.Services
         /// <param name="level">계층 깊이 (0부터 시작)</param>
         /// <param name="results">결과를 저장할 리스트</param>
         /// <param name="parentPath">부모 경로 (예: "Project > Building")</param>
+        [HandleProcessCorruptedStateExceptions]
+        [SecurityCritical]
         public void TraverseAndExtractProperties(
             ModelItem currentItem,
             Guid parentId,
@@ -396,6 +400,8 @@ namespace DXTnavis.Services
         /// </summary>
         /// <param name="item">속성을 추출할 ModelItem</param>
         /// <returns>PropertyItemViewModel 리스트</returns>
+        [HandleProcessCorruptedStateExceptions]
+        [SecurityCritical]
         public List<PropertyItemViewModel> ExtractProperties(ModelItem item)
         {
             var results = new List<PropertyItemViewModel>();
@@ -506,6 +512,8 @@ namespace DXTnavis.Services
         /// </summary>
         /// <param name="selectedItems">선택된 ModelItem 컬렉션</param>
         /// <returns>PropertyInfo 리스트</returns>
+        [HandleProcessCorruptedStateExceptions]
+        [SecurityCritical]
         public List<PropertyInfo> ExtractPropertiesFromSelection(ModelItemCollection selectedItems)
         {
             var results = new List<PropertyInfo>();
@@ -578,6 +586,8 @@ namespace DXTnavis.Services
         /// 전체 모델의 계층 구조를 HierarchicalPropertyRecord 리스트로 추출 (All × Hierarchy)
         /// </summary>
         /// <returns>HierarchicalPropertyRecord 리스트</returns>
+        [HandleProcessCorruptedStateExceptions]
+        [SecurityCritical]
         public List<HierarchicalPropertyRecord> ExtractAllHierarchicalRecords()
         {
             var results = new List<HierarchicalPropertyRecord>();

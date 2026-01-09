@@ -17,9 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CSV Export Unit 포함** - Hierarchy CSV에 DataType, Unit 컬럼 추가
 - **JSON Export Unit 포함** - TreeNode의 PropertyData에 DataType, Unit 필드 추가
 
+### Bug Fixes
+- **AccessViolationException 처리** - Navisworks API 내부 오류 안정적 처리
+  - `[HandleProcessCorruptedStateExceptions]` 속성 추가
+  - Corrupted State Exception을 catch하여 해당 카테고리만 건너뛰고 계속 진행
+
 ### Technical
 - `HierarchicalPropertyRecord` - DataType, RawValue, NumericValue, Unit 필드 추가
 - `NavisworksDataExtractor` - 추출 시점에 DisplayStringParser 사용
+- `NavisworksDataExtractor` - HandleProcessCorruptedStateExceptions 속성 추가
 - `PropertyItemViewModel` - Unit 프로퍼티 추가
 - `HierarchyFileWriter.WriteToCsv()` - includeUnit 파라미터 추가
 - `DXwindow.xaml` - DataGrid Unit 컬럼 추가
