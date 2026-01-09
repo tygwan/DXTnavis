@@ -45,17 +45,21 @@ Documentation: 1
 | Type | Refactoring |
 | File | `ViewModels/DXwindowViewModel.cs` |
 | Description | 2200+ 줄 ViewModel을 Partial Class로 분리 |
+| Status | ✅ Completed |
 
 **Current State:** 단일 파일에 모든 기능 집중
 **Target State:** 기능별 Partial Class 분리
 
 **Tasks:**
-- [ ] Core 속성/필드 분리 (`DXwindowViewModel.Core.cs`)
-- [ ] Filter 관련 분리 (`DXwindowViewModel.Filter.cs`)
-- [ ] Export 관련 분리 (`DXwindowViewModel.Export.cs`)
-- [ ] 3D Selection 관련 분리 (`DXwindowViewModel.Selection.cs`)
-- [ ] Snapshot 관련 분리 (`DXwindowViewModel.Snapshot.cs`)
-- [ ] Tree 관련 분리 (`DXwindowViewModel.Tree.cs`)
+- [x] Core 속성/필드/Constructor (`DXwindowViewModel.cs` - 1020줄)
+- [x] Filter 관련 분리 (`DXwindowViewModel.Filter.cs` - 144줄)
+- [x] Search 관련 분리 (`DXwindowViewModel.Search.cs` - 110줄)
+- [x] Export 관련 분리 (`DXwindowViewModel.Export.cs` - 397줄)
+- [x] 3D Selection 관련 분리 (`DXwindowViewModel.Selection.cs` - 219줄)
+- [x] Snapshot 관련 분리 (`DXwindowViewModel.Snapshot.cs` - 311줄)
+- [x] Tree 관련 분리 (`DXwindowViewModel.Tree.cs` - 181줄)
+
+**Result:** 2213줄 → 7개 파일 (각 파일 500줄 이하 목표 달성)
 
 ### 2.2 중복 코드 제거
 | Field | Value |
@@ -125,13 +129,13 @@ Documentation: 1
 
 ### Completed ✅
 - [x] 1.1 버전 정보 불일치 수정
+- [x] 2.1 ViewModel 리팩토링 (7개 Partial Class 분리)
 
 ### In Progress 🔄
-- [ ] 2.1 ViewModel 리팩토링
+- [ ] 3.1 ComAPI Property Write Research
 
 ### Pending 📋
 - [ ] 2.2 중복 코드 제거
-- [ ] 3.1 ComAPI Property Write Research
 - [ ] 4.1 CSV Viewer UI
 
 ---
