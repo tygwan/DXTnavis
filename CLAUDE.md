@@ -1,7 +1,7 @@
 # DXTnavis - Navisworks 2025 Property Viewer Plugin
 
 > **Context:** Standalone Navisworks plugin for property viewing and 3D control
-> **Version:** 0.5.0 (Released 2026-01-09)
+> **Version:** 0.6.0 (Released 2026-01-11)
 > **Docs Index:** [docs/_INDEX.md](docs/_INDEX.md)
 
 ## Quick Reference
@@ -10,7 +10,7 @@
 - C# .NET Framework 4.8 (locked)
 - WPF MVVM Pattern
 - Navisworks API 2025 (x64 only)
-- ComAPI (ViewPoint 저장, Property Write 가능)
+- ComAPI (ViewPoint, Property Write, TimeLiner)
 
 ### Current Status
 | Phase | Task | Status |
@@ -22,41 +22,36 @@
 | 5 | ComAPI Research | ✅ 100% |
 | 6 | Code Quality | ✅ 100% |
 | 7 | CSV Viewer | ✅ 100% |
+| **8** | **AWP 4D Automation** | ✅ 100% |
 
 **→ Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## v0.5.0 주요 변경사항
+## v0.6.0 AWP 4D Automation (NEW)
 
-### Code Quality ✅
-- [x] ViewModel 리팩토링 - 2213줄 → 7개 Partial Class 분리
-- [x] 500줄 이하 파일 목표 달성
+### Features ✅
+- [x] **CSV → TimeLiner 자동 연결** 파이프라인
+- [x] **Property Write** (ComAPI SetUserDefined)
+- [x] **Selection Set** 계층 구조 자동 생성
+- [x] **TimeLiner Task** 자동 생성 및 Set 연결
+- [x] **AWP 4D 탭** UI 통합
 
-### New Features ✅
-- [x] CSV Viewer UI - 우측 패널 탭으로 추가
-- [x] CSV 필터링 및 Export 기능
+### New Services (Phase 8)
+| Service | Description |
+|---------|-------------|
+| PropertyWriteService | ComAPI Property Write (재시도 로직) |
+| SelectionSetService | Selection Set 계층 구조 생성 |
+| TimeLinerService | TimeLiner Task 생성 및 Set 연결 |
+| AWP4DAutomationService | 통합 파이프라인 (이벤트 기반) |
+| ObjectMatcher | SyncID → ModelItem 매칭 (캐싱) |
+| AWP4DValidator | Pre/Post 검증 |
+| ScheduleCsvParser | 한영 컬럼 매핑 CSV 파싱 |
 
-### Research ✅
-- [x] ComAPI Property Write 가능성 조사 → **가능 확인**
-- [x] ADR-001 문서 작성 완료
-
----
-
-## v0.4.x 완료 기능
-
-### Bug Fixes (P0 - Critical) ✅
-- [x] 검색창 영어 입력 불가능 오류 (IME + PreviewKeyDown)
-- [x] Save ViewPoint 저장 오류 (COM API 기반 구현)
-
-### New Features (P1-P2) ✅
-- [x] 트리 레벨별 Expand/Collapse (L0~L5 버튼)
-- [x] 4종 CSV 내보내기 (All/Selection × Properties/Hierarchy)
-- [x] DisplayString 파싱 (Refined CSV)
-- [x] 관측점 초기화 (Reset to Home)
-- [x] Object 검색 기능 (이름/속성값/경로)
-- [x] Raw/Refined CSV 동시 저장
-- [x] CSV Verbose 로깅
+### Key Documents
+- [Phase 8 Document](docs/phases/phase-8-awp-4d-automation.md)
+- [Tech Spec: AWP 4D](docs/tech-specs/AWP-4D-Automation-Spec.md)
+- [ADR-002: TimeLiner API](docs/adr/ADR-002-TimeLiner-API-Integration.md)
 
 ---
 
@@ -70,61 +65,65 @@ dxtnavis/
 │   ├── DisplayStringParser.cs        # VariantData 타입 파싱
 │   ├── SnapshotService.cs            # 뷰포인트/캡처
 │   ├── HierarchyFileWriter.cs        # Hierarchy CSV
-│   └── PropertyFileWriter.cs         # Property CSV + Verbose 로깅
+│   ├── PropertyFileWriter.cs         # Property CSV + Verbose 로깅
+│   ├── PropertyWriteService.cs       # ComAPI Property Write (v0.6.0)
+│   ├── SelectionSetService.cs        # Selection Set 생성 (v0.6.0)
+│   ├── TimeLinerService.cs           # TimeLiner Task 생성 (v0.6.0)
+│   ├── AWP4DAutomationService.cs     # 통합 파이프라인 (v0.6.0)
+│   ├── ObjectMatcher.cs              # SyncID 매칭 (v0.6.0)
+│   ├── AWP4DValidator.cs             # 검증 (v0.6.0)
+│   └── ScheduleCsvParser.cs          # 스케줄 CSV 파싱 (v0.6.0)
 ├── ViewModels/            # MVVM ViewModels (Partial Class 패턴)
-│   ├── DXwindowViewModel.cs          # Core (1020줄)
-│   ├── DXwindowViewModel.Filter.cs   # 필터 기능 (144줄)
-│   ├── DXwindowViewModel.Search.cs   # 검색 기능 (110줄)
-│   ├── DXwindowViewModel.Selection.cs # 3D 선택 (219줄)
-│   ├── DXwindowViewModel.Snapshot.cs # 스냅샷 (311줄)
-│   ├── DXwindowViewModel.Tree.cs     # 트리 (181줄)
-│   ├── DXwindowViewModel.Export.cs   # 내보내기 (397줄)
-│   ├── CsvViewerViewModel.cs         # CSV 뷰어 VM (v0.5.0)
+│   ├── DXwindowViewModel.cs          # Core
+│   ├── DXwindowViewModel.Filter.cs   # 필터 기능
+│   ├── DXwindowViewModel.Search.cs   # 검색 기능
+│   ├── DXwindowViewModel.Selection.cs # 3D 선택
+│   ├── DXwindowViewModel.Snapshot.cs # 스냅샷
+│   ├── DXwindowViewModel.Tree.cs     # 트리
+│   ├── DXwindowViewModel.Export.cs   # 내보내기
+│   ├── CsvViewerViewModel.cs         # CSV 뷰어 VM
+│   ├── AWP4DViewModel.cs             # AWP 4D VM (v0.6.0)
 │   └── HierarchyNodeViewModel.cs     # 트리 노드
 ├── Views/                 # WPF Views
-│   └── DXwindow.xaml                 # 메인 UI + CSV Viewer 탭
+│   └── DXwindow.xaml                 # 메인 UI + AWP 4D 탭
 ├── Models/                # Data models
+│   ├── ScheduleData.cs               # 스케줄 데이터 (v0.6.0)
+│   ├── AWP4DOptions.cs               # 자동화 옵션 (v0.6.0)
+│   ├── AutomationResult.cs           # 실행 결과 (v0.6.0)
+│   └── ValidationResult.cs           # 검증 결과 (v0.6.0)
 └── docs/
-    ├── agile/
-    │   ├── SPRINT-v0.4.0.md
-    │   └── SPRINT-v0.5.0.md
-    └── adr/
-        └── ADR-001-ComAPI-Property-Write.md
+    ├── phases/
+    │   └── phase-8-awp-4d-automation.md
+    ├── adr/
+    │   ├── ADR-001-ComAPI-Property-Write.md
+    │   └── ADR-002-TimeLiner-API-Integration.md
+    └── tech-specs/
+        └── AWP-4D-Automation-Spec.md
 ```
 
 ---
 
-## Completed Features (v0.3.0)
+## Critical Patterns
 
-### Phase 1: Property Filtering
-- Level Filter (L0~L10)
-- SysPath Filter
-- TreeView Hierarchy
-- Visual Level Badges
+### Read-Only Collection Bypass
+```csharp
+// ❌ 직접 추가 불가
+collection.Add(item);  // 예외 발생
 
-### Phase 2: UI Enhancement (70%)
-- Level-based Expand/Collapse
-- Expand All / Collapse All
-- Node Icons (📁/🔷/📄)
+// ✅ 복사본 방식
+doc.SelectionSets.AddCopy(selectionSet);
+doc.SelectionSets.InsertCopy(folder, index, item);
+timeliner.TasksCopyFrom(rootCopy.Children);
+```
 
-### Phase 3: 3D Integration
-- Select in 3D
-- Show Only / Show All
-- Zoom to Selection
-
----
-
-## Known Issues
-
-| Issue | Priority | Status |
-|-------|----------|--------|
-| 검색창 영어 입력 불가 | 🔴 Critical | ✅ Fixed |
-| ViewPoint 저장 read-only | 🔴 Critical | ✅ Fixed |
-| Property Write 불가 (.NET API) | 🟠 High | ✅ Solved (ComAPI)
-
----
-
-## Critical Constraints
+### Selection Set → TimeLiner Task 연결
+```csharp
+// TypeConversion 필수!
+SelectionSource selSource = selectionSet as SelectionSource;
+SelectionSourceCollection selSourceCol = new SelectionSourceCollection();
+selSourceCol.Add(selSource);
+task.Selection.CopyFrom(selSourceCol);
+```
 
 ### Thread Safety
 ```csharp
@@ -135,13 +134,36 @@ Task.Run(() => Application.ActiveDocument.xxx);
 Application.ActiveDocument.CurrentSelection.Add(items);
 ```
 
-### COM API
+### Property Write (ComAPI)
 ```csharp
-// ViewPoint: ComAPI 필요
-// Property Write: ComAPI SetUserDefined() 사용 가능
-InwGUIPropertyNode2 propNode = comState.GetGUIPropertyNode(comPath, true);
-propNode.SetUserDefined(0, "CategoryName", "InternalName", propVec);
+InwOpState10 comState = ComApiBridge.State;
+InwOaPath comPath = ComApiBridge.ToInwOaPath(modelItem);
+InwGUIPropertyNode2 propNode = (InwGUIPropertyNode2)comState
+    .GetGUIPropertyNode(comPath, true);
+propNode.SetUserDefined(0, "AWP Schedule", "AWP_Internal", propVec);
 ```
+
+---
+
+## AWP 4D Automation Usage
+
+### CSV 파일 형식 (한영 컬럼 지원)
+```csv
+SyncID,TaskName,PlannedStart,PlannedEnd,TaskType,ParentSet
+Element_001,콘크리트 타설,2026-01-15,2026-01-20,Construct,Zone-A/Level-1
+Element_002,철골 설치,2026-01-18,2026-01-25,Construct,Zone-A/Level-2
+```
+
+### 지원 컬럼
+| English | Korean | Description |
+|---------|--------|-------------|
+| SyncID | 동기화ID | ModelItem 매칭 키 |
+| TaskName | 작업명 | TimeLiner Task 이름 |
+| PlannedStart | 계획시작 | 계획 시작일 |
+| PlannedEnd | 계획종료 | 계획 종료일 |
+| TaskType | 작업유형 | Construct/Demolish/Temporary |
+| ParentSet | 상위세트 | Selection Set 계층 경로 |
+| Progress | 진행률 | 0-100 |
 
 ---
 
@@ -149,30 +171,22 @@ propNode.SetUserDefined(0, "CategoryName", "InternalName", propVec);
 
 | Task | File | Description |
 |------|------|-------------|
-| 3D selection | DXwindowViewModel.Selection.cs | SelectIn3D, ShowOnlyFiltered |
-| Filter apply | DXwindowViewModel.Filter.cs | ApplyFilter, TriggerFilterDebounce |
-| Tree expand | DXwindowViewModel.Tree.cs | ExpandTreeToLevel |
-| CSV export | DXwindowViewModel.Export.cs | ExportAllPropertiesAsync |
-| CSV viewer | CsvViewerViewModel.cs | LoadCsvFile, ParseCsvFile |
-| Snapshot | DXwindowViewModel.Snapshot.cs | CaptureCurrentView |
-| Search | DXwindowViewModel.Search.cs | SearchObjects |
+| AWP 4D Pipeline | AWP4DAutomationService.cs | 전체 자동화 파이프라인 |
+| Property Write | PropertyWriteService.cs | ComAPI 속성 기입 |
+| Selection Set | SelectionSetService.cs | 계층 구조 생성 |
+| TimeLiner | TimeLinerService.cs | Task 생성 및 Set 연결 |
+| Object Match | ObjectMatcher.cs | SyncID → ModelItem |
+| Validation | AWP4DValidator.cs | Pre/Post 검증 |
+| AWP 4D UI | AWP4DViewModel.cs | UI 바인딩 |
 
 ---
 
-## Development Workflow
+## Architecture Decision Records
 
-### Agile Skills
-```bash
-/sprint status              # 진행 현황
-/quality-gate pre-commit    # 커밋 전 검증
-/feedback learning "내용"    # 학습 기록
-/feedback adr "결정사항"     # 아키텍처 결정
-```
-
-### Sub-Agents
-- `code-reviewer`: 버그 수정 리뷰
-- `progress-tracker`: 진행 추적
-- `tech-spec-writer`: ComAPI 문서화
+| ADR | Title | Status |
+|-----|-------|--------|
+| [ADR-001](docs/adr/ADR-001-ComAPI-Property-Write.md) | ComAPI Property Write | ✅ Accepted |
+| [ADR-002](docs/adr/ADR-002-TimeLiner-API-Integration.md) | TimeLiner API 4D 자동화 | ✅ Accepted |
 
 ---
 

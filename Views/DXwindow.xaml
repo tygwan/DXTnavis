@@ -652,7 +652,148 @@
                 </Grid>
             </TabItem>
 
-            <!-- 탭 3: 정보 -->
+            <!-- 탭 3: AWP 4D Automation (Phase 8) -->
+            <TabItem Header="⏱️ AWP 4D">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="AWP 4D Automation" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="CSV 스케줄 → TimeLiner 자동 연결"
+                                   Style="{StaticResource LabelStyle}" Margin="0,0,0,15"/>
+
+                        <!-- CSV 파일 선택 -->
+                        <Border Background="#E8F4FD" Padding="12" Margin="0,0,0,12" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Schedule CSV File" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="📂 Browse"
+                                            Style="{StaticResource ActionButton}"
+                                            Command="{Binding AWP4D.BrowseCsvCommand}"
+                                            Width="80" Height="30"/>
+                                    <TextBlock Text="{Binding AWP4D.CsvFileName, FallbackValue='(No file selected)'}"
+                                               VerticalAlignment="Center" Margin="10,0,0,0"
+                                               FontSize="11" Foreground="#666666"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 옵션 -->
+                        <Border Background="#F8F9FA" BorderBrush="#DDDDDD" BorderThickness="1"
+                                Padding="12" Margin="0,0,0,12" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Pipeline Options" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Property Write (ComAPI)"
+                                          IsChecked="{Binding AWP4D.EnablePropertyWrite}"
+                                          Margin="0,0,0,6"/>
+                                <CheckBox Content="Selection Set 생성"
+                                          IsChecked="{Binding AWP4D.EnableSelectionSetCreation}"
+                                          Margin="0,0,0,6"/>
+                                <CheckBox Content="TimeLiner Task 생성"
+                                          IsChecked="{Binding AWP4D.EnableTimeLinerTaskCreation}"
+                                          Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Grouping Strategy" Style="{StaticResource LabelStyle}"/>
+                                <ComboBox ItemsSource="{Binding AWP4D.GroupingStrategies}"
+                                          SelectedItem="{Binding AWP4D.SelectedGroupingStrategy}"
+                                          Height="26" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Min Match Rate (%)" Style="{StaticResource LabelStyle}"/>
+                                <TextBox Text="{Binding AWP4D.MinMatchSuccessRate, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="26" Padding="6,4" Margin="0,0,0,10"
+                                         InputMethod.IsInputMethodEnabled="True"
+                                         PreviewKeyDown="TextBox_PreviewKeyDown"
+                                         GotFocus="TextBox_GotFocus"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                        <TextBlock Text="Set Folder" Style="{StaticResource LabelStyle}"/>
+                                        <TextBox Text="{Binding AWP4D.SelectionSetRootFolder, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="26" Padding="6,4"
+                                                 InputMethod.IsInputMethodEnabled="True"
+                                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                                 GotFocus="TextBox_GotFocus"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                        <TextBlock Text="Task Folder" Style="{StaticResource LabelStyle}"/>
+                                        <TextBox Text="{Binding AWP4D.TimeLinerRootFolder, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="26" Padding="6,4"
+                                                 InputMethod.IsInputMethodEnabled="True"
+                                                 PreviewKeyDown="TextBox_PreviewKeyDown"
+                                                 GotFocus="TextBox_GotFocus"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 실행 버튼 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Button Content="▶ Execute"
+                                    Style="{StaticResource SuccessButton}"
+                                    Command="{Binding AWP4D.ExecuteCommand}"
+                                    Width="100" Height="35"/>
+                            <Button Content="🔍 Validate"
+                                    Style="{StaticResource FilterButton}"
+                                    Command="{Binding AWP4D.ValidateCommand}"
+                                    Width="80" Height="35" Margin="5,0,0,0"/>
+                            <CheckBox Content="Dry Run"
+                                      IsChecked="{Binding AWP4D.IsDryRun}"
+                                      VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Button Content="⏹ Cancel"
+                                    Style="{StaticResource FilterButton}"
+                                    Command="{Binding AWP4D.CancelCommand}"
+                                    Width="80" Height="30"/>
+                            <Button Content="🗑 Clear Results"
+                                    Style="{StaticResource FilterButton}"
+                                    Command="{Binding AWP4D.ClearResultsCommand}"
+                                    Width="100" Height="30" Margin="5,0,0,0"/>
+                            <Button Content="🧹 Clear AWP Data"
+                                    Style="{StaticResource FilterButton}"
+                                    Command="{Binding AWP4D.ClearExistingDataCommand}"
+                                    Width="110" Height="30" Margin="5,0,0,0"
+                                    ToolTip="Delete all AWP Selection Sets and TimeLiner Tasks"/>
+                        </StackPanel>
+
+                        <!-- 진행률 -->
+                        <Border Background="#F0F0F0" Padding="10" Margin="0,0,0,12" CornerRadius="4"
+                                Visibility="{Binding AWP4D.IsRunning, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding AWP4D.CurrentPhase, FallbackValue='Ready'}"
+                                           FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <ProgressBar Value="{Binding AWP4D.ProgressPercentage}"
+                                             Minimum="0" Maximum="100" Height="18"/>
+                                <TextBlock Text="{Binding AWP4D.StatusMessage}"
+                                           FontSize="10" Foreground="#666666" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 로그 -->
+                        <Border Background="White" BorderBrush="#DDDDDD" BorderThickness="1"
+                                Padding="8" CornerRadius="4" MaxHeight="150">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding AWP4D.LogEntries}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock FontSize="10" TextWrapping="Wrap" Margin="0,1">
+                                                <Run Text="{Binding Timestamp, StringFormat='[{0:HH:mm:ss}]'}" Foreground="#999999"/>
+                                                <Run Text="{Binding Message}"/>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- 탭 4: 정보 -->
             <TabItem Header="ℹ️ Info">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12">
@@ -679,6 +820,10 @@
 
                                 <TextBlock Text="• 3D 선택 및 뷰포인트" FontWeight="SemiBold" Margin="0,0,0,3"/>
                                 <TextBlock Text="  Select in 3D, Show Only, Zoom, ViewPoint 저장"
+                                           FontSize="10" Foreground="#666666" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="• AWP 4D Automation (NEW)" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                                <TextBlock Text="  CSV → Property → Selection Set → TimeLiner 자동화"
                                            FontSize="10" Foreground="#666666"/>
                             </StackPanel>
                         </Border>
@@ -687,7 +832,7 @@
                                 Padding="15" CornerRadius="4">
                             <StackPanel>
                                 <TextBlock Text="버전 정보" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <TextBlock Text="Version: 0.5.0" FontSize="11" Margin="0,0,0,3"/>
+                                <TextBlock Text="Version: 0.6.0" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="Target: Navisworks Manage 2025" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="Framework: .NET Framework 4.8" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="GitHub: github.com/tygwan/DXTnavis"

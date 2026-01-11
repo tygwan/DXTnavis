@@ -68,6 +68,11 @@ namespace DXTnavis.ViewModels
         public CsvViewerViewModel CsvViewer { get; }
 
         /// <summary>
+        /// AWP 4D Automation ViewModel (Phase 8)
+        /// </summary>
+        public AWP4DViewModel AWP4D { get; }
+
+        /// <summary>
         /// UI에 표시될 속성 목록
         /// ObservableCollection을 사용하여 자동 UI 업데이트
         /// </summary>
@@ -412,6 +417,9 @@ namespace DXTnavis.ViewModels
 
             // CSV Viewer 초기화 (v0.5.0)
             CsvViewer = new CsvViewerViewModel();
+
+            // AWP 4D Automation 초기화 (Phase 8)
+            AWP4D = new AWP4DViewModel();
 
             // 초기 상태 메시지
             StatusMessage = "Ready - Select objects to view hierarchy";
