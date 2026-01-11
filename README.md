@@ -2,9 +2,9 @@
 
 # DXTnavis
 
-**Navisworks 2025 Property Viewer & Manager Plugin**
+**Navisworks 2025 Property Viewer & 4D Automation Plugin**
 
-[![Version](https://img.shields.io/badge/Version-0.5.0-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.6.0-blue?style=flat-square)]()
 [![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
 [![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
@@ -12,9 +12,15 @@
 
 <br/>
 
-*BIM 모델의 속성을 효율적으로 확인하고 관리하기 위한 Navisworks 애드인*
+*BIM 모델의 속성을 효율적으로 관리하고 4D 시뮬레이션을 자동화하는 Navisworks 플러그인*
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Installation](#-installation) • [Changelog](CHANGELOG.md)
+
+---
+
+### Plugin Interface
+
+![DXTnavis Main Page](snapshots/dxtnavis_main_page.png)
 
 </div>
 
@@ -24,38 +30,56 @@
 
 <table>
 <tr>
-<td align="center" width="16%">
+<td align="center" width="14%">
 <h3>🌳</h3>
 <b>Hierarchy</b><br/>
 <sub>Level-based<br/>expand/collapse</sub>
 </td>
-<td align="center" width="16%">
+<td align="center" width="14%">
 <h3>🔍</h3>
 <b>Search</b><br/>
 <sub>Object search<br/>by name/path</sub>
 </td>
-<td align="center" width="16%">
+<td align="center" width="14%">
 <h3>🎯</h3>
 <b>3D Control</b><br/>
 <sub>Select, Show,<br/>Zoom, Reset</sub>
 </td>
-<td align="center" width="16%">
+<td align="center" width="14%">
 <h3>📤</h3>
 <b>Export</b><br/>
 <sub>Raw + Refined<br/>CSV dual export</sub>
 </td>
-<td align="center" width="16%">
+<td align="center" width="14%">
 <h3>📸</h3>
 <b>Snapshot</b><br/>
 <sub>ViewPoint<br/>Save & Reset</sub>
 </td>
-<td align="center" width="16%">
+<td align="center" width="14%">
 <h3>📊</h3>
 <b>CSV Viewer</b><br/>
 <sub>Load, Filter,<br/>Export CSV</sub>
 </td>
+<td align="center" width="14%">
+<h3>🎬</h3>
+<b>AWP 4D</b><br/>
+<sub>CSV → TimeLiner<br/>Automation</sub>
+</td>
 </tr>
 </table>
+
+### AWP 4D Automation (v0.6.0) 🆕
+CSV 스케줄 데이터에서 4D 시뮬레이션 자동 생성 파이프라인
+
+| 단계 | 기능 | 설명 |
+|:----:|------|------|
+| 1 | **CSV Import** | 한영 컬럼 매핑 지원 (SyncID, 작업명, 계획시작...) |
+| 2 | **Object Matching** | SyncID 기반 ModelItem 자동 매칭 |
+| 3 | **Property Write** | ComAPI로 Custom Property 기입 |
+| 4 | **Selection Set** | 계층적 Selection Set 자동 생성 |
+| 5 | **TimeLiner Task** | Task 생성 및 Set 연결 |
+
+> **지원 옵션**: Dry Run, Grouping Strategy, 최소 매칭률, 폴더명 설정
 
 ### Hierarchy Navigation
 - 모델 전체 계층 구조 TreeView 시각화
@@ -74,14 +98,14 @@
 | `Show Only` | 필터링된 객체만 표시 (나머지 숨김) |
 | `Show All` | 전체 객체 표시 복원 |
 | `Zoom` | 선택된 객체로 카메라 이동 |
-| `Reset Home` | 초기 뷰포인트로 리셋 (v0.4.0) |
+| `Reset Home` | 초기 뷰포인트로 리셋 |
 
-### Object Search (v0.4.0)
+### Object Search
 - 객체 이름, 속성값, SysPath로 검색
 - 검색 결과 자동 3D 선택 연동
 - 검색 결과로 Zoom 기능
 
-### CSV Export (v0.4.0)
+### CSV Export
 | 버튼 | 설명 |
 |------|------|
 | `All Properties` | 전체 모델 속성 내보내기 |
@@ -91,7 +115,7 @@
 
 > Raw CSV + Refined CSV (DisplayString 파싱) 동시 저장
 
-### CSV Viewer (v0.5.0)
+### CSV Viewer
 - 외부 CSV 파일 로드 및 DataGrid 표시
 - **컬럼별 필터링** - 전체 컬럼 또는 특정 컬럼 검색
 - **필터링된 데이터 Export** - 필터 결과를 새 CSV로 저장
@@ -105,6 +129,7 @@
 1. Visual Studio에서 DXTnavis.sln 열고 빌드 (관리자 권한)
 2. Navisworks 2025 실행 → Home 탭 → DXTnavis 클릭
 3. 계층 구조 로드 → 필터링 → 3D 제어
+4. AWP 4D 탭에서 스케줄 CSV 로드 → Execute
 ```
 
 ---
@@ -133,7 +158,7 @@ dotnet build DXTnavis.csproj -c Debug
 ## Development Status
 
 ```
-v0.5.0: [====================] 100% ✅ Released 2026-01-09
+v0.6.0: [====================] 100% ✅ Released 2026-01-11
 ```
 
 | Phase | Feature | Status |
@@ -145,6 +170,7 @@ v0.5.0: [====================] 100% ✅ Released 2026-01-09
 | 5 | ComAPI Research | ✅ 100% |
 | 6 | Code Quality | ✅ 100% |
 | 7 | CSV Viewer | ✅ 100% |
+| 8 | **AWP 4D Automation** | ✅ 100% |
 
 **→ [Changelog](CHANGELOG.md)**
 
@@ -152,6 +178,7 @@ v0.5.0: [====================] 100% ✅ Released 2026-01-09
 
 | Version | Features | Date |
 |:-------:|----------|:----:|
+| **v0.6.0** | **AWP 4D Automation Pipeline** | 2026-01-11 |
 | v0.5.0 | ViewModel Refactoring, CSV Viewer, ComAPI Research | 2026-01-09 |
 | v0.4.x | Auto Filter, Show Only Toggle, Unit Column | 2026-01-09 |
 | v0.4.0 | Object Search, 4종 CSV, Reset Home, Dual Export | 2026-01-08 |
@@ -159,15 +186,15 @@ v0.5.0: [====================] 100% ✅ Released 2026-01-09
 | v0.2.0 | 3D Selection, Visibility Control, Zoom | 2026-01-05 |
 | v0.1.0 | Level Filter, SysPath Filter, TreeView | 2026-01-03 |
 
-### v0.5.0 주요 변경
+### v0.6.0 주요 변경
 
 | Category | Feature | Status |
 |:--------:|---------|:------:|
-| 🔧 Quality | ViewModel 7개 Partial Class 분리 | ✅ |
-| 🔧 Quality | 2213줄 → 각 파일 500줄 이하 | ✅ |
-| 🆕 Feature | CSV Viewer UI (Load/Filter/Export) | ✅ |
-| 🔬 Research | ComAPI Property Write 가능 확인 | ✅ |
-| 📝 Docs | ADR-001 아키텍처 결정 기록 | ✅ |
+| 🆕 AWP 4D | CSV → Property Write → Selection Set → TimeLiner | ✅ |
+| 🆕 AWP 4D | SyncID 기반 ModelItem 자동 매칭 | ✅ |
+| 🆕 AWP 4D | ComAPI Property Write 구현 | ✅ |
+| 🆕 AWP 4D | 한영 컬럼 매핑 CSV 파서 | ✅ |
+| 🆕 AWP 4D | Dry Run / Validation 모드 | ✅ |
 
 ---
 
@@ -181,43 +208,71 @@ dxtnavis/
 ├── Models/
 │   ├── HierarchicalPropertyRecord.cs
 │   ├── TreeNodeModel.cs
-│   └── PropertyInfo.cs
-├── ViewModels/                      # MVVM (Partial Class 패턴)
-│   ├── DXwindowViewModel.cs         # Core (1020줄)
-│   ├── DXwindowViewModel.Filter.cs  # 필터 기능
-│   ├── DXwindowViewModel.Search.cs  # 검색 기능
-│   ├── DXwindowViewModel.Selection.cs # 3D 선택
-│   ├── DXwindowViewModel.Snapshot.cs  # 스냅샷
-│   ├── DXwindowViewModel.Tree.cs    # 트리 조작
-│   ├── DXwindowViewModel.Export.cs  # 내보내기
-│   ├── CsvViewerViewModel.cs        # CSV 뷰어 (v0.5.0)
-│   ├── HierarchyNodeViewModel.cs
-│   └── PropertyItemViewModel.cs
+│   ├── PropertyInfo.cs
+│   ├── ScheduleData.cs          # v0.6.0 - 스케줄 데이터
+│   ├── AWP4DOptions.cs          # v0.6.0 - 파이프라인 옵션
+│   ├── AutomationResult.cs      # v0.6.0 - 실행 결과
+│   └── ValidationResult.cs      # v0.6.0 - 검증 결과
+├── ViewModels/                   # MVVM (Partial Class 패턴)
+│   ├── DXwindowViewModel.cs      # Core
+│   ├── DXwindowViewModel.*.cs    # Partial classes
+│   ├── AWP4DViewModel.cs         # v0.6.0 - AWP 4D ViewModel
+│   ├── CsvViewerViewModel.cs
+│   └── HierarchyNodeViewModel.cs
 ├── Views/
-│   ├── DXwindow.xaml               # 메인 UI + CSV Viewer 탭
-│   └── DXwindow.xaml.cs
+│   └── DXwindow.xaml             # 메인 UI + AWP 4D 탭
 ├── Services/
 │   ├── NavisworksDataExtractor.cs
 │   ├── NavisworksSelectionService.cs
-│   ├── DisplayStringParser.cs
-│   ├── SnapshotService.cs
-│   ├── HierarchyFileWriter.cs
-│   └── PropertyFileWriter.cs
-├── Helpers/
-│   └── RelayCommand.cs
-├── Converters/
-│   └── BoolToVisibilityConverter.cs
+│   ├── PropertyWriteService.cs   # v0.6.0 - ComAPI Property Write
+│   ├── SelectionSetService.cs    # v0.6.0 - Selection Set 생성
+│   ├── TimeLinerService.cs       # v0.6.0 - TimeLiner Task 생성
+│   ├── AWP4DAutomationService.cs # v0.6.0 - 통합 파이프라인
+│   ├── ObjectMatcher.cs          # v0.6.0 - SyncID 매칭
+│   ├── AWP4DValidator.cs         # v0.6.0 - 검증 서비스
+│   └── ScheduleCsvParser.cs      # v0.6.0 - 스케줄 CSV 파서
+├── snapshots/
+│   └── dxtnavis_main_page.png
 ├── docs/
-│   ├── agile/
-│   │   ├── SPRINT-v0.4.0.md
-│   │   └── SPRINT-v0.5.0.md
-│   └── adr/
-│       └── ADR-001-ComAPI-Property-Write.md
+│   ├── phases/
+│   │   └── phase-8-awp-4d-automation.md
+│   └── tech-specs/
+│       └── AWP-4D-Automation-Spec.md
 ├── CHANGELOG.md
 └── DX.cs (Plugin Entry Point)
 ```
 
 </details>
+
+---
+
+## Technical Highlights
+
+### AWP 4D Automation Architecture
+
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────────┐
+│  CSV File   │───▶│ Schedule     │───▶│ Object Matcher  │
+│ (Schedule)  │    │ Parser       │    │ (SyncID → Item) │
+└─────────────┘    └──────────────┘    └────────┬────────┘
+                                                │
+    ┌───────────────────────────────────────────┼───────────────────────────────┐
+    │                                           ▼                               │
+    │  ┌─────────────────┐    ┌─────────────────────┐    ┌──────────────────┐  │
+    │  │ Property Write  │    │ Selection Set       │    │ TimeLiner Task   │  │
+    │  │ (ComAPI)        │    │ Creation            │    │ Creation         │  │
+    │  └─────────────────┘    └─────────────────────┘    └──────────────────┘  │
+    │                                                                           │
+    └───────────────────────── AWP4DAutomationService ──────────────────────────┘
+```
+
+### API Usage Strategy
+
+| 기능 | API | 이유 |
+|------|-----|------|
+| Property Write | ComAPI | .NET API는 Read-Only |
+| Selection Set | .NET API | AddCopy/InsertCopy 메서드 |
+| TimeLiner Task | .NET API | TasksCopyFrom 메서드 |
 
 ---
 
@@ -234,14 +289,13 @@ dxtnavis/
 </details>
 
 <details>
-<summary><b>Error Handling</b></summary>
+<summary><b>ComAPI Property Write</b></summary>
 
 ```csharp
-try {
-    var properties = category.Properties;
-} catch (AccessViolationException) {
-    // 일부 PropertyCategory에서 발생 - skip and continue
-}
+InwOpState10 comState = ComApiBridge.State;
+InwOaPath comPath = ComApiBridge.ToInwOaPath(modelItem);
+InwGUIPropertyNode2 propNode = (InwGUIPropertyNode2)comState.GetGUIPropertyNode(comPath, true);
+propNode.SetUserDefined(0, "CategoryName", "InternalName", propVec);
 ```
 
 </details>
@@ -254,7 +308,8 @@ try {
 <Reference Include="Autodesk.Navisworks.Api"/>
 <Reference Include="Autodesk.Navisworks.Automation"/>
 <Reference Include="Autodesk.Navisworks.ComApi"/>
-<Reference Include="Autodesk.Navisworks.Controls"/>
+<Reference Include="Autodesk.Navisworks.Timeliner"/>
+<Reference Include="Autodesk.Navisworks.Interop.ComApi"/>
 ```
 
 ---
@@ -268,6 +323,6 @@ try {
 
 ---
 
-<sub>Last Updated: 2026-01-09 • v0.5.0</sub>
+<sub>Last Updated: 2026-01-11 • v0.6.0</sub>
 
 </div>
