@@ -159,6 +159,7 @@ dotnet build DXTnavis.csproj -c Debug
 
 ```
 v0.6.0: [====================] 100% ✅ Released 2026-01-11
+v0.7.0: [███                 ] 15% 🔄 In Progress
 ```
 
 | Phase | Feature | Status |
@@ -170,7 +171,8 @@ v0.6.0: [====================] 100% ✅ Released 2026-01-11
 | 5 | ComAPI Research | ✅ 100% |
 | 6 | Code Quality | ✅ 100% |
 | 7 | CSV Viewer | ✅ 100% |
-| 8 | **AWP 4D Automation** | ✅ 100% |
+| 8 | AWP 4D Automation | ✅ 100% |
+| 9 | **UI Enhancement v2** | 🔄 15% |
 
 **→ [Changelog](CHANGELOG.md)**
 
@@ -185,6 +187,25 @@ v0.6.0: [====================] 100% ✅ Released 2026-01-11
 | v0.3.0 | Tree Expand/Collapse, Level Badges | 2026-01-06 |
 | v0.2.0 | 3D Selection, Visibility Control, Zoom | 2026-01-05 |
 | v0.1.0 | Level Filter, SysPath Filter, TreeView | 2026-01-03 |
+
+### v0.7.0 로드맵 (UI Enhancement v2)
+
+| Category | Feature | Status |
+|:--------:|---------|:------:|
+| 🔄 UI | Select All 체크박스 (전체 선택/해제) | 📋 Planned |
+| 🔄 UI | 객체별 그룹화 표시 (Expander) | 📋 Planned |
+| 🔄 UI | 카테고리별 하위 그룹화 | 📋 Planned |
+| 🔄 UI | Expand/Collapse All 버튼 | 📋 Planned |
+| 🔄 Test | AWP 4D 테스트 CSV 샘플 | 📋 Planned |
+
+**목표 UI**:
+```
+▼ Wall-1 (2 categories, 15 properties)
+  └ ▼ Item (5 properties)
+      ├ ☐ Name: Wall-1
+      └ ☐ Type: Wall
+  └ ▶ Dimensions (10 properties) [collapsed]
+```
 
 ### v0.6.0 주요 변경
 
@@ -235,7 +256,8 @@ dxtnavis/
 │   └── dxtnavis_main_page.png
 ├── docs/
 │   ├── phases/
-│   │   └── phase-8-awp-4d-automation.md
+│   │   ├── phase-8-awp-4d-automation.md
+│   │   └── phase-9-ui-enhancement.md    # v0.7.0
 │   └── tech-specs/
 │       └── AWP-4D-Automation-Spec.md
 ├── CHANGELOG.md
@@ -323,6 +345,6 @@ propNode.SetUserDefined(0, "CategoryName", "InternalName", propVec);
 
 ---
 
-<sub>Last Updated: 2026-01-11 • v0.6.0</sub>
+<sub>Last Updated: 2026-01-12 • v0.7.0-dev</sub>
 
 </div>
