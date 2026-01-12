@@ -50,6 +50,9 @@ namespace DXTnavis.ViewModels
             OnPropertyChanged(nameof(SelectedPropertiesCount));
             ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
             RefreshSelectionCommands();
+
+            // v0.7.0: Update grouped view
+            UpdateGroupedPropertiesView();
         }
 
         /// <summary>
@@ -87,6 +90,9 @@ namespace DXTnavis.ViewModels
             OnPropertyChanged(nameof(SelectedPropertiesCount));
             ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
             RefreshSelectionCommands();
+
+            // v0.7.0: Update grouped view
+            UpdateGroupedPropertiesView();
         }
 
         /// <summary>
@@ -138,6 +144,9 @@ namespace DXTnavis.ViewModels
 
             StatusMessage = $"Loaded: {AllHierarchicalProperties.Count} items";
             RefreshSelectionCommands();
+
+            // v0.7.0: Update grouped view
+            UpdateGroupedPropertiesView();
         }
 
         #endregion

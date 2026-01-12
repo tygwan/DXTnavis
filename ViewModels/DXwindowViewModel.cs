@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using Autodesk.Navisworks.Api;
 using DXTnavis.Helpers;
@@ -58,6 +59,14 @@ namespace DXTnavis.ViewModels
         // Object Search (v0.4.0)
         private string _objectSearchQuery;
 
+        // Select All (v0.7.0 Phase 9)
+        private bool _isAllSelected;
+        private bool _isUpdatingSelectAll;
+
+        // Group View (v0.7.0 Phase 9)
+        private bool _isGroupViewEnabled = true;
+        private ICollectionView _groupedPropertiesView;
+
         #endregion
 
         #region Properties
@@ -71,6 +80,86 @@ namespace DXTnavis.ViewModels
         /// AWP 4D Automation ViewModel (Phase 8)
         /// </summary>
         public AWP4DViewModel AWP4D { get; }
+
+        /// <summary>
+        /// 전체 선택 상태 (v0.7.0 Phase 9)
+        /// </summary>
+        public bool IsAllSelected
+        {
+            get => _isAllSelected;
+            set
+            {
+                if (_isAllSelected != value)
+                {
+                    _isAllSelected = value;
+                    OnPropertyChanged(nameof(IsAllSelected));
+
+                    // Avoid infinite loop when updating from individual checkbox changes
+                    if (!_isUpdatingSelectAll)
+                    {
+                        SelectAllProperties(value);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 그룹 뷰 활성화 여부 (v0.7.0 Phase 9)
+        /// </summary>
+        public bool IsGroupViewEnabled
+        {
+            get => _isGroupViewEnabled;
+            set
+            {
+                if (_isGroupViewEnabled != value)
+                {
+                    _isGroupViewEnabled = value;
+                    OnPropertyChanged(nameof(IsGroupViewEnabled));
+                    OnPropertyChanged(nameof(GroupExpandCollapseText));
+                    UpdateGroupedPropertiesView();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 그룹화된 속성 뷰 (v0.7.0 Phase 9)
+        /// CollectionViewSource를 통해 Object/Category별 그룹화 제공
+        /// </summary>
+        public ICollectionView GroupedPropertiesView
+        {
+            get
+            {
+                if (_groupedPropertiesView == null)
+                {
+                    UpdateGroupedPropertiesView();
+                }
+                return _groupedPropertiesView;
+            }
+        }
+
+        /// <summary>
+        /// 그룹 확장/축소 상태 텍스트 (v0.7.0)
+        /// </summary>
+        public string GroupExpandCollapseText
+        {
+            get
+            {
+                if (!_isGroupViewEnabled)
+                    return "";
+
+                int objectCount = FilteredHierarchicalProperties
+                    .Select(p => p.DisplayName)
+                    .Distinct()
+                    .Count();
+
+                int categoryCount = FilteredHierarchicalProperties
+                    .Select(p => $"{p.DisplayName}|{p.Category}")
+                    .Distinct()
+                    .Count();
+
+                return $"({objectCount} objects, {categoryCount} groups)";
+            }
+        }
 
         /// <summary>
         /// UI에 표시될 속성 목록
@@ -392,6 +481,10 @@ namespace DXTnavis.ViewModels
         public ICommand ClearSearchCommand { get; }
         public ICommand ZoomToSearchResultCommand { get; }
 
+        // Select All Command (v0.7.0 Phase 9)
+        public ICommand SelectAllCommand { get; }
+        public ICommand DeselectAllCommand { get; }
+
         #endregion
 
         #region Constructor
@@ -571,6 +664,15 @@ namespace DXTnavis.ViewModels
             ZoomToSearchResultCommand = new RelayCommand(
                 execute: _ => ZoomToSearchResult(),
                 canExecute: _ => FilteredHierarchicalProperties.Count > 0 && FilteredHierarchicalProperties.Count <= 100);
+
+            // v0.7.0: Select All / Deselect All commands
+            SelectAllCommand = new RelayCommand(
+                execute: _ => SelectAllProperties(true),
+                canExecute: _ => FilteredHierarchicalProperties.Count > 0);
+
+            DeselectAllCommand = new RelayCommand(
+                execute: _ => SelectAllProperties(false),
+                canExecute: _ => FilteredHierarchicalProperties.Any(p => p.IsSelected));
         }
 
         private void OnPropertyRecordChanged(object sender, PropertyChangedEventArgs e)
@@ -582,7 +684,89 @@ namespace DXTnavis.ViewModels
 
                 // 체크박스 선택이 변경되었으니, CreateSearchSetCommand의 CanExecute를 다시 평가
                 ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
+
+                // v0.7.0: Update IsAllSelected state based on current selections
+                UpdateSelectAllState();
             }
+        }
+
+        /// <summary>
+        /// 전체 선택/해제 (v0.7.0 Phase 9)
+        /// </summary>
+        private void SelectAllProperties(bool selectAll)
+        {
+            _isUpdatingSelectAll = true;
+            try
+            {
+                foreach (var prop in FilteredHierarchicalProperties)
+                {
+                    prop.IsSelected = selectAll;
+                }
+
+                _isAllSelected = selectAll;
+                OnPropertyChanged(nameof(IsAllSelected));
+                OnPropertyChanged(nameof(SelectedPropertiesCount));
+                OnPropertyChanged(nameof(SelectedPropertyInfo));
+
+                // Update command states
+                ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)SelectAllCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)DeselectAllCommand).RaiseCanExecuteChanged();
+            }
+            finally
+            {
+                _isUpdatingSelectAll = false;
+            }
+        }
+
+        /// <summary>
+        /// IsAllSelected 상태 업데이트 (개별 체크박스 변경 시)
+        /// </summary>
+        private void UpdateSelectAllState()
+        {
+            if (_isUpdatingSelectAll) return;
+
+            _isUpdatingSelectAll = true;
+            try
+            {
+                var totalCount = FilteredHierarchicalProperties.Count;
+                var selectedCount = FilteredHierarchicalProperties.Count(p => p.IsSelected);
+
+                // All selected → true, none selected → false, partial → false
+                _isAllSelected = totalCount > 0 && selectedCount == totalCount;
+                OnPropertyChanged(nameof(IsAllSelected));
+
+                // Update command states
+                ((RelayCommand)SelectAllCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)DeselectAllCommand).RaiseCanExecuteChanged();
+            }
+            finally
+            {
+                _isUpdatingSelectAll = false;
+            }
+        }
+
+        /// <summary>
+        /// GroupedPropertiesView 업데이트 (v0.7.0 Phase 9)
+        /// IsGroupViewEnabled 상태에 따라 그룹화 여부 결정
+        /// </summary>
+        private void UpdateGroupedPropertiesView()
+        {
+            var cvs = new CollectionViewSource
+            {
+                Source = FilteredHierarchicalProperties
+            };
+
+            if (_isGroupViewEnabled)
+            {
+                // 2-level grouping: DisplayName (Object) → Category
+                cvs.GroupDescriptions.Add(new PropertyGroupDescription("DisplayName"));
+                cvs.GroupDescriptions.Add(new PropertyGroupDescription("Category"));
+            }
+
+            _groupedPropertiesView = cvs.View;
+            OnPropertyChanged(nameof(GroupedPropertiesView));
+            OnPropertyChanged(nameof(GroupExpandCollapseText));
         }
 
 

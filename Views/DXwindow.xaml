@@ -77,6 +77,59 @@
             <Setter Property="Foreground" Value="#666666"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
+
+        <!-- v0.7.0: CollectionViewSource for Grouped Property Display -->
+        <CollectionViewSource x:Key="GroupedPropertiesSource"
+                              Source="{Binding FilteredHierarchicalProperties}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="DisplayName"/>
+                <PropertyGroupDescription PropertyName="Category"/>
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+
+        <!-- v0.7.0: Group Header Style (Level 1 - Object) -->
+        <Style x:Key="ObjectGroupHeaderStyle" TargetType="GroupItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupItem">
+                        <Expander IsExpanded="True" Background="#E8F4FC" BorderBrush="#B8D4E8" BorderThickness="1" Margin="0,2,0,0">
+                            <Expander.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📦 " FontSize="12"/>
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="12" Foreground="#0078D4"/>
+                                    <TextBlock Text=" (" Foreground="#666" FontSize="11"/>
+                                    <TextBlock Text="{Binding ItemCount}" Foreground="#666" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock Text=" properties)" Foreground="#666" FontSize="11"/>
+                                </StackPanel>
+                            </Expander.Header>
+                            <ItemsPresenter Margin="15,4,0,4"/>
+                        </Expander>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- v0.7.0: Group Header Style (Level 2 - Category) -->
+        <Style x:Key="CategoryGroupHeaderStyle" TargetType="GroupItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupItem">
+                        <Expander IsExpanded="True" Background="#F5F5F5" BorderBrush="#DDD" BorderThickness="1" Margin="0,1,0,0">
+                            <Expander.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📁 " FontSize="11"/>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="11" Foreground="#444"/>
+                                    <TextBlock Text=" (" Foreground="#888" FontSize="10"/>
+                                    <TextBlock Text="{Binding ItemCount}" Foreground="#888" FontSize="10"/>
+                                    <TextBlock Text=")" Foreground="#888" FontSize="10"/>
+                                </StackPanel>
+                            </Expander.Header>
+                            <ItemsPresenter Margin="10,2,0,2"/>
+                        </Expander>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="10">
@@ -346,43 +399,137 @@
                 </Grid>
             </Border>
 
-            <!-- DataGrid -->
+            <!-- DataGrid with Select All Toolbar (v0.7.0) -->
             <Border Grid.Row="3" BorderBrush="#DDDDDD" BorderThickness="1" Background="White">
-                <DataGrid x:Name="HierarchyDataGrid"
-                          ItemsSource="{Binding FilteredHierarchicalProperties}"
-                          AutoGenerateColumns="False"
-                          SelectionMode="Extended"
-                          SelectionUnit="FullRow"
-                          AlternatingRowBackground="#FAFAFA"
-                          RowBackground="White"
-                          ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
-                          GridLinesVisibility="Horizontal"
-                          BorderThickness="0"
-                          CanUserAddRows="False">
-                    <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Header="✓"
-                                                Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                Width="35"/>
-                        <DataGridTextColumn Header="Level"
-                                            Binding="{Binding Level}"
-                                            Width="50" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Object"
-                                            Binding="{Binding DisplayName}"
-                                            Width="130" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Category"
-                                            Binding="{Binding Category}"
-                                            Width="100" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Property"
-                                            Binding="{Binding PropertyName}"
-                                            Width="100" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Value"
-                                            Binding="{Binding PropertyValue}"
-                                            Width="*" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Unit"
-                                            Binding="{Binding Unit}"
-                                            Width="60" IsReadOnly="True"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Select All Toolbar (v0.7.0 Phase 9) -->
+                    <Border Grid.Row="0" Background="#F0F4F8" Padding="6,4" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Select All Checkbox -->
+                            <CheckBox Grid.Column="0"
+                                      Content="Select All"
+                                      IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
+                                      VerticalAlignment="Center"
+                                      FontWeight="SemiBold"
+                                      Margin="0,0,12,0"
+                                      ToolTip="전체 선택/해제 (필터링된 항목만)"/>
+
+                            <!-- Select/Deselect Buttons -->
+                            <Button Grid.Column="1"
+                                    Content="☑ All"
+                                    Style="{StaticResource FilterButton}"
+                                    Command="{Binding SelectAllCommand}"
+                                    ToolTip="모든 항목 선택"
+                                    Width="50"
+                                    Margin="0,0,4,0"/>
+                            <Button Grid.Column="2"
+                                    Content="☐ None"
+                                    Style="{StaticResource FilterButton}"
+                                    Command="{Binding DeselectAllCommand}"
+                                    ToolTip="모든 항목 선택 해제"
+                                    Width="55"
+                                    Margin="0,0,16,0"/>
+
+                            <!-- Separator -->
+                            <Border Grid.Column="3" Width="1" Background="#CCC" Margin="0,2"/>
+
+                            <!-- Group View Toggle (v0.7.0) -->
+                            <CheckBox Grid.Column="4"
+                                      Content="Group View"
+                                      IsChecked="{Binding IsGroupViewEnabled, Mode=TwoWay}"
+                                      VerticalAlignment="Center"
+                                      FontWeight="SemiBold"
+                                      Margin="12,0,8,0"
+                                      ToolTip="객체/카테고리별 그룹화 표시"/>
+
+                            <!-- Expand/Collapse Indicator -->
+                            <TextBlock Grid.Column="5"
+                                       Text="{Binding GroupExpandCollapseText}"
+                                       VerticalAlignment="Center"
+                                       Foreground="#888"
+                                       FontSize="10"
+                                       Margin="0,0,8,0"
+                                       Visibility="{Binding IsGroupViewEnabled, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            <!-- Selection Count -->
+                            <TextBlock Grid.Column="7"
+                                       Text="{Binding SelectedPropertiesCount}"
+                                       VerticalAlignment="Center"
+                                       Foreground="#666"
+                                       FontSize="11"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- DataGrid (v0.7.0: with GroupStyle support) -->
+                    <DataGrid Grid.Row="1"
+                              x:Name="HierarchyDataGrid"
+                              ItemsSource="{Binding GroupedPropertiesView}"
+                              AutoGenerateColumns="False"
+                              SelectionMode="Extended"
+                              SelectionUnit="FullRow"
+                              AlternatingRowBackground="#FAFAFA"
+                              RowBackground="White"
+                              ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
+                              GridLinesVisibility="Horizontal"
+                              BorderThickness="0"
+                              CanUserAddRows="False"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling"
+                              EnableRowVirtualization="True">
+                        <!-- v0.7.0: GroupStyle for hierarchical display -->
+                        <DataGrid.GroupStyle>
+                            <!-- Level 1: Object (DisplayName) -->
+                            <GroupStyle ContainerStyle="{StaticResource ObjectGroupHeaderStyle}">
+                                <GroupStyle.Panel>
+                                    <ItemsPanelTemplate>
+                                        <DataGridRowsPresenter/>
+                                    </ItemsPanelTemplate>
+                                </GroupStyle.Panel>
+                            </GroupStyle>
+                            <!-- Level 2: Category -->
+                            <GroupStyle ContainerStyle="{StaticResource CategoryGroupHeaderStyle}">
+                                <GroupStyle.Panel>
+                                    <ItemsPanelTemplate>
+                                        <DataGridRowsPresenter/>
+                                    </ItemsPanelTemplate>
+                                </GroupStyle.Panel>
+                            </GroupStyle>
+                        </DataGrid.GroupStyle>
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="✓"
+                                                    Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="35"/>
+                            <DataGridTextColumn Header="Level"
+                                                Binding="{Binding Level}"
+                                                Width="50" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Property"
+                                                Binding="{Binding PropertyName}"
+                                                Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Value"
+                                                Binding="{Binding PropertyValue}"
+                                                Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Unit"
+                                                Binding="{Binding Unit}"
+                                                Width="60" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </Border>
 
             <!-- 내보내기 및 3D 선택 버튼 -->
