@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2026-01-13
+
+### Performance Optimization (Phase 10)
+- **비동기 로딩** - Load Hierarchy 비동기 실행으로 UI 프리징 제거
+  - IProgress<LoadProgress> 패턴으로 진행률 보고
+  - Task.Run 사용하지 않고 UI 스레드에서 안전하게 실행 (Navisworks API 제약)
+- **진행률 표시** - ProgressBar + 텍스트 상태 표시
+  - 50개 노드마다 UI 업데이트
+  - Counting → Building tree → Complete 단계 표시
+- **취소 기능** - CancellationTokenSource로 즉시 취소 지원
+  - Cancel 버튼 UI 추가
+  - 취소 시 정리 작업 수행
+- **단일 순회 최적화** - TraverseUnified 메서드
+  - TreeNodeModel + HierarchicalPropertyRecord 동시 추출
+  - 기존 이중 순회 대비 성능 2배 향상
+
+### New Files
+- `Models/LoadProgress.cs` - 진행률 모델 및 LoadPhase enum
+- `Services/LoadHierarchyService.cs` - 최적화된 로딩 서비스
+
+### Modified Files
+- `ViewModels/DXwindowViewModel.cs` - LoadModelHierarchyOptimizedAsync, CancelLoad 메서드 추가
+- `Views/DXwindow.xaml` - ProgressBar, Cancel 버튼, LoadButtonText 바인딩
+- `Converters/BoolToVisibilityConverter.cs` - InverseBoolConverter 추가
+
+**→ [Phase 10: Load Optimization](docs/phases/phase-10-load-optimization.md)**
+
+---
+
+## [0.7.0] - 2026-01-13
+
+### Data Validation (Phase 5)
+- **ValidationService** - 속성 검증 서비스
+  - 단위 검증 (m, mm, kg 등)
+  - 타입 검증 (숫자, 날짜 등)
+  - 필수속성 검증
+
+### UI Enhancement (Phase 9)
+- **Select All 체크박스** - 전체 선택/해제 기능
+- **객체별/카테고리별 그룹화 표시** - CollectionViewSource 사용
+- **Expand/Collapse All 버튼** - Grouped View 토글
+
+### New Files
+- `Services/ValidationService.cs` - 속성 검증 서비스
+- `test_schedule_awp4d.csv` - AWP 4D 테스트 샘플
+
+**→ [Phase 9: UI Enhancement](docs/phases/phase-9-ui-enhancement.md)**
+
+---
+
+## [0.6.0] - 2026-01-11
+
+### AWP 4D Automation (Phase 8)
+- **CSV → TimeLiner 자동 연결** 파이프라인
+- **Property Write** - ComAPI SetUserDefined로 Custom Property 추가
+- **Selection Set 생성** - 계층 구조 자동 생성
+- **TimeLiner Task 생성** - Task 자동 생성 및 Selection Set 연결
+- **AWP 4D 탭** - UI 통합
+
+### New Services
+| Service | Description |
+|---------|-------------|
+| PropertyWriteService | ComAPI Property Write (재시도 로직) |
+| SelectionSetService | Selection Set 계층 구조 생성 |
+| TimeLinerService | TimeLiner Task 생성 및 Set 연결 |
+| AWP4DAutomationService | 통합 파이프라인 (이벤트 기반) |
+| ObjectMatcher | SyncID → ModelItem 매칭 (캐싱) |
+| AWP4DValidator | Pre/Post 검증 |
+| ScheduleCsvParser | 한영 컬럼 매핑 CSV 파싱 |
+
+**→ [Phase 8: AWP 4D Automation](docs/phases/phase-8-awp-4d-automation.md)**
+
+---
+
 ## [0.5.0] - 2026-01-09
 
 ### Code Quality

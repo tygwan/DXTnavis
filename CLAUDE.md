@@ -1,7 +1,7 @@
 # DXTnavis - Navisworks 2025 Property Viewer Plugin
 
 > **Context:** Standalone Navisworks plugin for property viewing and 3D control
-> **Version:** 0.7.0 (Released 2026-01-13)
+> **Version:** 0.8.0 (Released 2026-01-13)
 > **Docs Index:** [docs/_INDEX.md](docs/_INDEX.md)
 
 ## Quick Reference
@@ -24,32 +24,32 @@
 | 7 | CSV Viewer | ✅ 100% |
 | 8 | AWP 4D Automation | ✅ 100% |
 | 9 | UI Enhancement v2 | ✅ 100% |
-| **10** | **Load Optimization** | 📋 Planning |
+| **10** | **Load Optimization** | ✅ 100% |
 
 **→ Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## v0.8.0 Load Optimization (NEXT)
+## v0.8.0 Load Optimization (CURRENT)
 
-### Problem
-- UI 블로킹: 동기 실행으로 UI 프리징
-- 이중 순회: TreeNodeModel과 HierarchicalPropertyRecord 별도 생성
-- 진행률 없음: 로딩 중 피드백 부재
+### Features ✅
+- [x] **비동기 로딩** - IProgress<LoadProgress> 패턴으로 UI 프리징 제거
+- [x] **진행률 표시** - ProgressBar + 텍스트 상태 표시
+- [x] **취소 기능** - CancellationToken으로 즉시 취소
+- [x] **단일 순회 최적화** - TreeNodeModel + HierarchicalPropertyRecord 동시 추출
 
-### Planned Features
-- [ ] 비동기 로딩 (Task.Run + IProgress)
-- [ ] 진행률 표시 (ProgressBar)
-- [ ] 취소 기능 (CancellationToken)
-- [ ] 단일 순회 최적화
-- [ ] TreeView 가상화
+### New Files (Phase 10)
+| File | Description |
+|------|-------------|
+| LoadProgress.cs | 진행률 모델 및 LoadPhase enum |
+| LoadHierarchyService.cs | 최적화된 로딩 서비스 (단일 순회) |
 
 ### Key Documents
 - [Phase 10: Load Optimization](docs/phases/phase-10-load-optimization.md)
 
 ---
 
-## v0.7.0 Data Validation & UI (CURRENT)
+## v0.7.0 Data Validation & UI
 
 ### Features ✅
 - [x] **ValidationService** - 단위/타입/필수속성 검증

@@ -146,6 +146,7 @@
     <Compile Include="Models\AWP4DOptions.cs" />
     <Compile Include="Models\AutomationResult.cs" />
     <Compile Include="Models\ValidationResult.cs" />
+    <Compile Include="Models\LoadProgress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\FullModelExporterService.cs" />
     <Compile Include="Services\PropertyFileWriter.cs" />
@@ -163,6 +164,7 @@
     <Compile Include="Services\AWP4DAutomationService.cs" />
     <Compile Include="Services\AWP4DValidator.cs" />
     <Compile Include="Services\ValidationService.cs" />
+    <Compile Include="Services\LoadHierarchyService.cs" />
     <Compile Include="ViewModels\AWP4DViewModel.cs" />
     <Compile Include="ViewModels\CsvViewerViewModel.cs" />
     <Compile Include="ViewModels\DXwindowViewModel.cs" />

@@ -54,6 +54,13 @@ namespace DXTnavis.ViewModels
         private readonly SnapshotService _snapshotService;
         private readonly ValidationService _validationService; // Phase 5
 
+        // Load Hierarchy Service (Phase 10)
+        private readonly LoadHierarchyService _loadHierarchyService;
+        private System.Threading.CancellationTokenSource _loadCts;
+        private bool _isLoadingHierarchy;
+        private double _loadProgressPercentage;
+        private string _loadProgressText;
+
         // Tree Expand/Collapse (Phase 2)
         private int _selectedExpandLevel;
 
@@ -440,6 +447,52 @@ namespace DXTnavis.ViewModels
             }
         }
 
+        /// <summary>
+        /// 계층 구조 로딩 중 여부 (Phase 10)
+        /// </summary>
+        public bool IsLoadingHierarchy
+        {
+            get => _isLoadingHierarchy;
+            set
+            {
+                _isLoadingHierarchy = value;
+                OnPropertyChanged(nameof(IsLoadingHierarchy));
+                OnPropertyChanged(nameof(LoadButtonText));
+                ((RelayCommand)CancelLoadCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+
+        /// <summary>
+        /// 로딩 진행률 (0-100) (Phase 10)
+        /// </summary>
+        public double LoadProgressPercentage
+        {
+            get => _loadProgressPercentage;
+            set
+            {
+                _loadProgressPercentage = value;
+                OnPropertyChanged(nameof(LoadProgressPercentage));
+            }
+        }
+
+        /// <summary>
+        /// 로딩 진행 상태 텍스트 (Phase 10)
+        /// </summary>
+        public string LoadProgressText
+        {
+            get => _loadProgressText;
+            set
+            {
+                _loadProgressText = value;
+                OnPropertyChanged(nameof(LoadProgressText));
+            }
+        }
+
+        /// <summary>
+        /// Load 버튼 텍스트 (Phase 10)
+        /// </summary>
+        public string LoadButtonText => IsLoadingHierarchy ? "Loading..." : "Load Hierarchy";
+
         #endregion
 
         #region Commands
@@ -453,6 +506,7 @@ namespace DXTnavis.ViewModels
         public ICommand ExportSelectionHierarchyCommand { get; }  // Selection × Hierarchy
         public ICommand CreateSearchSetCommand { get; }
         public ICommand LoadHierarchyCommand { get; }
+        public ICommand CancelLoadCommand { get; }  // Phase 10
         public ICommand ApplyFilterCommand { get; }
         public ICommand ClearFilterCommand { get; }
 
@@ -514,6 +568,10 @@ namespace DXTnavis.ViewModels
 
             // Validation Service 초기화 (Phase 5)
             _validationService = new ValidationService();
+
+            // Load Hierarchy Service 초기화 (Phase 10)
+            _loadHierarchyService = new LoadHierarchyService();
+            _loadProgressText = "Ready";
 
             // CSV Viewer 초기화 (v0.5.0)
             CsvViewer = new CsvViewerViewModel();
@@ -594,7 +652,12 @@ namespace DXTnavis.ViewModels
                 canExecute: _ => FilteredHierarchicalProperties.Any(p => p.IsSelected));
 
             LoadHierarchyCommand = new AsyncRelayCommand(
-                execute: async _ => await LoadModelHierarchyAsync());
+                execute: async _ => await LoadModelHierarchyOptimizedAsync(),
+                canExecute: _ => !IsLoadingHierarchy);
+
+            CancelLoadCommand = new RelayCommand(
+                execute: _ => CancelLoad(),
+                canExecute: _ => IsLoadingHierarchy);
 
             ApplyFilterCommand = new RelayCommand(
                 execute: _ => ApplyFilter());
@@ -978,8 +1041,146 @@ namespace DXTnavis.ViewModels
         }
 
         /// <summary>
-        /// 모델 전체 계층 구조를 TreeView로 로드
+        /// 모델 전체 계층 구조를 TreeView로 로드 (Phase 10 최적화 버전)
+        /// - 비동기 로딩 with 진행률 표시
+        /// - 취소 기능 지원
+        /// - 단일 순회 최적화
+        /// </summary>
+        private async Task LoadModelHierarchyOptimizedAsync()
+        {
+            // 이미 로딩 중이면 무시
+            if (IsLoadingHierarchy) return;
+
+            try
+            {
+                // 로딩 상태 시작
+                IsLoadingHierarchy = true;
+                LoadProgressPercentage = 0;
+                LoadProgressText = "Initializing...";
+                ExportStatusMessage = "모델 계층 구조 로딩 중...";
+
+                // CancellationTokenSource 생성
+                _loadCts?.Cancel();
+                _loadCts?.Dispose();
+                _loadCts = new System.Threading.CancellationTokenSource();
+
+                // 진행률 보고 핸들러
+                var progress = new Progress<LoadProgress>(p =>
+                {
+                    LoadProgressPercentage = p.Percentage;
+                    LoadProgressText = p.ProgressText;
+                });
+
+                // 비동기 로딩 실행
+                var result = await _loadHierarchyService.LoadHierarchyAsync(progress, _loadCts.Token);
+
+                // 취소된 경우
+                if (result.IsCancelled)
+                {
+                    LoadProgressText = "Cancelled";
+                    StatusMessage = "Loading cancelled by user";
+                    return;
+                }
+
+                // 오류 발생 시
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    MessageBox.Show(result.ErrorMessage, "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // 데이터가 없는 경우
+                if (result.TotalNodeCount == 0)
+                {
+                    MessageBox.Show("모델에서 데이터를 추출할 수 없습니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // UI 업데이트 (TreeView)
+                LoadProgressText = "Updating UI...";
+                ObjectHierarchyRoot.Clear();
+                foreach (var treeNode in result.TreeNodes)
+                {
+                    ObjectHierarchyRoot.Add(treeNode);
+                }
+
+                // TreeView 선택 이벤트 구독
+                SubscribeTreeNodeEvents(result.TreeNodes);
+
+                // 속성 데이터 업데이트
+                AllHierarchicalProperties.Clear();
+                foreach (var record in result.Properties)
+                {
+                    AllHierarchicalProperties.Add(record);
+                }
+
+                // FilteredHierarchicalProperties 동기화
+                SyncFilteredProperties();
+
+                // 트리 명령 갱신 (Phase 2)
+                RefreshTreeCommands();
+
+                // 기본적으로 Level 2까지 확장
+                ExpandTreeToLevel(SelectedExpandLevel);
+
+                // 완료 메시지
+                ExportStatusMessage = "Hierarchy loaded!";
+                LoadProgressText = $"Complete: {result.TotalNodeCount:N0} nodes, {result.TotalPropertyCount:N0} properties";
+                StatusMessage = $"Loaded: {result.TotalPropertyCount:N0} properties from {result.TotalNodeCount:N0} nodes";
+            }
+            catch (OperationCanceledException)
+            {
+                LoadProgressText = "Cancelled";
+                StatusMessage = "Loading cancelled";
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = $"❌ 오류: {ex.Message}";
+                LoadProgressText = "Error";
+                MessageBox.Show(
+                    $"계층 구조 로드 중 오류가 발생했습니다:\n\n{ex.Message}",
+                    "오류",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoadingHierarchy = false;
+                ((RelayCommand)LoadHierarchyCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+
+        /// <summary>
+        /// 로딩 취소 (Phase 10)
+        /// </summary>
+        private void CancelLoad()
+        {
+            if (_loadCts != null && !_loadCts.IsCancellationRequested)
+            {
+                _loadCts.Cancel();
+                LoadProgressText = "Cancelling...";
+            }
+        }
+
+        /// <summary>
+        /// TreeNode 이벤트 구독 (재귀)
+        /// </summary>
+        private void SubscribeTreeNodeEvents(IEnumerable<TreeNodeModel> nodes)
+        {
+            foreach (var node in nodes)
+            {
+                node.PropertyChanged += OnTreeNodeSelectionChanged;
+                if (node.Children?.Count > 0)
+                {
+                    SubscribeTreeNodeEvents(node.Children);
+                }
+            }
+        }
+
+        /// <summary>
+        /// [Legacy] 모델 전체 계층 구조를 TreeView로 로드
         /// v0.4.1: ModelItem 계층 구조를 직접 사용하여 모든 레벨 노드 포함
+        /// Note: Phase 10에서 LoadModelHierarchyOptimizedAsync로 대체됨
         /// </summary>
         private Task LoadModelHierarchyAsync()
         {

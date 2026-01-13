@@ -12,6 +12,7 @@
 
     <Window.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
 
         <!-- 기본 버튼 스타일 -->
         <Style x:Key="ActionButton" TargetType="Button">
@@ -261,11 +262,43 @@
                 </TreeView>
             </Border>
 
-            <!-- 버튼 -->
+            <!-- 버튼 및 진행률 (Phase 10) -->
             <StackPanel Grid.Row="2" Margin="0,8,0,0">
-                <Button Content="📂 Load Hierarchy"
-                        Style="{StaticResource ActionButton}"
-                        Command="{Binding LoadHierarchyCommand}"/>
+                <!-- Load/Cancel 버튼 -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Content="{Binding LoadButtonText}"
+                            Style="{StaticResource ActionButton}"
+                            Command="{Binding LoadHierarchyCommand}"
+                            IsEnabled="{Binding IsLoadingHierarchy, Converter={StaticResource InverseBoolConverter}}"/>
+
+                    <Button Grid.Column="1"
+                            Content="⏹ Cancel"
+                            Style="{StaticResource FilterButton}"
+                            Command="{Binding CancelLoadCommand}"
+                            Width="70"
+                            Visibility="{Binding IsLoadingHierarchy, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </Grid>
+
+                <!-- 진행률 표시 (Phase 10) -->
+                <Border Background="#F0F4F8" Padding="8" Margin="0,6,0,0" CornerRadius="3"
+                        Visibility="{Binding IsLoadingHierarchy, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <ProgressBar Value="{Binding LoadProgressPercentage}"
+                                     Minimum="0" Maximum="100"
+                                     Height="16"
+                                     Foreground="#0078D4"/>
+                        <TextBlock Text="{Binding LoadProgressText}"
+                                   FontSize="10" Foreground="#666666"
+                                   Margin="0,4,0,0"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </Grid>
 

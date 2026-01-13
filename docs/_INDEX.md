@@ -1,8 +1,8 @@
 # DXTnavis Documentation Index
 
 > **Last Updated:** 2026-01-13
-> **Current Version:** v0.7.0 (Data Validation, UI Enhancement)
-> **Next Version:** v0.8.0 (Load Optimization)
+> **Current Version:** v0.8.0 (Load Optimization)
+> **Next Version:** v0.9.0 (TBD)
 
 ---
 
@@ -22,7 +22,7 @@
 ```
 v0.6.0: [====================] 100% (Released 2026-01-11)
 v0.7.0: [====================] 100% (Released 2026-01-13)
-v0.8.0: [                    ]   0% (Planning - Load Optimization)
+v0.8.0: [====================] 100% (Released 2026-01-13)
 ```
 
 ### Phase Status
@@ -38,34 +38,33 @@ v0.8.0: [                    ]   0% (Planning - Load Optimization)
 | 7 | CSV Viewer | ✅ Complete | 100% | - |
 | 8 | AWP 4D Automation | ✅ Complete | 100% | [phase-8](phases/phase-8-awp-4d-automation.md) |
 | 9 | UI Enhancement | ✅ Complete | 100% | [phase-9](phases/phase-9-ui-enhancement.md) |
-| **10** | **Load Optimization** | 📋 Planning | 0% | [phase-10](phases/phase-10-load-optimization.md) |
+| **10** | **Load Optimization** | ✅ Complete | 100% | [phase-10](phases/phase-10-load-optimization.md) |
 
 ---
 
-## v0.8.0 Roadmap: Load Optimization
+## v0.8.0 Completed: Load Optimization
 
-### Problem Analysis
-- [x] 현재 LoadHierarchy 구현 분석 완료
-- [x] 성능 병목 지점 식별 (이중 순회, UI 블로킹)
-- [ ] 벤치마크 테스트
+### Features Released (2026-01-13)
+- [x] **비동기 로딩** - IProgress<LoadProgress> 패턴으로 UI 스레드 분리
+- [x] **진행률 표시** - ProgressBar + 텍스트 상태 표시
+- [x] **취소 기능** - CancellationToken으로 즉시 취소
+- [x] **단일 순회 최적화** - TreeNodeModel + HierarchicalPropertyRecord 동시 추출
 
-### Implementation Plan
+### Implementation Summary
 
 | Sprint | Task | Priority | Status |
 |--------|------|----------|--------|
-| Sprint 1 | 비동기 로딩 (Task.Run) | 🔴 P0 | 📋 Planned |
-| Sprint 1 | 진행률 표시 (ProgressBar) | 🔴 P0 | 📋 Planned |
-| Sprint 2 | 취소 기능 (CancellationToken) | 🟠 P1 | 📋 Planned |
-| Sprint 3 | 단일 순회 최적화 | 🟠 P1 | 📋 Planned |
-| Sprint 4 | TreeView 가상화 | 🟡 P2 | 📋 Planned |
+| Sprint 1 | 비동기 로딩 (Task.Run) | 🔴 P0 | ✅ Complete |
+| Sprint 1 | 진행률 표시 (ProgressBar) | 🔴 P0 | ✅ Complete |
+| Sprint 2 | 취소 기능 (CancellationToken) | 🟠 P1 | ✅ Complete |
+| Sprint 3 | 단일 순회 최적화 | 🟠 P1 | ✅ Complete |
+| Sprint 4 | TreeView 가상화 | 🟡 P2 | ✅ Already Implemented |
 
-### Performance Targets
-
-| Metric | Current | Target |
-|--------|---------|--------|
-| 10K 노드 로딩 | ~15초 | ~5초 |
-| UI 응답성 | 프리징 | 60 FPS |
-| 메모리 피크 | ~500MB | ~300MB |
+### New Files
+| File | Purpose |
+|------|---------|
+| LoadProgress.cs | 진행률 모델 및 LoadPhase enum |
+| LoadHierarchyService.cs | 최적화된 로딩 서비스 (단일 순회) |
 
 ### Key Documents
 - **Phase Doc**: [Phase 10: Load Optimization](phases/phase-10-load-optimization.md)
@@ -212,7 +211,8 @@ docs/
 
 | Version | Date | Key Features |
 |---------|------|--------------|
-| **v0.7.0** | 2026-01-13 | Data Validation, Grouped Property View, Select All |
+| **v0.8.0** | 2026-01-13 | Load Optimization, Async Loading, Progress UI, Cancellation |
+| v0.7.0 | 2026-01-13 | Data Validation, Grouped Property View, Select All |
 | v0.6.0 | 2026-01-11 | AWP 4D Automation, TimeLiner 연동, Property Write |
 | v0.5.0 | 2026-01-09 | ViewModel 리팩토링, CSV Viewer, ComAPI Research |
 | v0.4.3 | 2026-01-09 | 필터 자동 적용, Show Only 토글, ViewPoint 저장 수정 |

@@ -31,4 +31,31 @@ namespace DXTnavis.Converters
             return false;
         }
     }
+
+    /// <summary>
+    /// Boolean 값을 반전하는 컨버터 (Phase 10)
+    /// true -> false, false -> true
+    /// </summary>
+    public class InverseBoolConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                return !boolValue;
+            }
+
+            return true;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                return !boolValue;
+            }
+
+            return false;
+        }
+    }
 }
