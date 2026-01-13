@@ -162,6 +162,7 @@
     <Compile Include="Services\TimeLinerService.cs" />
     <Compile Include="Services\AWP4DAutomationService.cs" />
     <Compile Include="Services\AWP4DValidator.cs" />
+    <Compile Include="Services\ValidationService.cs" />
     <Compile Include="ViewModels\AWP4DViewModel.cs" />
     <Compile Include="ViewModels\CsvViewerViewModel.cs" />
     <Compile Include="ViewModels\DXwindowViewModel.cs" />

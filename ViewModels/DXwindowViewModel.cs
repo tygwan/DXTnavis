@@ -52,6 +52,7 @@ namespace DXTnavis.ViewModels
 
         // Snapshot Service (Phase 4)
         private readonly SnapshotService _snapshotService;
+        private readonly ValidationService _validationService; // Phase 5
 
         // Tree Expand/Collapse (Phase 2)
         private int _selectedExpandLevel;
@@ -485,6 +486,9 @@ namespace DXTnavis.ViewModels
         public ICommand SelectAllCommand { get; }
         public ICommand DeselectAllCommand { get; }
 
+        // Validation Command (v0.7.0 Phase 5)
+        public ICommand ValidatePropertiesCommand { get; }
+
         #endregion
 
         #region Constructor
@@ -507,6 +511,9 @@ namespace DXTnavis.ViewModels
 
             // Snapshot Service 초기화 (Phase 4)
             _snapshotService = new SnapshotService();
+
+            // Validation Service 초기화 (Phase 5)
+            _validationService = new ValidationService();
 
             // CSV Viewer 초기화 (v0.5.0)
             CsvViewer = new CsvViewerViewModel();
@@ -673,6 +680,11 @@ namespace DXTnavis.ViewModels
             DeselectAllCommand = new RelayCommand(
                 execute: _ => SelectAllProperties(false),
                 canExecute: _ => FilteredHierarchicalProperties.Any(p => p.IsSelected));
+
+            // Phase 5: Validation Command
+            ValidatePropertiesCommand = new RelayCommand(
+                execute: _ => ValidateProperties(),
+                canExecute: _ => FilteredHierarchicalProperties.Count > 0);
         }
 
         private void OnPropertyRecordChanged(object sender, PropertyChangedEventArgs e)
@@ -1105,6 +1117,49 @@ namespace DXTnavis.ViewModels
 
         #endregion
 
+        #region Phase 5: Validation Methods
+
+        /// <summary>
+        /// 현재 필터링된 속성에 대해 유효성 검증 수행
+        /// </summary>
+        private void ValidateProperties()
+        {
+            try
+            {
+                if (FilteredHierarchicalProperties.Count == 0)
+                {
+                    StatusMessage = "검증할 데이터가 없습니다.";
+                    return;
+                }
+
+                StatusMessage = "데이터 검증 중...";
+
+                var report = _validationService.ValidateAll(FilteredHierarchicalProperties);
+                var summary = _validationService.GenerateReportSummary(report);
+
+                // 결과 표시 (StatusMessage 또는 별도 창)
+                if (report.ErrorCount == 0 && report.WarningCount == 0)
+                {
+                    StatusMessage = $"✅ 검증 완료: {report.TotalObjects}개 객체 모두 통과";
+                }
+                else
+                {
+                    StatusMessage = $"⚠️ 검증 완료: {report.ErrorCount}개 오류, {report.WarningCount}개 경고 발견";
+                }
+
+                // 검증 결과를 Debug 출력으로 확인 가능
+                System.Diagnostics.Debug.WriteLine(summary);
+
+                // 향후: 검증 결과 창 표시 또는 CSV 내보내기
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"검증 오류: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"Validation Error: {ex}");
+            }
+        }
+
+        #endregion
 
         #region INotifyPropertyChanged Implementation
 

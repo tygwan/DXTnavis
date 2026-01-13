@@ -354,6 +354,9 @@
                                 Command="{Binding ApplyFilterCommand}"/>
                         <Button Content="✕ Clear" Style="{StaticResource FilterButton}"
                                 Command="{Binding ClearFilterCommand}"/>
+                        <Button Content="✓ Validate" Style="{StaticResource FilterButton}"
+                                Command="{Binding ValidatePropertiesCommand}"
+                                ToolTip="속성 데이터 유효성 검증 (단위, 필수속성, 타입)"/>
                     </StackPanel>
                 </Grid>
             </Border>

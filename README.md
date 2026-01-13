@@ -4,7 +4,7 @@
 
 **Navisworks 2025 Property Viewer & 4D Automation Plugin**
 
-[![Version](https://img.shields.io/badge/Version-0.6.0-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.7.0-blue?style=flat-square)]()
 [![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
 [![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
@@ -159,7 +159,7 @@ dotnet build DXTnavis.csproj -c Debug
 
 ```
 v0.6.0: [====================] 100% ✅ Released 2026-01-11
-v0.7.0: [███                 ] 15% 🔄 In Progress
+v0.7.0: [====================] 100% ✅ Released 2026-01-13
 ```
 
 | Phase | Feature | Status |
@@ -168,11 +168,11 @@ v0.7.0: [███                 ] 15% 🔄 In Progress
 | 2 | UI Enhancement | ✅ 100% |
 | 3 | 3D Integration | ✅ 100% |
 | 4 | CSV Enhancement | ✅ 100% |
-| 5 | ComAPI Research | ✅ 100% |
+| 5 | Data Validation | ✅ 100% |
 | 6 | Code Quality | ✅ 100% |
 | 7 | CSV Viewer | ✅ 100% |
 | 8 | AWP 4D Automation | ✅ 100% |
-| 9 | **UI Enhancement v2** | 🔄 15% |
+| 9 | UI Enhancement v2 | ✅ 100% |
 
 **→ [Changelog](CHANGELOG.md)**
 
@@ -180,7 +180,8 @@ v0.7.0: [███                 ] 15% 🔄 In Progress
 
 | Version | Features | Date |
 |:-------:|----------|:----:|
-| **v0.6.0** | **AWP 4D Automation Pipeline** | 2026-01-11 |
+| **v0.7.0** | **Data Validation, Grouped Property View, Select All** | 2026-01-13 |
+| v0.6.0 | AWP 4D Automation Pipeline | 2026-01-11 |
 | v0.5.0 | ViewModel Refactoring, CSV Viewer, ComAPI Research | 2026-01-09 |
 | v0.4.x | Auto Filter, Show Only Toggle, Unit Column | 2026-01-09 |
 | v0.4.0 | Object Search, 4종 CSV, Reset Home, Dual Export | 2026-01-08 |
@@ -188,22 +189,24 @@ v0.7.0: [███                 ] 15% 🔄 In Progress
 | v0.2.0 | 3D Selection, Visibility Control, Zoom | 2026-01-05 |
 | v0.1.0 | Level Filter, SysPath Filter, TreeView | 2026-01-03 |
 
-### v0.7.0 로드맵 (UI Enhancement v2)
+### v0.7.0 주요 기능 (Released)
 
 | Category | Feature | Status |
 |:--------:|---------|:------:|
-| 🔄 UI | Select All 체크박스 (전체 선택/해제) | 📋 Planned |
-| 🔄 UI | 객체별 그룹화 표시 (Expander) | 📋 Planned |
-| 🔄 UI | 카테고리별 하위 그룹화 | 📋 Planned |
-| 🔄 UI | Expand/Collapse All 버튼 | 📋 Planned |
-| 🔄 Test | AWP 4D 테스트 CSV 샘플 | 📋 Planned |
+| ✅ UI | Select All 체크박스 (전체 선택/해제) | ✅ Complete |
+| ✅ UI | 객체별 그룹화 표시 (Expander) | ✅ Complete |
+| ✅ UI | 카테고리별 하위 그룹화 | ✅ Complete |
+| ✅ UI | Expand/Collapse All 버튼 | ✅ Complete |
+| ✅ Validation | 단위 불일치 감지 | ✅ Complete |
+| ✅ Validation | 필수 속성 누락 확인 | ✅ Complete |
+| ✅ Test | AWP 4D 테스트 CSV 샘플 | ✅ Complete |
 
-**목표 UI**:
+**구현된 UI**:
 ```
 ▼ Wall-1 (2 categories, 15 properties)
   └ ▼ Item (5 properties)
-      ├ ☐ Name: Wall-1
-      └ ☐ Type: Wall
+      ├ ☑ Name: Wall-1
+      └ ☑ Type: Wall
   └ ▶ Dimensions (10 properties) [collapsed]
 ```
 
@@ -239,6 +242,7 @@ dxtnavis/
 │   ├── DXwindowViewModel.*.cs    # Partial classes
 │   ├── AWP4DViewModel.cs         # v0.6.0 - AWP 4D ViewModel
 │   ├── CsvViewerViewModel.cs
+│   ├── PropertyItemViewModel.cs  # v0.7.0 - 속성 그룹화 VM
 │   └── HierarchyNodeViewModel.cs
 ├── Views/
 │   └── DXwindow.xaml             # 메인 UI + AWP 4D 탭
@@ -251,11 +255,13 @@ dxtnavis/
 │   ├── AWP4DAutomationService.cs # v0.6.0 - 통합 파이프라인
 │   ├── ObjectMatcher.cs          # v0.6.0 - SyncID 매칭
 │   ├── AWP4DValidator.cs         # v0.6.0 - 검증 서비스
-│   └── ScheduleCsvParser.cs      # v0.6.0 - 스케줄 CSV 파서
+│   ├── ScheduleCsvParser.cs      # v0.6.0 - 스케줄 CSV 파서
+│   └── ValidationService.cs      # v0.7.0 - 속성 검증 서비스
 ├── snapshots/
 │   └── dxtnavis_main_page.png
 ├── docs/
 │   ├── phases/
+│   │   ├── phase-5-data-validation.md   # v0.7.0
 │   │   ├── phase-8-awp-4d-automation.md
 │   │   └── phase-9-ui-enhancement.md    # v0.7.0
 │   └── tech-specs/
@@ -345,6 +351,6 @@ propNode.SetUserDefined(0, "CategoryName", "InternalName", propVec);
 
 ---
 
-<sub>Last Updated: 2026-01-12 • v0.7.0-dev</sub>
+<sub>Last Updated: 2026-01-13 • v0.7.0</sub>
 
 </div>

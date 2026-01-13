@@ -1,8 +1,8 @@
 # Phase 4: 3D Snapshot Workflow
 
-> **Status:** ⚠️ Partial (50%)
+> **Status:** ✅ Complete (95%)
 > **Parent:** [_INDEX](../_INDEX.md) | **Prev:** [Phase 3](phase-3-3d-integration.md) | **Next:** [Phase 5](phase-5-data-validation.md)
-> **Last Updated:** 2026-01-08
+> **Last Updated:** 2026-01-13
 
 ## Overview
 3D 뷰포트 이미지 캡처 및 ViewPoint 저장 워크플로우
@@ -62,29 +62,29 @@ comState.DriveIOPlugin("lcodpimage", fullPath, options);
 └── 📷 Object_guid-yyy.png
 ```
 
-## Known Issues
+## Known Issues (Resolved/Documented)
 
 | Issue | Priority | Status | Description |
 |-------|----------|--------|-------------|
-| ViewPoint 저장 read-only | 🔴 Critical | Open | SavedViewpoints 컬렉션 수정 시 오류 |
+| ViewPoint 저장 read-only | ✅ Resolved | Fixed | AddCopy() 메서드 사용으로 해결 |
 | COM API GUI context | 🟡 Low | Documented | Navisworks GUI 컨텍스트 필요 |
 | Anti-aliasing 성능 | 🟡 Low | Documented | Level > 4 시 성능 저하 |
 
 ---
 
-## v0.4.0 Planned
+## v0.4.0+ Implemented
 
 ### Bug Fixes
 | ID | Requirement | Priority | Status |
 |----|-------------|----------|--------|
-| FR-407 | ViewPoint 저장 read-only 오류 수정 | P0 | ⏳ |
-| FR-408 | ComAPI를 통한 ViewPoint 저장 | P0 | ⏳ |
+| FR-407 | ViewPoint 저장 read-only 오류 수정 | P0 | ✅ AddCopy() 적용 |
+| FR-408 | ComAPI를 통한 ViewPoint 저장 | P0 | ✅ InsertCopy() 폴더 지원 |
 
 ### New Features
 | ID | Requirement | Priority | Status |
 |----|-------------|----------|--------|
-| FR-409 | Home ViewPoint 자동 저장 | P2 | ⏳ |
-| FR-410 | Reset to Home 기능 | P2 | ⏳ |
+| FR-409 | Home ViewPoint 자동 저장 | P2 | ✅ FindHomeViewpoint() |
+| FR-410 | Reset to Home 기능 | P2 | ✅ ResetToHome() |
 
 ---
 
