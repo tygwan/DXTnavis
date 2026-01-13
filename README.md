@@ -4,7 +4,7 @@
 
 **Navisworks 2025 Property Viewer & 4D Automation Plugin**
 
-[![Version](https://img.shields.io/badge/Version-0.7.0-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.8.0-blue?style=flat-square)]()
 [![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
 [![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
@@ -30,40 +30,45 @@
 
 <table>
 <tr>
-<td align="center" width="14%">
+<td align="center" width="12%">
 <h3>🌳</h3>
 <b>Hierarchy</b><br/>
 <sub>Level-based<br/>expand/collapse</sub>
 </td>
-<td align="center" width="14%">
+<td align="center" width="12%">
 <h3>🔍</h3>
 <b>Search</b><br/>
 <sub>Object search<br/>by name/path</sub>
 </td>
-<td align="center" width="14%">
+<td align="center" width="12%">
 <h3>🎯</h3>
 <b>3D Control</b><br/>
 <sub>Select, Show,<br/>Zoom, Reset</sub>
 </td>
-<td align="center" width="14%">
+<td align="center" width="12%">
 <h3>📤</h3>
 <b>Export</b><br/>
 <sub>Raw + Refined<br/>CSV dual export</sub>
 </td>
-<td align="center" width="14%">
+<td align="center" width="12%">
 <h3>📸</h3>
 <b>Snapshot</b><br/>
 <sub>ViewPoint<br/>Save & Reset</sub>
 </td>
-<td align="center" width="14%">
+<td align="center" width="12%">
 <h3>📊</h3>
 <b>CSV Viewer</b><br/>
 <sub>Load, Filter,<br/>Export CSV</sub>
 </td>
-<td align="center" width="14%">
+<td align="center" width="12%">
 <h3>🎬</h3>
 <b>AWP 4D</b><br/>
 <sub>CSV → TimeLiner<br/>Automation</sub>
+</td>
+<td align="center" width="12%">
+<h3>⚡</h3>
+<b>Async Load</b><br/>
+<sub>Progress bar,<br/>Cancel support</sub>
 </td>
 </tr>
 </table>
@@ -160,6 +165,7 @@ dotnet build DXTnavis.csproj -c Debug
 ```
 v0.6.0: [====================] 100% ✅ Released 2026-01-11
 v0.7.0: [====================] 100% ✅ Released 2026-01-13
+v0.8.0: [====================] 100% ✅ Released 2026-01-13
 ```
 
 | Phase | Feature | Status |
@@ -173,6 +179,7 @@ v0.7.0: [====================] 100% ✅ Released 2026-01-13
 | 7 | CSV Viewer | ✅ 100% |
 | 8 | AWP 4D Automation | ✅ 100% |
 | 9 | UI Enhancement v2 | ✅ 100% |
+| 10 | Load Optimization | ✅ 100% |
 
 **→ [Changelog](CHANGELOG.md)**
 
@@ -180,7 +187,8 @@ v0.7.0: [====================] 100% ✅ Released 2026-01-13
 
 | Version | Features | Date |
 |:-------:|----------|:----:|
-| **v0.7.0** | **Data Validation, Grouped Property View, Select All** | 2026-01-13 |
+| **v0.8.0** | **Async Loading, Progress UI, Cancellation, Single-Pass Optimization** | 2026-01-13 |
+| v0.7.0 | Data Validation, Grouped Property View, Select All | 2026-01-13 |
 | v0.6.0 | AWP 4D Automation Pipeline | 2026-01-11 |
 | v0.5.0 | ViewModel Refactoring, CSV Viewer, ComAPI Research | 2026-01-09 |
 | v0.4.x | Auto Filter, Show Only Toggle, Unit Column | 2026-01-09 |
@@ -189,7 +197,27 @@ v0.7.0: [====================] 100% ✅ Released 2026-01-13
 | v0.2.0 | 3D Selection, Visibility Control, Zoom | 2026-01-05 |
 | v0.1.0 | Level Filter, SysPath Filter, TreeView | 2026-01-03 |
 
-### v0.7.0 주요 기능 (Released)
+### v0.8.0 주요 기능 (Released) 🆕
+
+| Category | Feature | Status |
+|:--------:|---------|:------:|
+| ⚡ Perf | 비동기 로딩 (UI 프리징 제거) | ✅ Complete |
+| ⚡ Perf | ProgressBar + 상태 텍스트 | ✅ Complete |
+| ⚡ Perf | 취소 버튼 (즉시 중단) | ✅ Complete |
+| ⚡ Perf | 단일 순회 최적화 (2배 성능) | ✅ Complete |
+
+**구현된 UI**:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  [📂 Loading...] [⏹ Cancel]                                 │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 35%  │  │
+│  └───────────────────────────────────────────────────────┘  │
+│  Building tree: 3,500 / 10,000 (35%)                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### v0.7.0 주요 기능
 
 | Category | Feature | Status |
 |:--------:|---------|:------:|
@@ -199,16 +227,6 @@ v0.7.0: [====================] 100% ✅ Released 2026-01-13
 | ✅ UI | Expand/Collapse All 버튼 | ✅ Complete |
 | ✅ Validation | 단위 불일치 감지 | ✅ Complete |
 | ✅ Validation | 필수 속성 누락 확인 | ✅ Complete |
-| ✅ Test | AWP 4D 테스트 CSV 샘플 | ✅ Complete |
-
-**구현된 UI**:
-```
-▼ Wall-1 (2 categories, 15 properties)
-  └ ▼ Item (5 properties)
-      ├ ☑ Name: Wall-1
-      └ ☑ Type: Wall
-  └ ▶ Dimensions (10 properties) [collapsed]
-```
 
 ### v0.6.0 주요 변경
 
@@ -236,7 +254,8 @@ dxtnavis/
 │   ├── ScheduleData.cs          # v0.6.0 - 스케줄 데이터
 │   ├── AWP4DOptions.cs          # v0.6.0 - 파이프라인 옵션
 │   ├── AutomationResult.cs      # v0.6.0 - 실행 결과
-│   └── ValidationResult.cs      # v0.6.0 - 검증 결과
+│   ├── ValidationResult.cs      # v0.6.0 - 검증 결과
+│   └── LoadProgress.cs          # v0.8.0 - 로딩 진행률 모델
 ├── ViewModels/                   # MVVM (Partial Class 패턴)
 │   ├── DXwindowViewModel.cs      # Core
 │   ├── DXwindowViewModel.*.cs    # Partial classes
@@ -256,14 +275,16 @@ dxtnavis/
 │   ├── ObjectMatcher.cs          # v0.6.0 - SyncID 매칭
 │   ├── AWP4DValidator.cs         # v0.6.0 - 검증 서비스
 │   ├── ScheduleCsvParser.cs      # v0.6.0 - 스케줄 CSV 파서
-│   └── ValidationService.cs      # v0.7.0 - 속성 검증 서비스
+│   ├── ValidationService.cs      # v0.7.0 - 속성 검증 서비스
+│   └── LoadHierarchyService.cs   # v0.8.0 - 최적화된 로딩 서비스
 ├── snapshots/
 │   └── dxtnavis_main_page.png
 ├── docs/
 │   ├── phases/
 │   │   ├── phase-5-data-validation.md   # v0.7.0
 │   │   ├── phase-8-awp-4d-automation.md
-│   │   └── phase-9-ui-enhancement.md    # v0.7.0
+│   │   ├── phase-9-ui-enhancement.md    # v0.7.0
+│   │   └── phase-10-load-optimization.md # v0.8.0
 │   └── tech-specs/
 │       └── AWP-4D-Automation-Spec.md
 ├── CHANGELOG.md
@@ -351,6 +372,6 @@ propNode.SetUserDefined(0, "CategoryName", "InternalName", propVec);
 
 ---
 
-<sub>Last Updated: 2026-01-13 • v0.7.0</sub>
+<sub>Last Updated: 2026-01-13 • v0.8.0</sub>
 
 </div>
