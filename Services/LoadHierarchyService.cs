@@ -53,11 +53,21 @@ namespace DXTnavis.Services
 
             try
             {
-                // 1단계: 노드 수 카운트 (빠른 순회)
+                var doc = Application.ActiveDocument;
+
+                if (doc == null)
+                {
+                    result.ErrorMessage = "활성 문서가 없습니다.";
+                    return result;
+                }
+
+                // 1단계: 노드 수 카운트 (UI 스레드에서 동기 실행 - Navisworks API 제약)
                 progress?.Report(new LoadProgress(0, 0, "Counting...", LoadPhase.Counting));
 
-                int totalNodes = await Task.Run(() =>
-                    CountAllNodes(cancellationToken), cancellationToken);
+                // UI 응답성을 위해 yield
+                await Task.Yield();
+
+                int totalNodes = CountAllNodes(cancellationToken);
 
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -68,15 +78,11 @@ namespace DXTnavis.Services
 
                 progress?.Report(new LoadProgress(0, totalNodes, "Starting extraction...", LoadPhase.ExtractingTree));
 
+                // UI 응답성을 위해 yield
+                await Task.Yield();
+
                 // 2단계: 데이터 추출 (단일 순회) - UI 스레드에서 실행 (Navisworks API 제약)
                 int processed = 0;
-                var doc = Application.ActiveDocument;
-
-                if (doc == null)
-                {
-                    result.ErrorMessage = "활성 문서가 없습니다.";
-                    return result;
-                }
 
                 foreach (var model in doc.Models)
                 {
@@ -84,20 +90,22 @@ namespace DXTnavis.Services
 
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    var rootTreeNode = TraverseUnified(
+                    var rootTreeNode = await TraverseUnifiedAsync(
                         model.RootItem,
                         Guid.Empty,
                         0,
                         string.Empty,
                         result,
-                        ref processed,
+                        processed,
                         totalNodes,
                         progress,
                         cancellationToken);
 
-                    if (rootTreeNode != null)
+                    processed = rootTreeNode.Item2;
+
+                    if (rootTreeNode.Item1 != null)
                     {
-                        result.TreeNodes.Add(rootTreeNode);
+                        result.TreeNodes.Add(rootTreeNode.Item1);
                     }
                 }
 
@@ -158,23 +166,22 @@ namespace DXTnavis.Services
         }
 
         /// <summary>
-        /// 통합 순회 (TreeNodeModel + HierarchicalPropertyRecord 동시 생성)
+        /// 비동기 통합 순회 (TreeNodeModel + HierarchicalPropertyRecord 동시 생성)
+        /// UI 스레드에서 실행하되, Task.Yield()로 UI 응답성 유지
         /// </summary>
-        [HandleProcessCorruptedStateExceptions]
-        [SecurityCritical]
-        private TreeNodeModel TraverseUnified(
+        private async Task<Tuple<TreeNodeModel, int>> TraverseUnifiedAsync(
             ModelItem item,
             Guid parentId,
             int level,
             string parentPath,
             HierarchyExtractionResult result,
-            ref int processed,
+            int processed,
             int total,
             IProgress<LoadProgress> progress,
             CancellationToken ct)
         {
             if (item == null || item.IsHidden)
-                return null;
+                return Tuple.Create<TreeNodeModel, int>(null, processed);
 
             ct.ThrowIfCancellationRequested();
 
@@ -206,6 +213,8 @@ namespace DXTnavis.Services
             if (processed % PROGRESS_REPORT_INTERVAL == 0 || processed == total)
             {
                 progress?.Report(new LoadProgress(processed, total, displayName, LoadPhase.ExtractingTree));
+                // UI 응답성을 위해 yield (진행률 보고 시점에만)
+                await Task.Yield();
             }
 
             // 자식 재귀 처리
@@ -215,17 +224,19 @@ namespace DXTnavis.Services
             {
                 ct.ThrowIfCancellationRequested();
 
-                var childNode = TraverseUnified(
+                var childResult = await TraverseUnifiedAsync(
                     child, childParentId, level + 1, currentPath,
-                    result, ref processed, total, progress, ct);
+                    result, processed, total, progress, ct);
 
-                if (childNode != null)
+                processed = childResult.Item2;
+
+                if (childResult.Item1 != null)
                 {
-                    treeNode.Children.Add(childNode);
+                    treeNode.Children.Add(childResult.Item1);
                 }
             }
 
-            return treeNode;
+            return Tuple.Create(treeNode, processed);
         }
 
         /// <summary>
