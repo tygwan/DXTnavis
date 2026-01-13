@@ -1,7 +1,7 @@
 # DXTnavis - Navisworks 2025 Property Viewer Plugin
 
 > **Context:** Standalone Navisworks plugin for property viewing and 3D control
-> **Version:** 0.6.0 (Released 2026-01-11)
+> **Version:** 0.7.0 (Released 2026-01-13)
 > **Docs Index:** [docs/_INDEX.md](docs/_INDEX.md)
 
 ## Quick Reference
@@ -19,16 +19,53 @@
 | 2 | UI Enhancement | ✅ 100% |
 | 3 | 3D Object Integration | ✅ 100% |
 | 4 | CSV Enhancement | ✅ 100% |
-| 5 | ComAPI Research | ✅ 100% |
+| 5 | Data Validation | ✅ 100% |
 | 6 | Code Quality | ✅ 100% |
 | 7 | CSV Viewer | ✅ 100% |
-| **8** | **AWP 4D Automation** | ✅ 100% |
+| 8 | AWP 4D Automation | ✅ 100% |
+| 9 | UI Enhancement v2 | ✅ 100% |
+| **10** | **Load Optimization** | 📋 Planning |
 
 **→ Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## v0.6.0 AWP 4D Automation (NEW)
+## v0.8.0 Load Optimization (NEXT)
+
+### Problem
+- UI 블로킹: 동기 실행으로 UI 프리징
+- 이중 순회: TreeNodeModel과 HierarchicalPropertyRecord 별도 생성
+- 진행률 없음: 로딩 중 피드백 부재
+
+### Planned Features
+- [ ] 비동기 로딩 (Task.Run + IProgress)
+- [ ] 진행률 표시 (ProgressBar)
+- [ ] 취소 기능 (CancellationToken)
+- [ ] 단일 순회 최적화
+- [ ] TreeView 가상화
+
+### Key Documents
+- [Phase 10: Load Optimization](docs/phases/phase-10-load-optimization.md)
+
+---
+
+## v0.7.0 Data Validation & UI (CURRENT)
+
+### Features ✅
+- [x] **ValidationService** - 단위/타입/필수속성 검증
+- [x] **Select All 체크박스** - 전체 선택/해제
+- [x] **그룹화 표시** - 객체별/카테고리별 Expander
+- [x] **Expand/Collapse All** - 그룹 일괄 펼침/접기
+
+### New Services (Phase 5, 9)
+| Service | Description |
+|---------|-------------|
+| ValidationService | 속성 검증 (단위, 타입, 필수) |
+| PropertyItemViewModel | 그룹화 표시용 ViewModel |
+
+---
+
+## v0.6.0 AWP 4D Automation
 
 ### Features ✅
 - [x] **CSV → TimeLiner 자동 연결** 파이프라인
@@ -37,7 +74,7 @@
 - [x] **TimeLiner Task** 자동 생성 및 Set 연결
 - [x] **AWP 4D 탭** UI 통합
 
-### New Services (Phase 8)
+### Services (Phase 8)
 | Service | Description |
 |---------|-------------|
 | PropertyWriteService | ComAPI Property Write (재시도 로직) |
@@ -47,11 +84,6 @@
 | ObjectMatcher | SyncID → ModelItem 매칭 (캐싱) |
 | AWP4DValidator | Pre/Post 검증 |
 | ScheduleCsvParser | 한영 컬럼 매핑 CSV 파싱 |
-
-### Key Documents
-- [Phase 8 Document](docs/phases/phase-8-awp-4d-automation.md)
-- [Tech Spec: AWP 4D](docs/tech-specs/AWP-4D-Automation-Spec.md)
-- [ADR-002: TimeLiner API](docs/adr/ADR-002-TimeLiner-API-Integration.md)
 
 ---
 
@@ -72,7 +104,8 @@ dxtnavis/
 │   ├── AWP4DAutomationService.cs     # 통합 파이프라인 (v0.6.0)
 │   ├── ObjectMatcher.cs              # SyncID 매칭 (v0.6.0)
 │   ├── AWP4DValidator.cs             # 검증 (v0.6.0)
-│   └── ScheduleCsvParser.cs          # 스케줄 CSV 파싱 (v0.6.0)
+│   ├── ScheduleCsvParser.cs          # 스케줄 CSV 파싱 (v0.6.0)
+│   └── ValidationService.cs          # 속성 검증 (v0.7.0)
 ├── ViewModels/            # MVVM ViewModels (Partial Class 패턴)
 │   ├── DXwindowViewModel.cs          # Core
 │   ├── DXwindowViewModel.Filter.cs   # 필터 기능
@@ -83,6 +116,7 @@ dxtnavis/
 │   ├── DXwindowViewModel.Export.cs   # 내보내기
 │   ├── CsvViewerViewModel.cs         # CSV 뷰어 VM
 │   ├── AWP4DViewModel.cs             # AWP 4D VM (v0.6.0)
+│   ├── PropertyItemViewModel.cs      # 속성 그룹화 VM (v0.7.0)
 │   └── HierarchyNodeViewModel.cs     # 트리 노드
 ├── Views/                 # WPF Views
 │   └── DXwindow.xaml                 # 메인 UI + AWP 4D 탭
@@ -93,7 +127,10 @@ dxtnavis/
 │   └── ValidationResult.cs           # 검증 결과 (v0.6.0)
 └── docs/
     ├── phases/
-    │   └── phase-8-awp-4d-automation.md
+    │   ├── phase-5-data-validation.md     # v0.7.0
+    │   ├── phase-8-awp-4d-automation.md
+    │   ├── phase-9-ui-enhancement.md      # v0.7.0
+    │   └── phase-10-load-optimization.md  # v0.8.0 Planning
     ├── adr/
     │   ├── ADR-001-ComAPI-Property-Write.md
     │   └── ADR-002-TimeLiner-API-Integration.md
@@ -176,7 +213,7 @@ Element_002,철골 설치,2026-01-18,2026-01-25,Construct,Zone-A/Level-2
 | Selection Set | SelectionSetService.cs | 계층 구조 생성 |
 | TimeLiner | TimeLinerService.cs | Task 생성 및 Set 연결 |
 | Object Match | ObjectMatcher.cs | SyncID → ModelItem |
-| Validation | AWP4DValidator.cs | Pre/Post 검증 |
+| Validation | ValidationService.cs | 속성 검증 (v0.7.0) |
 | AWP 4D UI | AWP4DViewModel.cs | UI 바인딩 |
 
 ---

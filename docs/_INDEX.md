@@ -1,8 +1,8 @@
 # DXTnavis Documentation Index
 
-> **Last Updated:** 2026-01-12
-> **Current Version:** v0.6.0 (AWP 4D Automation)
-> **Next Version:** v0.7.0 (UI Enhancement)
+> **Last Updated:** 2026-01-13
+> **Current Version:** v0.7.0 (Data Validation, UI Enhancement)
+> **Next Version:** v0.8.0 (Load Optimization)
 
 ---
 
@@ -21,7 +21,8 @@
 ### Overall Progress
 ```
 v0.6.0: [====================] 100% (Released 2026-01-11)
-v0.7.0: [███                 ] 15% (Planning - UI Enhancement)
+v0.7.0: [====================] 100% (Released 2026-01-13)
+v0.8.0: [                    ]   0% (Planning - Load Optimization)
 ```
 
 ### Phase Status
@@ -36,32 +37,53 @@ v0.7.0: [███                 ] 15% (Planning - UI Enhancement)
 | 6 | Code Quality | ✅ Complete | 100% | - |
 | 7 | CSV Viewer | ✅ Complete | 100% | - |
 | 8 | AWP 4D Automation | ✅ Complete | 100% | [phase-8](phases/phase-8-awp-4d-automation.md) |
-| **9** | **UI Enhancement** | 📋 Planning | 15% | [phase-9](phases/phase-9-ui-enhancement.md) |
+| 9 | UI Enhancement | ✅ Complete | 100% | [phase-9](phases/phase-9-ui-enhancement.md) |
+| **10** | **Load Optimization** | 📋 Planning | 0% | [phase-10](phases/phase-10-load-optimization.md) |
 
 ---
 
-## v0.7.0 Roadmap: UI Enhancement
+## v0.8.0 Roadmap: Load Optimization
 
-### Analysis Completed
-- [x] 현재 UI 구조 분석 (DataGrid with HierarchicalPropertyRecord)
-- [x] WPF 패턴 조사 (TreeView, DataGrid+RowDetails, Expander+ItemsControl, ListView+GroupStyle)
-- [x] 소스 CSV 데이터 분석 (AllProperties, AllHierarchy)
-- [ ] 성능 요구사항 정의
+### Problem Analysis
+- [x] 현재 LoadHierarchy 구현 분석 완료
+- [x] 성능 병목 지점 식별 (이중 순회, UI 블로킹)
+- [ ] 벤치마크 테스트
 
 ### Implementation Plan
 
 | Sprint | Task | Priority | Status |
 |--------|------|----------|--------|
-| Sprint 1 | Select All 체크박스 UI | 🔴 P0 | 📋 Planned |
-| Sprint 1 | SelectAllCommand 구현 | 🔴 P0 | 📋 Planned |
-| Sprint 2 | CollectionViewSource 그룹화 | 🔴 P0 | 📋 Planned |
-| Sprint 2 | GroupStyle (Object/Category) | 🟠 P1 | 📋 Planned |
-| Sprint 2 | Expand/Collapse All 버튼 | 🟠 P1 | 📋 Planned |
-| Sprint 3 | AWP 4D 테스트 CSV 샘플 | 🟡 P2 | 📋 Planned |
+| Sprint 1 | 비동기 로딩 (Task.Run) | 🔴 P0 | 📋 Planned |
+| Sprint 1 | 진행률 표시 (ProgressBar) | 🔴 P0 | 📋 Planned |
+| Sprint 2 | 취소 기능 (CancellationToken) | 🟠 P1 | 📋 Planned |
+| Sprint 3 | 단일 순회 최적화 | 🟠 P1 | 📋 Planned |
+| Sprint 4 | TreeView 가상화 | 🟡 P2 | 📋 Planned |
+
+### Performance Targets
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| 10K 노드 로딩 | ~15초 | ~5초 |
+| UI 응답성 | 프리징 | 60 FPS |
+| 메모리 피크 | ~500MB | ~300MB |
+
+### Key Documents
+- **Phase Doc**: [Phase 10: Load Optimization](phases/phase-10-load-optimization.md)
+
+---
+
+## v0.7.0 Completed: Data Validation & UI Enhancement
+
+### Features Released (2026-01-13)
+- [x] ValidationService 구현 (단위/타입/필수속성 검증)
+- [x] Select All 체크박스 (전체 선택/해제)
+- [x] 객체별/카테고리별 그룹화 표시
+- [x] Expand/Collapse All 버튼
+- [x] AWP 4D 테스트 CSV 샘플
 
 ### Key Documents
 - **Phase Doc**: [Phase 9: UI Enhancement](phases/phase-9-ui-enhancement.md)
-- **Previous**: [Phase 8: AWP 4D Automation](phases/phase-8-awp-4d-automation.md)
+- **Phase Doc**: [Phase 5: Data Validation](phases/phase-5-data-validation.md)
 
 ---
 
@@ -102,7 +124,8 @@ docs/
 │   ├── phase-4-snapshot-workflow.md
 │   ├── phase-5-data-validation.md
 │   ├── phase-8-awp-4d-automation.md
-│   └── phase-9-ui-enhancement.md  # NEW
+│   ├── phase-9-ui-enhancement.md
+│   └── phase-10-load-optimization.md  # NEW (v0.8.0)
 ├── prd/                         # Product Requirements
 │   ├── 3d-snapshot-workflow-prd.md
 │   └── v0.4.0-feature-expansion-prd.md
@@ -135,12 +158,22 @@ docs/
 | AWP4DValidator.cs | Pre/Post 검증 | P8 | ✅ |
 | ScheduleCsvParser.cs | 한영 컬럼 매핑 CSV 파싱 | P8 | ✅ |
 
-### Planned Changes (v0.7.0)
+### Completed Changes (v0.7.0)
 | File | Purpose | Phase | Status |
 |------|---------|-------|--------|
-| DXwindow.xaml | Select All, GroupStyle 추가 | P9 | 📋 |
-| DXwindowViewModel.cs | SelectAllCommand 구현 | P9 | 📋 |
-| TestSchedule.csv | AWP 4D 테스트 샘플 | P9 | 📋 |
+| ValidationService.cs | 속성 검증 서비스 | P5 | ✅ |
+| DXwindow.xaml | Select All, GroupStyle 추가 | P9 | ✅ |
+| DXwindowViewModel.cs | SelectAllCommand, ValidateCommand 구현 | P5/P9 | ✅ |
+| PropertyItemViewModel.cs | 속성 그룹화 ViewModel | P9 | ✅ |
+| test_schedule_awp4d.csv | AWP 4D 테스트 샘플 | P9 | ✅ |
+
+### Planned Changes (v0.8.0)
+| File | Purpose | Phase | Status |
+|------|---------|-------|--------|
+| LoadHierarchyService.cs | 최적화된 로딩 서비스 | P10 | 📋 |
+| DXwindowViewModel.cs | LoadModelHierarchyAsync 리팩토링 | P10 | 📋 |
+| DXwindow.xaml | ProgressBar, Cancel 버튼 추가 | P10 | 📋 |
+| LoadProgress.cs | 진행률 모델 | P10 | 📋 |
 
 ### ViewModels (Partial Class Pattern)
 | File | Lines | Key Features |
@@ -179,7 +212,8 @@ docs/
 
 | Version | Date | Key Features |
 |---------|------|--------------|
-| **v0.6.0** | 2026-01-11 | AWP 4D Automation, TimeLiner 연동, Property Write |
+| **v0.7.0** | 2026-01-13 | Data Validation, Grouped Property View, Select All |
+| v0.6.0 | 2026-01-11 | AWP 4D Automation, TimeLiner 연동, Property Write |
 | v0.5.0 | 2026-01-09 | ViewModel 리팩토링, CSV Viewer, ComAPI Research |
 | v0.4.3 | 2026-01-09 | 필터 자동 적용, Show Only 토글, ViewPoint 저장 수정 |
 | v0.4.2 | 2026-01-09 | Unit 컬럼, AccessViolation 처리 |
@@ -194,8 +228,12 @@ docs/
 
 ## Quick Links
 
-### v0.7.0 Documents (UI Enhancement)
+### v0.8.0 Documents (Load Optimization) - Planning
+- [Phase 10: Load Optimization](phases/phase-10-load-optimization.md)
+
+### v0.7.0 Documents (Data Validation & UI) - Released
 - [Phase 9: UI Enhancement](phases/phase-9-ui-enhancement.md)
+- [Phase 5: Data Validation](phases/phase-5-data-validation.md)
 
 ### v0.6.0 Documents (AWP 4D)
 - [Phase 8: AWP 4D Automation](phases/phase-8-awp-4d-automation.md)
