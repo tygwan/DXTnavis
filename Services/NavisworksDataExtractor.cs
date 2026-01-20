@@ -613,5 +613,232 @@ namespace DXTnavis.Services
 
             return results;
         }
+
+        #region Phase 12: Grouped Data Extraction
+
+        /// <summary>
+        /// Phase 12: 전체 모델을 그룹화된 ObjectGroupModel 리스트로 추출
+        /// 445K 개별 레코드 대신 ~5K 그룹으로 로드하여 성능 최적화
+        /// </summary>
+        /// <returns>ObjectGroupModel 리스트</returns>
+        [HandleProcessCorruptedStateExceptions]
+        [SecurityCritical]
+        public List<ObjectGroupModel> ExtractAllAsGroups()
+        {
+            var results = new List<ObjectGroupModel>();
+
+            var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+            if (doc == null)
+                return results;
+
+            // 모든 모델의 루트 아이템부터 순회
+            foreach (var model in doc.Models)
+            {
+                if (model?.RootItem == null) continue;
+
+                TraverseAndExtractGroups(model.RootItem, Guid.Empty, 0, results, "");
+            }
+
+            // 통계 로깅
+            int totalProps = results.Sum(g => g.PropertyCount);
+            System.Diagnostics.Debug.WriteLine($"=== [Phase 12: Grouped Extraction 통계] ===");
+            System.Diagnostics.Debug.WriteLine($"그룹 수: {results.Count}");
+            System.Diagnostics.Debug.WriteLine($"총 속성 수: {totalProps}");
+            System.Diagnostics.Debug.WriteLine($"평균 속성/그룹: {(results.Count > 0 ? totalProps / results.Count : 0)}");
+
+            return results;
+        }
+
+        /// <summary>
+        /// Phase 12: 재귀적으로 ModelItem을 ObjectGroupModel로 변환
+        /// </summary>
+        [HandleProcessCorruptedStateExceptions]
+        [SecurityCritical]
+        private void TraverseAndExtractGroups(
+            ModelItem currentItem,
+            Guid parentId,
+            int level,
+            List<ObjectGroupModel> results,
+            string parentPath)
+        {
+            if (currentItem == null)
+                return;
+
+            // 숨겨진 객체는 건너뜀
+            if (currentItem.IsHidden)
+                return;
+
+            // 현재 객체의 표시 이름
+            string displayName = GetDisplayName(currentItem);
+
+            // 현재 경로 계산
+            string currentPath = string.IsNullOrEmpty(parentPath)
+                ? displayName
+                : $"{parentPath} > {displayName}";
+
+            // 속성 유무 확인
+            bool hasProperties = false;
+            foreach (var category in currentItem.PropertyCategories)
+            {
+                hasProperties = true;
+                break;
+            }
+
+            // 형상도 없고 속성도 없으면 자식만 탐색
+            if (!currentItem.HasGeometry && !hasProperties)
+            {
+                foreach (ModelItem child in currentItem.Children)
+                {
+                    TraverseAndExtractGroups(child, parentId, level + 1, results, currentPath);
+                }
+                return;
+            }
+
+            // 현재 객체의 고유 ID
+            Guid currentId = currentItem.InstanceGuid;
+
+            // ObjectGroupModel 생성
+            var group = new ObjectGroupModel(currentId, displayName, level, currentPath, parentId);
+
+            // 속성 추출 및 그룹에 추가
+            foreach (var category in currentItem.PropertyCategories)
+            {
+                if (category == null) continue;
+
+                DataPropertyCollection properties = null;
+                try
+                {
+                    properties = category.Properties;
+                }
+                catch (System.AccessViolationException)
+                {
+                    continue;
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+
+                if (properties == null) continue;
+
+                foreach (DataProperty property in properties)
+                {
+                    if (property == null) continue;
+
+                    try
+                    {
+                        string categoryName = string.Empty;
+                        string propertyName = string.Empty;
+                        string propertyValue = string.Empty;
+                        string readWriteStatus = "알 수 없음";
+                        string dataType = string.Empty;
+                        string rawValue = string.Empty;
+                        double? numericValue = null;
+                        string unit = string.Empty;
+
+                        try { categoryName = category.DisplayName ?? string.Empty; }
+                        catch { categoryName = "Unknown Category"; }
+
+                        try { propertyName = property.DisplayName ?? string.Empty; }
+                        catch { propertyName = "Unknown Property"; }
+
+                        try
+                        {
+                            var value = property.Value;
+                            if (value != null)
+                            {
+                                propertyValue = value.ToString();
+                                var parsed = _displayStringParser.Parse(propertyValue);
+                                dataType = parsed.DataType;
+                                rawValue = parsed.RawValue;
+                                numericValue = parsed.NumericValue;
+                                unit = parsed.Unit;
+                            }
+                        }
+                        catch (System.AccessViolationException)
+                        {
+                            propertyValue = "[Access Denied]";
+                        }
+                        catch
+                        {
+                            propertyValue = "[Error]";
+                        }
+
+                        try
+                        {
+                            readWriteStatus = property.IsReadOnly ? "읽기 전용" : "쓰기 가능";
+                        }
+                        catch { readWriteStatus = "알 수 없음"; }
+
+                        // PropertyRecord 생성 및 그룹에 추가
+                        var propRecord = new PropertyRecord(
+                            categoryName, propertyName, propertyValue,
+                            dataType, rawValue, numericValue, unit, readWriteStatus);
+
+                        group.AddProperty(propRecord);
+                    }
+                    catch (System.AccessViolationException)
+                    {
+                        continue;
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            // 속성이 있는 그룹만 결과에 추가
+            if (group.PropertyCount > 0)
+            {
+                results.Add(group);
+            }
+
+            // 자식 순회
+            Guid childParentId = (currentId == Guid.Empty) ? parentId : currentId;
+            foreach (ModelItem child in currentItem.Children)
+            {
+                TraverseAndExtractGroups(child, childParentId, level + 1, results, currentPath);
+            }
+        }
+
+        /// <summary>
+        /// Phase 12: HierarchicalPropertyRecord 리스트를 ObjectGroupModel 리스트로 변환
+        /// 기존 데이터 호환성 지원
+        /// </summary>
+        public static List<ObjectGroupModel> ConvertToGroups(IEnumerable<HierarchicalPropertyRecord> records)
+        {
+            var groupDict = new Dictionary<Guid, ObjectGroupModel>();
+
+            foreach (var record in records)
+            {
+                if (!groupDict.TryGetValue(record.ObjectId, out var group))
+                {
+                    group = new ObjectGroupModel(
+                        record.ObjectId,
+                        record.DisplayName,
+                        record.Level,
+                        record.SysPath,
+                        record.ParentId);
+                    groupDict[record.ObjectId] = group;
+                }
+
+                var propRecord = new PropertyRecord(
+                    record.Category,
+                    record.PropertyName,
+                    record.PropertyValue,
+                    record.DataType,
+                    record.RawValue,
+                    record.NumericValue,
+                    record.Unit,
+                    record.ReadWriteStatus);
+
+                group.AddProperty(propRecord);
+            }
+
+            return groupDict.Values.ToList();
+        }
+
+        #endregion
     }
 }

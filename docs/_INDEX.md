@@ -1,8 +1,8 @@
 # DXTnavis Documentation Index
 
-> **Last Updated:** 2026-01-13
-> **Current Version:** v0.8.0 (Load Optimization)
-> **Next Version:** v0.9.0 (TBD)
+> **Last Updated:** 2026-01-21
+> **Current Version:** v1.2.0 (Direct TimeLiner Execution Complete)
+> **Previous:** v1.1.0 (TimeLiner Enhancement Phase 1)
 
 ---
 
@@ -10,6 +10,7 @@
 
 | Category | Document | Description |
 |----------|----------|-------------|
+| **User Manual** | [USER-MANUAL.md](USER-MANUAL.md) | 전체 기능 사용 가이드 (v1.1.0) |
 | **Overview** | [CLAUDE.md](../CLAUDE.md) | Project context & quick ref |
 | **Changelog** | [CHANGELOG.md](../CHANGELOG.md) | Version history |
 | **README** | [README.md](../README.md) | Public documentation |
@@ -20,9 +21,11 @@
 
 ### Overall Progress
 ```
-v0.6.0: [====================] 100% (Released 2026-01-11)
-v0.7.0: [====================] 100% (Released 2026-01-13)
-v0.8.0: [====================] 100% (Released 2026-01-13)
+v1.2.0: [====================] 100% (Released 2026-01-21) ✅ NEW!
+v1.1.0: [====================] 100% (Released 2026-01-21)
+v1.0.0: [====================] 100% (Released 2026-01-20)
+v0.9.0: [====================] 100% (Released 2026-01-20)
+v0.8.0: [====================] 100% (Released 2026-01-19)
 ```
 
 ### Phase Status
@@ -38,51 +41,82 @@ v0.8.0: [====================] 100% (Released 2026-01-13)
 | 7 | CSV Viewer | ✅ Complete | 100% | - |
 | 8 | AWP 4D Automation | ✅ Complete | 100% | [phase-8](phases/phase-8-awp-4d-automation.md) |
 | 9 | UI Enhancement | ✅ Complete | 100% | [phase-9](phases/phase-9-ui-enhancement.md) |
-| **10** | **Load Optimization** | ✅ Complete | 100% | [phase-10](phases/phase-10-load-optimization.md) |
+| 10 | Schedule Builder | ✅ Complete | 100% | [phase-10](phases/phase-10-refined-schedule-builder.md) |
+| 11 | Object Grouping MVP | ✅ Complete | 100% | [phase-11](phases/phase-11-object-grouping.md) |
+| 12 | Grouped Data Structure | ✅ Complete | 100% | [phase-12](phases/phase-12-grouped-data-structure.md) |
+| **13** | **TimeLiner Enhancement** | ✅ Complete | 100% | [phase-13](phases/phase-13-timeliner-enhancement.md) |
+| **14** | **Direct TimeLiner Exec** | ✅ Complete | 100% | [sprint-v1.1.0](agile/SPRINT-v1.1.0.md) |
 
 ---
 
-## v0.8.0 Completed: Load Optimization
+## v1.2.0 Completed: Direct TimeLiner Execution ✅ NEW!
 
-### Features Released (2026-01-13)
-- [x] **비동기 로딩** - IProgress<LoadProgress> 패턴으로 UI 스레드 분리
-- [x] **진행률 표시** - ProgressBar + 텍스트 상태 표시
-- [x] **취소 기능** - CancellationToken으로 즉시 취소
-- [x] **단일 순회 최적화** - TreeNodeModel + HierarchicalPropertyRecord 동시 추출
-
-### Implementation Summary
-
-| Sprint | Task | Priority | Status |
-|--------|------|----------|--------|
-| Sprint 1 | 비동기 로딩 (Task.Run) | 🔴 P0 | ✅ Complete |
-| Sprint 1 | 진행률 표시 (ProgressBar) | 🔴 P0 | ✅ Complete |
-| Sprint 2 | 취소 기능 (CancellationToken) | 🟠 P1 | ✅ Complete |
-| Sprint 3 | 단일 순회 최적화 | 🟠 P1 | ✅ Complete |
-| Sprint 4 | TreeView 가상화 | 🟡 P2 | ✅ Already Implemented |
-
-### New Files
-| File | Purpose |
-|------|---------|
-| LoadProgress.cs | 진행률 모델 및 LoadPhase enum |
-| LoadHierarchyService.cs | 최적화된 로딩 서비스 (단일 순회) |
+### Features Released (2026-01-21)
+- [x] **직접 TimeLiner 실행**: CSV 없이 1클릭으로 TimeLiner 연결
+- [x] **DryRun 미리보기**: 실행 전 결과 확인
+- [x] **진행률 표시**: 실시간 진행 상태 (ProgressBar)
+- [x] **완전 자동화**: Schedule Builder → TimeLiner 원클릭 연결
 
 ### Key Documents
-- **Phase Doc**: [Phase 10: Load Optimization](phases/phase-10-load-optimization.md)
+- **Sprint Doc**: [SPRINT-v1.1.0](agile/SPRINT-v1.1.0.md)
+- **Phase Doc**: [Phase 13: TimeLiner Enhancement](phases/phase-13-timeliner-enhancement.md)
 
 ---
 
-## v0.7.0 Completed: Data Validation & UI Enhancement
+## v1.1.0 Completed: TimeLiner Enhancement (Phase 1)
 
-### Features Released (2026-01-13)
-- [x] ValidationService 구현 (단위/타입/필수속성 검증)
+### Features Released (2026-01-21)
+- [x] **TaskType 한글화**: 구성/철거/임시 (UI) → Construct/Demolish/Temporary (API)
+- [x] **DateMode 옵션**: PlannedOnly, ActualFromPlanned(권장), BothSeparate
+- [x] **확장 ParentSet 전략**: 7가지 (ByLevel, ByFloorLevel, ByCategory, ByArea, Composite, ByProperty, Custom)
+- [x] **CSV ActualStart/ActualEnd 컬럼**: DateMode에 따른 자동 생성
+
+### Key Documents
+- **Sprint Doc**: [SPRINT-v1.1.0](agile/SPRINT-v1.1.0.md)
+- **Phase Doc**: [Phase 13: TimeLiner Enhancement](phases/phase-13-timeliner-enhancement.md)
+
+---
+
+## v0.9.0 Completed: Object Grouping MVP
+
+### Features Released (2026-01-20)
+- [x] 객체별 그룹화 보기 (Expander UI)
+- [x] Flat/Grouped Mode 전환 토글
+- [x] 그룹 선택 시 하위 속성 전체 선택
+- [x] 10K 미만 필터링 데이터에서만 활성화
+- [x] BoolToVisibilityConverter Invert 파라미터 지원
+
+### Key Documents
+- **Phase Doc**: [Phase 11: Object Grouping](phases/phase-11-object-grouping.md)
+- **Previous**: [Phase 10: Schedule Builder](phases/phase-10-refined-schedule-builder.md)
+
+---
+
+## v0.8.0 Completed: Schedule Builder
+
+### Features Released (2026-01-19)
+- [x] Schedule CSV 자동 생성
+- [x] Task 설정 (이름, 유형, 기간, 시작일)
+- [x] ParentSet 전략 (ByLevel, ByProperty, Custom)
+- [x] 미리보기 DataGrid
+- [x] Schedule 탭 UI 추가
+
+### Key Documents
+- **Phase Doc**: [Phase 10: Schedule Builder](phases/phase-10-refined-schedule-builder.md)
+- **Previous**: [Phase 9: UI Enhancement](phases/phase-9-ui-enhancement.md)
+
+---
+
+## v0.7.0 Completed: UI Enhancement (Select All)
+
+### Features Released (2026-01-19)
 - [x] Select All 체크박스 (전체 선택/해제)
-- [x] 객체별/카테고리별 그룹화 표시
-- [x] Expand/Collapse All 버튼
-- [x] AWP 4D 테스트 CSV 샘플
+- [x] SelectedPropertiesCount 실시간 업데이트
+- [x] 문서 구조 정리 (progress → _archive)
 
 ### Key Documents
+- **Sprint Doc**: [SPRINT-v0.7.0](agile/SPRINT-v0.7.0.md)
 - **Phase Doc**: [Phase 9: UI Enhancement](phases/phase-9-ui-enhancement.md)
-- **Phase Doc**: [Phase 5: Data Validation](phases/phase-5-data-validation.md)
 
 ---
 
@@ -123,13 +157,13 @@ docs/
 │   ├── phase-4-snapshot-workflow.md
 │   ├── phase-5-data-validation.md
 │   ├── phase-8-awp-4d-automation.md
-│   ├── phase-9-ui-enhancement.md
-│   └── phase-10-load-optimization.md  # NEW (v0.8.0)
+│   ├── phase-9-ui-enhancement.md        # v0.7.0 In Progress
+│   └── phase-10-refined-schedule-builder.md  # v0.8.0 Planned
 ├── prd/                         # Product Requirements
 │   ├── 3d-snapshot-workflow-prd.md
 │   └── v0.4.0-feature-expansion-prd.md
-├── progress/                    # Progress tracking
-│   └── status.md
+├── _archive/                    # Archived documents
+│   └── progress/                # (Deprecated - see CHANGELOG.md)
 └── tech-specs/                  # Technical Specifications
     ├── 3d-snapshot-workflow-spec.md
     ├── v0.4.0-tech-spec.md
@@ -157,22 +191,12 @@ docs/
 | AWP4DValidator.cs | Pre/Post 검증 | P8 | ✅ |
 | ScheduleCsvParser.cs | 한영 컬럼 매핑 CSV 파싱 | P8 | ✅ |
 
-### Completed Changes (v0.7.0)
+### Planned Changes (v0.7.0)
 | File | Purpose | Phase | Status |
 |------|---------|-------|--------|
-| ValidationService.cs | 속성 검증 서비스 | P5 | ✅ |
-| DXwindow.xaml | Select All, GroupStyle 추가 | P9 | ✅ |
-| DXwindowViewModel.cs | SelectAllCommand, ValidateCommand 구현 | P5/P9 | ✅ |
-| PropertyItemViewModel.cs | 속성 그룹화 ViewModel | P9 | ✅ |
-| test_schedule_awp4d.csv | AWP 4D 테스트 샘플 | P9 | ✅ |
-
-### Planned Changes (v0.8.0)
-| File | Purpose | Phase | Status |
-|------|---------|-------|--------|
-| LoadHierarchyService.cs | 최적화된 로딩 서비스 | P10 | 📋 |
-| DXwindowViewModel.cs | LoadModelHierarchyAsync 리팩토링 | P10 | 📋 |
-| DXwindow.xaml | ProgressBar, Cancel 버튼 추가 | P10 | 📋 |
-| LoadProgress.cs | 진행률 모델 | P10 | 📋 |
+| DXwindow.xaml | Select All, GroupStyle 추가 | P9 | 📋 |
+| DXwindowViewModel.cs | SelectAllCommand 구현 | P9 | 📋 |
+| TestSchedule.csv | AWP 4D 테스트 샘플 | P9 | 📋 |
 
 ### ViewModels (Partial Class Pattern)
 | File | Lines | Key Features |
@@ -211,8 +235,11 @@ docs/
 
 | Version | Date | Key Features |
 |---------|------|--------------|
-| **v0.8.0** | 2026-01-13 | Load Optimization, Async Loading, Progress UI, Cancellation |
-| v0.7.0 | 2026-01-13 | Data Validation, Grouped Property View, Select All |
+| **v1.1.0** | 2026-01-21 | TaskType 한글화, DateMode 옵션, 확장 ParentSet (7가지) |
+| **v1.0.0** | 2026-01-20 | Grouped Data Structure (445K→5K 최적화) |
+| v0.9.0 | 2026-01-20 | Object Grouping MVP, Expander UI |
+| v0.8.0 | 2026-01-19 | Schedule Builder, ParentSet 전략 |
+| v0.7.0 | 2026-01-19 | UI Enhancement, Select All |
 | v0.6.0 | 2026-01-11 | AWP 4D Automation, TimeLiner 연동, Property Write |
 | v0.5.0 | 2026-01-09 | ViewModel 리팩토링, CSV Viewer, ComAPI Research |
 | v0.4.3 | 2026-01-09 | 필터 자동 적용, Show Only 토글, ViewPoint 저장 수정 |
@@ -228,12 +255,14 @@ docs/
 
 ## Quick Links
 
-### v0.8.0 Documents (Load Optimization) - Planning
-- [Phase 10: Load Optimization](phases/phase-10-load-optimization.md)
+### v1.1.0 Documents (TimeLiner Enhancement)
+- [User Manual v1.1.0](USER-MANUAL.md)
+- [Sprint v1.1.0](agile/SPRINT-v1.1.0.md)
+- [Phase 13: TimeLiner Enhancement](phases/phase-13-timeliner-enhancement.md)
 
-### v0.7.0 Documents (Data Validation & UI) - Released
-- [Phase 9: UI Enhancement](phases/phase-9-ui-enhancement.md)
-- [Phase 5: Data Validation](phases/phase-5-data-validation.md)
+### v1.0.0 Documents (Grouped Data Structure)
+- [Phase 12: Grouped Data Structure](phases/phase-12-grouped-data-structure.md)
+- [Phase 11: Object Grouping](phases/phase-11-object-grouping.md)
 
 ### v0.6.0 Documents (AWP 4D)
 - [Phase 8: AWP 4D Automation](phases/phase-8-awp-4d-automation.md)

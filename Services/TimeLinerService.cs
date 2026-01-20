@@ -458,19 +458,33 @@ namespace DXTnavis.Services
 
         /// <summary>
         /// SimulationTaskTypeName 파싱
+        /// Phase 13: 한글 TaskType 지원 강화
         /// </summary>
         private string ParseSimulationTaskType(string taskType)
         {
             if (string.IsNullOrEmpty(taskType))
                 return "Construct";
 
-            taskType = taskType.ToLowerInvariant();
+            // 정확한 매칭 먼저 시도 (Phase 13)
+            var taskTypeLower = taskType.ToLowerInvariant();
+            var taskTypeTrimmed = taskType.Trim();
 
-            if (taskType.Contains("demolish") || taskType.Contains("remove") ||
-                taskType.Contains("철거") || taskType.Contains("해체"))
+            // 정확한 한글 매칭
+            if (taskTypeTrimmed == "구성") return "Construct";
+            if (taskTypeTrimmed == "철거") return "Demolish";
+            if (taskTypeTrimmed == "임시") return "Temporary";
+
+            // 정확한 영문 매칭
+            if (taskTypeLower == "construct") return "Construct";
+            if (taskTypeLower == "demolish") return "Demolish";
+            if (taskTypeLower == "temporary") return "Temporary";
+
+            // 키워드 기반 매칭 (하위 호환성)
+            if (taskTypeLower.Contains("demolish") || taskTypeLower.Contains("remove") ||
+                taskTypeTrimmed.Contains("철거") || taskTypeTrimmed.Contains("해체"))
                 return "Demolish";
 
-            if (taskType.Contains("temp") || taskType.Contains("임시") || taskType.Contains("가설"))
+            if (taskTypeLower.Contains("temp") || taskTypeTrimmed.Contains("임시") || taskTypeTrimmed.Contains("가설"))
                 return "Temporary";
 
             return "Construct";
@@ -547,6 +561,159 @@ namespace DXTnavis.Services
             return _createdTasks;
         }
 
+        #region TimeLiner Connection Status API
+
+        /// <summary>
+        /// TimeLiner 사용 가능 여부 확인
+        /// </summary>
+        public bool IsTimeLinerAvailable()
+        {
+            var doc = Application.ActiveDocument;
+            if (doc == null) return false;
+
+            var timeliner = GetDocumentTimeliner(doc);
+            return timeliner != null;
+        }
+
+        /// <summary>
+        /// 모든 TimeLiner Task 조회 (계층 구조 평탄화)
+        /// </summary>
+        public List<TimeLinerTaskInfo> GetAllTasksInfo()
+        {
+            var result = new List<TimeLinerTaskInfo>();
+            var doc = Application.ActiveDocument;
+            if (doc == null) return result;
+
+            var timeliner = GetDocumentTimeliner(doc);
+            if (timeliner == null) return result;
+
+            CollectTasksRecursively(timeliner.TasksRoot, result, "", doc);
+            return result;
+        }
+
+        /// <summary>
+        /// 재귀적 Task 수집
+        /// </summary>
+        private void CollectTasksRecursively(GroupItem parent, List<TimeLinerTaskInfo> result, string parentPath, Document doc)
+        {
+            foreach (var child in parent.Children)
+            {
+                if (child is TimelinerTask task)
+                {
+                    var currentPath = string.IsNullOrEmpty(parentPath)
+                        ? task.DisplayName
+                        : $"{parentPath}/{task.DisplayName}";
+
+                    // Task 정보 수집
+                    var info = new TimeLinerTaskInfo
+                    {
+                        DisplayName = task.DisplayName,
+                        SyncId = task.SynchronizationId,
+                        FullPath = currentPath,
+                        HasSelection = task.Selection.HasSelectionSources || task.Selection.HasExplicitSelection,
+                        HasSelectionSources = task.Selection.HasSelectionSources,
+                        HasExplicitSelection = task.Selection.HasExplicitSelection,
+                        PlannedStart = task.PlannedStartDate,
+                        PlannedEnd = task.PlannedEndDate,
+                        TaskType = task.SimulationTaskTypeName
+                    };
+
+                    // 연결된 ModelItem 수 조회
+                    try
+                    {
+                        var selectedItems = task.Selection.GetSelectedItems(doc);
+                        info.LinkedItemCount = selectedItems?.Count ?? 0;
+                    }
+                    catch
+                    {
+                        info.LinkedItemCount = 0;
+                    }
+
+                    result.Add(info);
+
+                    // 하위 Task 재귀 처리
+                    if (task.Children.Count > 0)
+                    {
+                        CollectTasksRecursively(task, result, currentPath, doc);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 특정 SyncID로 Task 연결 상태 확인
+        /// </summary>
+        public TimeLinerTaskInfo GetTaskInfoBySyncId(string syncId)
+        {
+            if (string.IsNullOrEmpty(syncId)) return null;
+
+            var allTasks = GetAllTasksInfo();
+            return allTasks.FirstOrDefault(t =>
+                !string.IsNullOrEmpty(t.SyncId) &&
+                t.SyncId.Equals(syncId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// 연결된 Task 수 조회
+        /// </summary>
+        public (int total, int linked, int unlinked) GetTaskConnectionSummary()
+        {
+            var allTasks = GetAllTasksInfo();
+            int total = allTasks.Count;
+            int linked = allTasks.Count(t => t.HasSelection);
+            int unlinked = total - linked;
+            return (total, linked, unlinked);
+        }
+
+        /// <summary>
+        /// 특정 Task의 연결된 ModelItem 목록 조회
+        /// </summary>
+        public ModelItemCollection GetLinkedModelItems(string syncId)
+        {
+            var doc = Application.ActiveDocument;
+            if (doc == null) return null;
+
+            var timeliner = GetDocumentTimeliner(doc);
+            if (timeliner == null) return null;
+
+            var task = FindTaskBySyncId(timeliner.TasksRoot, syncId);
+            if (task == null) return null;
+
+            try
+            {
+                return task.Selection.GetSelectedItems(doc);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// SyncID로 Task 찾기 (재귀)
+        /// </summary>
+        private TimelinerTask FindTaskBySyncId(GroupItem parent, string syncId)
+        {
+            foreach (var child in parent.Children)
+            {
+                if (child is TimelinerTask task)
+                {
+                    if (!string.IsNullOrEmpty(task.SynchronizationId) &&
+                        task.SynchronizationId.Equals(syncId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return task;
+                    }
+
+                    // 하위 Task 재귀 검색
+                    var found = FindTaskBySyncId(task, syncId);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
+
+        #endregion
+
         protected virtual void OnProgressChanged(TimeLinerProgressEventArgs e)
         {
             ProgressChanged?.Invoke(this, e);
@@ -564,5 +731,73 @@ namespace DXTnavis.Services
         public bool Success { get; set; }
         public string ErrorMessage { get; set; }
         public double Progress => TotalCount > 0 ? (double)CurrentIndex / TotalCount * 100 : 0;
+    }
+
+    /// <summary>
+    /// TimeLiner Task 연결 상태 정보
+    /// </summary>
+    public class TimeLinerTaskInfo
+    {
+        /// <summary>
+        /// Task 표시 이름
+        /// </summary>
+        public string DisplayName { get; set; }
+
+        /// <summary>
+        /// 동기화 ID
+        /// </summary>
+        public string SyncId { get; set; }
+
+        /// <summary>
+        /// 전체 경로 (계층 구조)
+        /// </summary>
+        public string FullPath { get; set; }
+
+        /// <summary>
+        /// Selection 연결 여부 (HasSelectionSources || HasExplicitSelection)
+        /// </summary>
+        public bool HasSelection { get; set; }
+
+        /// <summary>
+        /// SelectionSource 연결 여부
+        /// </summary>
+        public bool HasSelectionSources { get; set; }
+
+        /// <summary>
+        /// 명시적 Selection 연결 여부
+        /// </summary>
+        public bool HasExplicitSelection { get; set; }
+
+        /// <summary>
+        /// 연결된 ModelItem 수
+        /// </summary>
+        public int LinkedItemCount { get; set; }
+
+        /// <summary>
+        /// 계획 시작일
+        /// </summary>
+        public DateTime? PlannedStart { get; set; }
+
+        /// <summary>
+        /// 계획 종료일
+        /// </summary>
+        public DateTime? PlannedEnd { get; set; }
+
+        /// <summary>
+        /// Task 유형 (Construct, Demolish, Temporary)
+        /// </summary>
+        public string TaskType { get; set; }
+
+        /// <summary>
+        /// 연결 상태 텍스트
+        /// </summary>
+        public string ConnectionStatus => HasSelection
+            ? $"✓ 연결됨 ({LinkedItemCount} items)"
+            : "✗ 미연결";
+
+        /// <summary>
+        /// 연결 상태 아이콘
+        /// </summary>
+        public string ConnectionIcon => HasSelection ? "✓" : "✗";
     }
 }

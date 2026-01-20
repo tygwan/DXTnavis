@@ -100,7 +100,18 @@ namespace DXTnavis.Views
                 default:
                     // Navisworks 단축키 충돌 방지:
                     // 문자, 숫자, 특수문자 키는 모두 TextBox에서 처리되도록
-                    // e.Handled를 설정하지 않음 (WPF TextBox 기본 처리)
+                    // e.Handled = true로 설정하여 Navisworks가 가로채지 못하게 함
+                    if (e.Key >= Key.D0 && e.Key <= Key.D9 ||
+                        e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9 ||
+                        e.Key >= Key.A && e.Key <= Key.Z ||
+                        e.Key == Key.Back || e.Key == Key.Delete ||
+                        e.Key == Key.Left || e.Key == Key.Right ||
+                        e.Key == Key.Home || e.Key == Key.End ||
+                        e.Key == Key.OemPeriod || e.Key == Key.OemMinus ||
+                        e.Key == Key.Space)
+                    {
+                        e.Handled = false;  // TextBox가 처리하도록 함
+                    }
                     break;
             }
         }

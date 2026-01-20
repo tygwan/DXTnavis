@@ -4,7 +4,7 @@
 
 **Navisworks 2025 Property Viewer & 4D Automation Plugin**
 
-[![Version](https://img.shields.io/badge/Version-0.8.0-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.9.0-blue?style=flat-square)]()
 [![Navisworks](https://img.shields.io/badge/Navisworks-2025-FF6D00?style=flat-square&logo=autodesk&logoColor=white)](https://www.autodesk.com/products/navisworks)
 [![.NET](https://img.shields.io/badge/.NET_Framework-4.8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![WPF](https://img.shields.io/badge/WPF-MVVM-0078D4?style=flat-square&logo=windows&logoColor=white)]()
@@ -14,7 +14,7 @@
 
 *BIM 모델의 속성을 효율적으로 관리하고 4D 시뮬레이션을 자동화하는 Navisworks 플러그인*
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Installation](#-installation) • [Changelog](CHANGELOG.md)
+[Features](#-features) • [Quick Start](#-quick-start) • [Installation](#-installation) • [User Manual](docs/USER-MANUAL.md) • [Changelog](CHANGELOG.md)
 
 ---
 
@@ -30,50 +30,74 @@
 
 <table>
 <tr>
-<td align="center" width="12%">
+<td align="center" width="14%">
 <h3>🌳</h3>
 <b>Hierarchy</b><br/>
 <sub>Level-based<br/>expand/collapse</sub>
 </td>
-<td align="center" width="12%">
+<td align="center" width="14%">
 <h3>🔍</h3>
 <b>Search</b><br/>
 <sub>Object search<br/>by name/path</sub>
 </td>
-<td align="center" width="12%">
+<td align="center" width="14%">
 <h3>🎯</h3>
 <b>3D Control</b><br/>
 <sub>Select, Show,<br/>Zoom, Reset</sub>
 </td>
-<td align="center" width="12%">
+<td align="center" width="14%">
 <h3>📤</h3>
 <b>Export</b><br/>
 <sub>Raw + Refined<br/>CSV dual export</sub>
 </td>
-<td align="center" width="12%">
+<td align="center" width="14%">
 <h3>📸</h3>
 <b>Snapshot</b><br/>
 <sub>ViewPoint<br/>Save & Reset</sub>
 </td>
-<td align="center" width="12%">
+<td align="center" width="14%">
 <h3>📊</h3>
 <b>CSV Viewer</b><br/>
 <sub>Load, Filter,<br/>Export CSV</sub>
 </td>
-<td align="center" width="12%">
+<td align="center" width="14%">
 <h3>🎬</h3>
 <b>AWP 4D</b><br/>
 <sub>CSV → TimeLiner<br/>Automation</sub>
 </td>
-<td align="center" width="12%">
-<h3>⚡</h3>
-<b>Async Load</b><br/>
-<sub>Progress bar,<br/>Cancel support</sub>
+<td align="center" width="14%">
+<h3>📅</h3>
+<b>Schedule</b><br/>
+<sub>Auto Schedule<br/>CSV Generator</sub>
 </td>
 </tr>
 </table>
 
-### AWP 4D Automation (v0.6.0) 🆕
+### Object Grouping (v0.9.0) 🆕
+객체별 속성 그룹화 표시 (MVP)
+
+| 기능 | 설명 |
+|------|------|
+| **Grouped View 토글** | Flat Mode ↔ Grouped Mode 전환 |
+| **객체별 그룹화** | 동일 객체의 속성들을 Expander로 그룹화 |
+| **그룹 선택** | 객체 선택 시 하위 속성 모두 선택 |
+| **조건부 활성화** | 10K 미만 필터링 데이터에서만 사용 가능 |
+
+> **성능 최적화**: 445K+ 전체 데이터에서는 Flat Mode 유지, 필터링 후 10K 미만일 때 Grouped Mode 활성화
+
+### Schedule Builder (v0.8.0)
+선택된 객체에서 Schedule CSV 자동 생성
+
+| 기능 | 설명 |
+|------|------|
+| **Task 설정** | 이름 접두사, 유형, 기간, 시작일 |
+| **ParentSet 전략** | ByLevel, ByProperty, Custom |
+| **미리보기** | 생성 전 DataGrid 확인 |
+| **AWP 4D 연동** | 생성된 CSV를 TimeLiner에 적용 |
+
+> **Workflow**: 객체 선택 → Task 설정 → Preview → Generate CSV → AWP 4D 실행
+
+### AWP 4D Automation (v0.6.0)
 CSV 스케줄 데이터에서 4D 시뮬레이션 자동 생성 파이프라인
 
 | 단계 | 기능 | 설명 |
@@ -163,9 +187,9 @@ dotnet build DXTnavis.csproj -c Debug
 ## Development Status
 
 ```
+v0.9.0: [====================] 100% ✅ Released 2026-01-20
+v0.8.0: [====================] 100% ✅ Released 2026-01-19
 v0.6.0: [====================] 100% ✅ Released 2026-01-11
-v0.7.0: [====================] 100% ✅ Released 2026-01-13
-v0.8.0: [====================] 100% ✅ Released 2026-01-13
 ```
 
 | Phase | Feature | Status |
@@ -174,12 +198,13 @@ v0.8.0: [====================] 100% ✅ Released 2026-01-13
 | 2 | UI Enhancement | ✅ 100% |
 | 3 | 3D Integration | ✅ 100% |
 | 4 | CSV Enhancement | ✅ 100% |
-| 5 | Data Validation | ✅ 100% |
+| 5 | ComAPI Research | ✅ 100% |
 | 6 | Code Quality | ✅ 100% |
 | 7 | CSV Viewer | ✅ 100% |
 | 8 | AWP 4D Automation | ✅ 100% |
-| 9 | UI Enhancement v2 | ✅ 100% |
-| 10 | Load Optimization | ✅ 100% |
+| 9 | UI Enhancement (Select All) | ✅ 100% |
+| 10 | Schedule Builder | ✅ 100% |
+| 11 | **Object Grouping MVP** | ✅ 100% |
 
 **→ [Changelog](CHANGELOG.md)**
 
@@ -187,8 +212,8 @@ v0.8.0: [====================] 100% ✅ Released 2026-01-13
 
 | Version | Features | Date |
 |:-------:|----------|:----:|
-| **v0.8.0** | **Async Loading, Progress UI, Cancellation, Single-Pass Optimization** | 2026-01-13 |
-| v0.7.0 | Data Validation, Grouped Property View, Select All | 2026-01-13 |
+| **v0.9.0** | **Object Grouping MVP** | 2026-01-20 |
+| v0.8.0 | Schedule Builder, Select All | 2026-01-19 |
 | v0.6.0 | AWP 4D Automation Pipeline | 2026-01-11 |
 | v0.5.0 | ViewModel Refactoring, CSV Viewer, ComAPI Research | 2026-01-09 |
 | v0.4.x | Auto Filter, Show Only Toggle, Unit Column | 2026-01-09 |
@@ -197,36 +222,25 @@ v0.8.0: [====================] 100% ✅ Released 2026-01-13
 | v0.2.0 | 3D Selection, Visibility Control, Zoom | 2026-01-05 |
 | v0.1.0 | Level Filter, SysPath Filter, TreeView | 2026-01-03 |
 
-### v0.8.0 주요 기능 (Released) 🆕
+### v0.9.0 주요 변경
 
 | Category | Feature | Status |
 |:--------:|---------|:------:|
-| ⚡ Perf | 비동기 로딩 (UI 프리징 제거) | ✅ Complete |
-| ⚡ Perf | ProgressBar + 상태 텍스트 | ✅ Complete |
-| ⚡ Perf | 취소 버튼 (즉시 중단) | ✅ Complete |
-| ⚡ Perf | 단일 순회 최적화 (2배 성능) | ✅ Complete |
+| 🆕 Grouping | 객체별 속성 그룹화 (Expander UI) | ✅ |
+| 🆕 Grouping | Flat/Grouped Mode 토글 전환 | ✅ |
+| 🆕 Grouping | 그룹 선택 시 하위 속성 모두 선택 | ✅ |
+| 🆕 Grouping | 10K 미만 필터링 시에만 활성화 | ✅ |
+| 🔧 Converter | BoolToVisibilityConverter Invert 지원 | ✅ |
 
-**구현된 UI**:
-```
-┌─────────────────────────────────────────────────────────────┐
-│  [📂 Loading...] [⏹ Cancel]                                 │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 35%  │  │
-│  └───────────────────────────────────────────────────────┘  │
-│  Building tree: 3,500 / 10,000 (35%)                        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### v0.7.0 주요 기능
+### v0.8.0 주요 변경
 
 | Category | Feature | Status |
 |:--------:|---------|:------:|
-| ✅ UI | Select All 체크박스 (전체 선택/해제) | ✅ Complete |
-| ✅ UI | 객체별 그룹화 표시 (Expander) | ✅ Complete |
-| ✅ UI | 카테고리별 하위 그룹화 | ✅ Complete |
-| ✅ UI | Expand/Collapse All 버튼 | ✅ Complete |
-| ✅ Validation | 단위 불일치 감지 | ✅ Complete |
-| ✅ Validation | 필수 속성 누락 확인 | ✅ Complete |
+| 🆕 Schedule | Schedule CSV 자동 생성 | ✅ |
+| 🆕 Schedule | Task 설정 (이름, 유형, 기간, 시작일) | ✅ |
+| 🆕 Schedule | ParentSet 전략 (ByLevel, ByProperty, Custom) | ✅ |
+| 🆕 Schedule | 미리보기 DataGrid | ✅ |
+| 🆕 UI | Select All 체크박스 | ✅ |
 
 ### v0.6.0 주요 변경
 
@@ -254,14 +268,12 @@ dxtnavis/
 │   ├── ScheduleData.cs          # v0.6.0 - 스케줄 데이터
 │   ├── AWP4DOptions.cs          # v0.6.0 - 파이프라인 옵션
 │   ├── AutomationResult.cs      # v0.6.0 - 실행 결과
-│   ├── ValidationResult.cs      # v0.6.0 - 검증 결과
-│   └── LoadProgress.cs          # v0.8.0 - 로딩 진행률 모델
+│   └── ValidationResult.cs      # v0.6.0 - 검증 결과
 ├── ViewModels/                   # MVVM (Partial Class 패턴)
 │   ├── DXwindowViewModel.cs      # Core
 │   ├── DXwindowViewModel.*.cs    # Partial classes
 │   ├── AWP4DViewModel.cs         # v0.6.0 - AWP 4D ViewModel
 │   ├── CsvViewerViewModel.cs
-│   ├── PropertyItemViewModel.cs  # v0.7.0 - 속성 그룹화 VM
 │   └── HierarchyNodeViewModel.cs
 ├── Views/
 │   └── DXwindow.xaml             # 메인 UI + AWP 4D 탭
@@ -274,17 +286,13 @@ dxtnavis/
 │   ├── AWP4DAutomationService.cs # v0.6.0 - 통합 파이프라인
 │   ├── ObjectMatcher.cs          # v0.6.0 - SyncID 매칭
 │   ├── AWP4DValidator.cs         # v0.6.0 - 검증 서비스
-│   ├── ScheduleCsvParser.cs      # v0.6.0 - 스케줄 CSV 파서
-│   ├── ValidationService.cs      # v0.7.0 - 속성 검증 서비스
-│   └── LoadHierarchyService.cs   # v0.8.0 - 최적화된 로딩 서비스
+│   └── ScheduleCsvParser.cs      # v0.6.0 - 스케줄 CSV 파서
 ├── snapshots/
 │   └── dxtnavis_main_page.png
 ├── docs/
 │   ├── phases/
-│   │   ├── phase-5-data-validation.md   # v0.7.0
 │   │   ├── phase-8-awp-4d-automation.md
-│   │   ├── phase-9-ui-enhancement.md    # v0.7.0
-│   │   └── phase-10-load-optimization.md # v0.8.0
+│   │   └── phase-9-ui-enhancement.md    # v0.7.0
 │   └── tech-specs/
 │       └── AWP-4D-Automation-Spec.md
 ├── CHANGELOG.md
@@ -372,6 +380,6 @@ propNode.SetUserDefined(0, "CategoryName", "InternalName", propVec);
 
 ---
 
-<sub>Last Updated: 2026-01-13 • v0.8.0</sub>
+<sub>Last Updated: 2026-01-20 • v0.9.0</sub>
 
 </div>

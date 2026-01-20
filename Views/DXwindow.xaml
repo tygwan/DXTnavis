@@ -12,7 +12,6 @@
 
     <Window.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
 
         <!-- 기본 버튼 스타일 -->
         <Style x:Key="ActionButton" TargetType="Button">
@@ -77,59 +76,6 @@
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Foreground" Value="#666666"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
-        </Style>
-
-        <!-- v0.7.0: CollectionViewSource for Grouped Property Display -->
-        <CollectionViewSource x:Key="GroupedPropertiesSource"
-                              Source="{Binding FilteredHierarchicalProperties}">
-            <CollectionViewSource.GroupDescriptions>
-                <PropertyGroupDescription PropertyName="DisplayName"/>
-                <PropertyGroupDescription PropertyName="Category"/>
-            </CollectionViewSource.GroupDescriptions>
-        </CollectionViewSource>
-
-        <!-- v0.7.0: Group Header Style (Level 1 - Object) -->
-        <Style x:Key="ObjectGroupHeaderStyle" TargetType="GroupItem">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="GroupItem">
-                        <Expander IsExpanded="True" Background="#E8F4FC" BorderBrush="#B8D4E8" BorderThickness="1" Margin="0,2,0,0">
-                            <Expander.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="📦 " FontSize="12"/>
-                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="12" Foreground="#0078D4"/>
-                                    <TextBlock Text=" (" Foreground="#666" FontSize="11"/>
-                                    <TextBlock Text="{Binding ItemCount}" Foreground="#666" FontSize="11" FontWeight="SemiBold"/>
-                                    <TextBlock Text=" properties)" Foreground="#666" FontSize="11"/>
-                                </StackPanel>
-                            </Expander.Header>
-                            <ItemsPresenter Margin="15,4,0,4"/>
-                        </Expander>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- v0.7.0: Group Header Style (Level 2 - Category) -->
-        <Style x:Key="CategoryGroupHeaderStyle" TargetType="GroupItem">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="GroupItem">
-                        <Expander IsExpanded="True" Background="#F5F5F5" BorderBrush="#DDD" BorderThickness="1" Margin="0,1,0,0">
-                            <Expander.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="📁 " FontSize="11"/>
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="11" Foreground="#444"/>
-                                    <TextBlock Text=" (" Foreground="#888" FontSize="10"/>
-                                    <TextBlock Text="{Binding ItemCount}" Foreground="#888" FontSize="10"/>
-                                    <TextBlock Text=")" Foreground="#888" FontSize="10"/>
-                                </StackPanel>
-                            </Expander.Header>
-                            <ItemsPresenter Margin="10,2,0,2"/>
-                        </Expander>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
     </Window.Resources>
 
@@ -262,43 +208,11 @@
                 </TreeView>
             </Border>
 
-            <!-- 버튼 및 진행률 (Phase 10) -->
+            <!-- 버튼 -->
             <StackPanel Grid.Row="2" Margin="0,8,0,0">
-                <!-- Load/Cancel 버튼 -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Button Grid.Column="0"
-                            Content="{Binding LoadButtonText}"
-                            Style="{StaticResource ActionButton}"
-                            Command="{Binding LoadHierarchyCommand}"
-                            IsEnabled="{Binding IsLoadingHierarchy, Converter={StaticResource InverseBoolConverter}}"/>
-
-                    <Button Grid.Column="1"
-                            Content="⏹ Cancel"
-                            Style="{StaticResource FilterButton}"
-                            Command="{Binding CancelLoadCommand}"
-                            Width="70"
-                            Visibility="{Binding IsLoadingHierarchy, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                </Grid>
-
-                <!-- 진행률 표시 (Phase 10) -->
-                <Border Background="#F0F4F8" Padding="8" Margin="0,6,0,0" CornerRadius="3"
-                        Visibility="{Binding IsLoadingHierarchy, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <StackPanel>
-                        <ProgressBar Value="{Binding LoadProgressPercentage}"
-                                     Minimum="0" Maximum="100"
-                                     Height="16"
-                                     Foreground="#0078D4"/>
-                        <TextBlock Text="{Binding LoadProgressText}"
-                                   FontSize="10" Foreground="#666666"
-                                   Margin="0,4,0,0"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                </Border>
+                <Button Content="📂 Load Hierarchy"
+                        Style="{StaticResource ActionButton}"
+                        Command="{Binding LoadHierarchyCommand}"/>
             </StackPanel>
         </Grid>
 
@@ -312,6 +226,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -322,75 +237,97 @@
                 <TextBlock Text="속성 데이터 및 필터링" Style="{StaticResource LabelStyle}"/>
             </StackPanel>
 
-            <!-- 필터 영역 -->
+            <!-- 필터 영역 (Phase 12: 체크박스 기반) -->
             <Border Grid.Row="1" Background="#E8F4FD" Padding="10" Margin="0,0,0,8" CornerRadius="4">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="70"/>
-                        <ColumnDefinition Width="1.5*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <!-- Level 필터 -->
-                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                        <TextBlock Text="Level" Style="{StaticResource LabelStyle}"/>
-                        <ComboBox ItemsSource="{Binding AvailableLevels}"
-                                  SelectedItem="{Binding SelectedLevelFilter}"
-                                  Height="28"/>
+                    <!-- Row 0: Level 체크박스 필터 -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="Level:" FontWeight="SemiBold" VerticalAlignment="Center" Width="55"/>
+                        <ItemsControl ItemsSource="{Binding LevelFilterOptions}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                              Content="{Binding DisplayText}"
+                                              IsEnabled="{Binding IsEnabled}"
+                                              ToolTip="{Binding ToolTip}"
+                                              Margin="0,0,10,0" FontSize="11"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
 
-                    <!-- SysPath 필터 -->
-                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
-                        <TextBlock Text="Path" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding SysPathFilter, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="28" VerticalContentAlignment="Center"
-                                 ToolTip="System path filter (e.g., Project > Building)"
-                                 InputMethod.IsInputMethodEnabled="True"
-                                 PreviewKeyDown="TextBox_PreviewKeyDown"
-                                 GotFocus="TextBox_GotFocus"/>
-                    </StackPanel>
+                    <!-- Row 1: Category 체크박스 필터 -->
+                    <Border Grid.Row="1" Background="#D4EAFC" Padding="4" Margin="0,0,0,6" CornerRadius="2">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Category:" FontWeight="SemiBold" VerticalAlignment="Top" Width="55" Margin="0,2,0,0"/>
+                            <ScrollViewer MaxHeight="50" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding CategoryFilterOptions}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                      Content="{Binding DisplayText}"
+                                                      IsEnabled="{Binding IsEnabled}"
+                                                      ToolTip="{Binding ToolTip}"
+                                                      Margin="0,0,8,2" FontSize="10"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
 
-                    <!-- 카테고리 필터 -->
-                    <StackPanel Grid.Column="2" Margin="0,0,8,0">
-                        <TextBlock Text="Category" Style="{StaticResource LabelStyle}"/>
-                        <ComboBox ItemsSource="{Binding AvailableCategories}"
-                                  SelectedItem="{Binding SelectedCategoryFilter}"
-                                  Height="28"/>
-                    </StackPanel>
+                    <!-- Row 2: 텍스트 필터 + 버튼 -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <!-- 속성 필터 -->
-                    <StackPanel Grid.Column="3" Margin="0,0,8,0">
-                        <TextBlock Text="Property" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding PropertyNameFilter, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="28" VerticalContentAlignment="Center"
-                                 InputMethod.IsInputMethodEnabled="True"
-                                 PreviewKeyDown="TextBox_PreviewKeyDown"
-                                 GotFocus="TextBox_GotFocus"/>
-                    </StackPanel>
+                        <!-- 속성 필터 -->
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="Property Name" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding PropertyNameFilter, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="26" VerticalContentAlignment="Center"
+                                     InputMethod.IsInputMethodEnabled="True"
+                                     PreviewKeyDown="TextBox_PreviewKeyDown"
+                                     GotFocus="TextBox_GotFocus"/>
+                        </StackPanel>
 
-                    <!-- 값 필터 -->
-                    <StackPanel Grid.Column="4" Margin="0,0,8,0">
-                        <TextBlock Text="Value" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding PropertyValueFilter, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="28" VerticalContentAlignment="Center"
-                                 InputMethod.IsInputMethodEnabled="True"
-                                 PreviewKeyDown="TextBox_PreviewKeyDown"
-                                 GotFocus="TextBox_GotFocus"/>
-                    </StackPanel>
+                        <!-- 값 필터 -->
+                        <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                            <TextBlock Text="Property Value" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding PropertyValueFilter, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="26" VerticalContentAlignment="Center"
+                                     InputMethod.IsInputMethodEnabled="True"
+                                     PreviewKeyDown="TextBox_PreviewKeyDown"
+                                     GotFocus="TextBox_GotFocus"/>
+                        </StackPanel>
 
-                    <!-- 필터 버튼 -->
-                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Bottom">
-                        <Button Content="🔍 Filter" Style="{StaticResource FilterButton}"
-                                Command="{Binding ApplyFilterCommand}"/>
-                        <Button Content="✕ Clear" Style="{StaticResource FilterButton}"
-                                Command="{Binding ClearFilterCommand}"/>
-                        <Button Content="✓ Validate" Style="{StaticResource FilterButton}"
-                                Command="{Binding ValidatePropertiesCommand}"
-                                ToolTip="속성 데이터 유효성 검증 (단위, 필수속성, 타입)"/>
-                    </StackPanel>
+                        <!-- 필터 버튼 -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom">
+                            <Button Content="🔍 Filter" Style="{StaticResource FilterButton}"
+                                    Command="{Binding ApplyFilterCommand}"/>
+                            <Button Content="✕ Clear" Style="{StaticResource FilterButton}"
+                                    Command="{Binding ClearFilterCommand}"/>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
 
@@ -435,87 +372,52 @@
                 </Grid>
             </Border>
 
-            <!-- DataGrid with Select All Toolbar (v0.7.0) -->
-            <Border Grid.Row="3" BorderBrush="#DDDDDD" BorderThickness="1" Background="White">
+            <!-- Select All & View Mode Toggle (Phase 12: 그룹 기반) -->
+            <Border Grid.Row="3" Background="#F0F4F8" Padding="8,4" Margin="0,4,0,0" CornerRadius="4">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Select All Toolbar (v0.7.0 Phase 9) -->
-                    <Border Grid.Row="0" Background="#F0F4F8" Padding="6,4" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                    <!-- Phase 12: 그룹 Select All (항상 빠름) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <CheckBox Content="Select All Groups"
+                                  IsChecked="{Binding IsGroupSelectAll, Mode=TwoWay}"
+                                  VerticalAlignment="Center"
+                                  FontWeight="SemiBold"
+                                  Foreground="#0078D4"
+                                  ToolTip="전체 그룹 선택/해제"/>
+                        <TextBlock VerticalAlignment="Center" Margin="8,0,0,0">
+                            <Run Text="{Binding SelectionSummary, Mode=OneWay}" Foreground="#666666"/>
+                        </TextBlock>
+                    </StackPanel>
 
-                            <!-- Select All Checkbox -->
-                            <CheckBox Grid.Column="0"
-                                      Content="Select All"
-                                      IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
-                                      VerticalAlignment="Center"
-                                      FontWeight="SemiBold"
-                                      Margin="0,0,12,0"
-                                      ToolTip="전체 선택/해제 (필터링된 항목만)"/>
+                    <!-- Grouped/Flat View Toggle -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <CheckBox Content="Flat View"
+                                  IsChecked="{Binding IsGroupedViewEnabled, Mode=TwoWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                                  VerticalAlignment="Center"
+                                  FontWeight="SemiBold"
+                                  ToolTip="플랫 뷰 / 그룹 뷰 전환"
+                                  Foreground="#6F42C1"
+                                  Visibility="Collapsed"/>
+                        <TextBlock VerticalAlignment="Center" Foreground="#6F42C1" FontWeight="SemiBold">
+                            <Run Text="{Binding FilteredGroupCount, StringFormat='{}{0:N0} groups', Mode=OneWay}"/>
+                            <Run Text=" | " Foreground="#999"/>
+                            <Run Text="{Binding FilteredPropertyCount, StringFormat='{}{0:N0} props', Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-                            <!-- Select/Deselect Buttons -->
-                            <Button Grid.Column="1"
-                                    Content="☑ All"
-                                    Style="{StaticResource FilterButton}"
-                                    Command="{Binding SelectAllCommand}"
-                                    ToolTip="모든 항목 선택"
-                                    Width="50"
-                                    Margin="0,0,4,0"/>
-                            <Button Grid.Column="2"
-                                    Content="☐ None"
-                                    Style="{StaticResource FilterButton}"
-                                    Command="{Binding DeselectAllCommand}"
-                                    ToolTip="모든 항목 선택 해제"
-                                    Width="55"
-                                    Margin="0,0,16,0"/>
-
-                            <!-- Separator -->
-                            <Border Grid.Column="3" Width="1" Background="#CCC" Margin="0,2"/>
-
-                            <!-- Group View Toggle (v0.7.0) -->
-                            <CheckBox Grid.Column="4"
-                                      Content="Group View"
-                                      IsChecked="{Binding IsGroupViewEnabled, Mode=TwoWay}"
-                                      VerticalAlignment="Center"
-                                      FontWeight="SemiBold"
-                                      Margin="12,0,8,0"
-                                      ToolTip="객체/카테고리별 그룹화 표시"/>
-
-                            <!-- Expand/Collapse Indicator -->
-                            <TextBlock Grid.Column="5"
-                                       Text="{Binding GroupExpandCollapseText}"
-                                       VerticalAlignment="Center"
-                                       Foreground="#888"
-                                       FontSize="10"
-                                       Margin="0,0,8,0"
-                                       Visibility="{Binding IsGroupViewEnabled, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
-                            <!-- Selection Count -->
-                            <TextBlock Grid.Column="7"
-                                       Text="{Binding SelectedPropertiesCount}"
-                                       VerticalAlignment="Center"
-                                       Foreground="#666"
-                                       FontSize="11"/>
-                        </Grid>
-                    </Border>
-
-                    <!-- DataGrid (v0.7.0: with GroupStyle support) -->
-                    <DataGrid Grid.Row="1"
-                              x:Name="HierarchyDataGrid"
-                              ItemsSource="{Binding GroupedPropertiesView}"
+            <!-- DataGrid Container (Flat Mode / Grouped Mode 전환) -->
+            <Border Grid.Row="4" BorderBrush="#DDDDDD" BorderThickness="1" Background="White">
+                <Grid>
+                    <!-- Flat Mode DataGrid (기본) -->
+                    <DataGrid x:Name="HierarchyDataGrid"
+                              ItemsSource="{Binding FilteredHierarchicalProperties}"
                               AutoGenerateColumns="False"
                               SelectionMode="Extended"
                               SelectionUnit="FullRow"
@@ -525,28 +427,7 @@
                               GridLinesVisibility="Horizontal"
                               BorderThickness="0"
                               CanUserAddRows="False"
-                              VirtualizingStackPanel.IsVirtualizing="True"
-                              VirtualizingStackPanel.VirtualizationMode="Recycling"
-                              EnableRowVirtualization="True">
-                        <!-- v0.7.0: GroupStyle for hierarchical display -->
-                        <DataGrid.GroupStyle>
-                            <!-- Level 1: Object (DisplayName) -->
-                            <GroupStyle ContainerStyle="{StaticResource ObjectGroupHeaderStyle}">
-                                <GroupStyle.Panel>
-                                    <ItemsPanelTemplate>
-                                        <DataGridRowsPresenter/>
-                                    </ItemsPanelTemplate>
-                                </GroupStyle.Panel>
-                            </GroupStyle>
-                            <!-- Level 2: Category -->
-                            <GroupStyle ContainerStyle="{StaticResource CategoryGroupHeaderStyle}">
-                                <GroupStyle.Panel>
-                                    <ItemsPanelTemplate>
-                                        <DataGridRowsPresenter/>
-                                    </ItemsPanelTemplate>
-                                </GroupStyle.Panel>
-                            </GroupStyle>
-                        </DataGrid.GroupStyle>
+                              Visibility="{Binding IsGroupedViewEnabled, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
                         <DataGrid.Columns>
                             <DataGridCheckBoxColumn Header="✓"
                                                     Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -554,22 +435,137 @@
                             <DataGridTextColumn Header="Level"
                                                 Binding="{Binding Level}"
                                                 Width="50" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Object"
+                                                Binding="{Binding DisplayName}"
+                                                Width="130" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Category"
+                                                Binding="{Binding Category}"
+                                                Width="100" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Property"
                                                 Binding="{Binding PropertyName}"
-                                                Width="120" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="Value"
+                                                Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Raw Value"
                                                 Binding="{Binding PropertyValue}"
-                                                Width="*" IsReadOnly="True"/>
+                                                Width="150" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Refined"
+                                                Binding="{Binding RawValue}"
+                                                Width="*" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#0078D4"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="Unit"
                                                 Binding="{Binding Unit}"
                                                 Width="60" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                    <!-- Phase 12: Grouped Mode ListView (FilteredObjectGroups 사용) -->
+                    <ListView x:Name="GroupedListView"
+                              ItemsSource="{Binding FilteredObjectGroups}"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              BorderThickness="0"
+                              Background="White"
+                              Visibility="{Binding IsGroupedViewEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                          Background="White" BorderThickness="0,0,0,1" BorderBrush="#E0E0E0">
+                                    <!-- 그룹 헤더 -->
+                                    <Expander.Header>
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"/>
+
+                                            <Border Grid.Column="1"
+                                                    Background="#6F42C1" CornerRadius="2"
+                                                    Padding="4,1" Margin="0,0,8,0">
+                                                <TextBlock Text="{Binding LevelBadge}"
+                                                           Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                            </Border>
+
+                                            <TextBlock Grid.Column="2"
+                                                       VerticalAlignment="Center">
+                                                <Run Text="{Binding DisplayName, Mode=OneWay}" FontWeight="SemiBold" FontSize="13"/>
+                                                <Run Text="{Binding FilteredPropertyCount, StringFormat=' ({0} props)', Mode=OneWay}" Foreground="#666"/>
+                                            </TextBlock>
+
+                                            <TextBlock Grid.Column="3"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="#28A745" FontSize="11"
+                                                       Margin="8,0"
+                                                       Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <Run Text="✓ Selected"/>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Expander.Header>
+
+                                    <!-- 필터링된 속성 목록 (확장 시) -->
+                                    <DataGrid ItemsSource="{Binding FilteredProperties}"
+                                              AutoGenerateColumns="False"
+                                              CanUserAddRows="False"
+                                              HeadersVisibility="None"
+                                              GridLinesVisibility="None"
+                                              Background="#FAFAFA"
+                                              BorderThickness="0"
+                                              Margin="32,0,0,4"
+                                              MaxHeight="300">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Binding="{Binding Category}" Width="100" IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#6F42C1"/>
+                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Binding="{Binding PropertyName}" Width="100" IsReadOnly="True"/>
+                                            <DataGridTextColumn Binding="{Binding PropertyValue}" Width="150" IsReadOnly="True"/>
+                                            <DataGridTextColumn Binding="{Binding RawValue}" Width="*" IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#0078D4"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Binding="{Binding Unit}" Width="50" IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#999"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Expander>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
                 </Grid>
             </Border>
 
             <!-- 내보내기 및 3D 선택 버튼 -->
-            <Border Grid.Row="4" Background="#F8F9FA" Padding="8" Margin="0,8,0,0" CornerRadius="4">
+            <Border Grid.Row="5" Background="#F8F9FA" Padding="8" Margin="0,8,0,0" CornerRadius="4">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -964,8 +960,8 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <TextBlock FontSize="10" TextWrapping="Wrap" Margin="0,1">
-                                                <Run Text="{Binding Timestamp, StringFormat='[{0:HH:mm:ss}]'}" Foreground="#999999"/>
-                                                <Run Text="{Binding Message}"/>
+                                                <Run Text="{Binding Timestamp, StringFormat='[{0:HH:mm:ss}]', Mode=OneWay}" Foreground="#999999"/>
+                                                <Run Text="{Binding Message, Mode=OneWay}"/>
                                             </TextBlock>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -976,7 +972,246 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 탭 4: 정보 -->
+            <!-- 탭 4: Schedule Builder (Phase 10) -->
+            <TabItem Header="📅 Schedule">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="Schedule Builder" FontSize="16" FontWeight="Bold"
+                                   Foreground="#0078D4" Margin="0,0,0,12"/>
+
+                        <!-- 선택 상태 표시 -->
+                        <Border Background="#E3F2FD" Padding="12" Margin="0,0,0,12" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold">
+                                    <Run Text="선택된 객체: "/>
+                                    <Run Text="{Binding ScheduleBuilder.SelectedCount, FallbackValue=0, Mode=OneWay}" Foreground="#0078D4" FontWeight="Bold"/>
+                                    <Run Text=" 개"/>
+                                </TextBlock>
+                                <TextBlock Text="{Binding ScheduleBuilder.StatusMessage, FallbackValue='선택된 항목이 없습니다.'}"
+                                           FontSize="11" Foreground="#666666" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 옵션 설정 -->
+                        <Border Background="#F8F9FA" Padding="12" Margin="0,0,0,12" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Task 설정" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                <!-- Task Name Prefix -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Task Prefix" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding ScheduleBuilder.TaskNamePrefix, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="26" Padding="6,4"
+                                             InputMethod.IsInputMethodEnabled="True"
+                                             PreviewKeyDown="TextBox_PreviewKeyDown"
+                                             GotFocus="TextBox_GotFocus"/>
+                                </Grid>
+
+                                <!-- Task Type -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Task Type" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding ScheduleBuilder.TaskTypes}"
+                                              SelectedItem="{Binding ScheduleBuilder.SelectedTaskType}"
+                                              Height="26"/>
+                                </Grid>
+
+                                <!-- Duration -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="30"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Duration" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding ScheduleBuilder.DurationPerTask, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="26" Padding="6,4"
+                                             InputMethod.IsInputMethodEnabled="True"
+                                             PreviewKeyDown="TextBox_PreviewKeyDown"
+                                             GotFocus="TextBox_GotFocus"/>
+                                    <TextBlock Grid.Column="2" Text="일" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                </Grid>
+
+                                <!-- Start Date -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Start Date" VerticalAlignment="Center"/>
+                                    <DatePicker Grid.Column="1" SelectedDate="{Binding ScheduleBuilder.StartDate}"
+                                                Height="26"/>
+                                </Grid>
+
+                                <!-- Date Mode (Phase 13) -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Date Mode" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1"
+                                              ItemsSource="{Binding ScheduleBuilder.DateModeOptions}"
+                                              SelectedValue="{Binding ScheduleBuilder.SelectedDateMode}"
+                                              SelectedValuePath="Mode"
+                                              DisplayMemberPath="DisplayName"
+                                              Height="26"
+                                              ToolTip="TimeLiner 날짜 설정 방식"/>
+                                </Grid>
+
+                                <!-- ParentSet Strategy -->
+                                <TextBlock Text="ParentSet 전략" FontWeight="Bold" Margin="0,12,0,8"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Strategy" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding ScheduleBuilder.ParentSetStrategies}"
+                                              SelectedItem="{Binding ScheduleBuilder.ParentSetStrategy}"
+                                              Height="26"/>
+                                </Grid>
+
+                                <!-- Level (ByLevel 전략 시) -->
+                                <Grid Margin="0,0,0,8"
+                                      Visibility="{Binding ScheduleBuilder.IsLevelStrategySelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Level" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding ScheduleBuilder.ParentSetLevel, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="26" Padding="6,4"
+                                             InputMethod.IsInputMethodEnabled="True"
+                                             PreviewKeyDown="TextBox_PreviewKeyDown"
+                                             GotFocus="TextBox_GotFocus"/>
+                                </Grid>
+
+                                <!-- Custom ParentSet (Custom 전략 시) -->
+                                <Grid Margin="0,0,0,8"
+                                      Visibility="{Binding ScheduleBuilder.IsCustomStrategySelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Custom Set" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding ScheduleBuilder.CustomParentSet, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="26" Padding="6,4"
+                                             InputMethod.IsInputMethodEnabled="True"
+                                             PreviewKeyDown="TextBox_PreviewKeyDown"
+                                             GotFocus="TextBox_GotFocus"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 실행 버튼 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="🔄 Refresh"
+                                    Style="{StaticResource FilterButton}"
+                                    Command="{Binding ScheduleBuilder.RefreshPreviewCommand}"
+                                    Width="80" Height="28"/>
+                            <Button Content="💾 CSV"
+                                    Style="{StaticResource SuccessButton}"
+                                    Command="{Binding ScheduleBuilder.GenerateCsvCommand}"
+                                    Width="70" Height="28" Margin="6,0,0,0"
+                                    ToolTip="Schedule CSV 파일 저장"/>
+                            <Button Content="▶ Temp CSV"
+                                    Style="{StaticResource ActionButton}"
+                                    Command="{Binding ScheduleBuilder.ExecuteToTimeLinerCommand}"
+                                    Width="85" Height="28" Margin="6,0,0,0"
+                                    ToolTip="임시 CSV 생성 후 AWP 4D 탭에서 로드"/>
+                        </StackPanel>
+
+                        <!-- Phase 13: 직접 실행 섹션 -->
+                        <Border Background="#E8F5E9" Padding="10" Margin="0,0,0,12" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="⚡ Direct TimeLiner Execution" FontWeight="SemiBold" Foreground="#2E7D32" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <CheckBox Content="DryRun (미리보기만)"
+                                              IsChecked="{Binding ScheduleBuilder.IsDryRunMode}"
+                                              VerticalAlignment="Center"
+                                              ToolTip="체크하면 실제 실행 없이 결과를 미리 확인합니다"/>
+                                    <Button Content="🚀 직접 실행"
+                                            Background="#2E7D32" Foreground="White"
+                                            Command="{Binding ScheduleBuilder.DirectExecuteCommand}"
+                                            Width="100" Height="28" Margin="12,0,0,0"
+                                            ToolTip="CSV 없이 직접 TimeLiner에 연결"
+                                            IsEnabled="{Binding ScheduleBuilder.CanExecute}"/>
+                                </StackPanel>
+                                <!-- 진행률 표시 -->
+                                <Grid Visibility="{Binding ScheduleBuilder.IsExecuting, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <ProgressBar Value="{Binding ScheduleBuilder.ExecutionProgress}"
+                                                 Minimum="0" Maximum="100"
+                                                 Height="6" Background="#C8E6C9" Foreground="#2E7D32"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 예상 기간 표시 -->
+                        <Border Background="#FFF3E0" Padding="10" Margin="0,0,0,12" CornerRadius="4"
+                                Visibility="{Binding ScheduleBuilder.SelectedCount, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock>
+                                <Run Text="예상 총 기간: "/>
+                                <Run Text="{Binding ScheduleBuilder.TotalDuration, FallbackValue=0, Mode=OneWay}" FontWeight="Bold" Foreground="#E65100"/>
+                                <Run Text=" 일"/>
+                            </TextBlock>
+                        </Border>
+
+                        <!-- 미리보기 DataGrid -->
+                        <Border Background="White" BorderBrush="#DDDDDD" BorderThickness="1"
+                                Padding="1" CornerRadius="4" MaxHeight="200">
+                            <DataGrid ItemsSource="{Binding ScheduleBuilder.PreviewItems}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      RowHeight="24"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal"
+                                      HorizontalGridLinesBrush="#EEEEEE"
+                                      AlternatingRowBackground="#FAFAFA"
+                                      EnableRowVirtualization="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Task" Binding="{Binding TaskName}" Width="70"/>
+                                    <DataGridTextColumn Header="Planned Start" Binding="{Binding PlannedStart, StringFormat='yyyy-MM-dd'}" Width="85"/>
+                                    <DataGridTextColumn Header="Planned End" Binding="{Binding PlannedEnd, StringFormat='yyyy-MM-dd'}" Width="85"/>
+                                    <DataGridTextColumn Header="Actual" Binding="{Binding ActualDateDisplay}" Width="70">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#28A745"/>
+                                                <Setter Property="FontSize" Value="10"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding TaskType}" Width="50"/>
+                                    <DataGridTextColumn Header="Set" Binding="{Binding ParentSet}" Width="60"/>
+                                    <DataGridTextColumn Header="Original" Binding="{Binding OriginalDisplayName}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+
+                        <!-- 사용법 안내 -->
+                        <Border Background="#F0F0F0" Padding="10" Margin="0,12,0,0" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="사용 방법" FontWeight="Bold" Margin="0,0,0,6"/>
+                                <TextBlock Text="1. 중앙 패널에서 객체를 선택 (체크박스)" FontSize="10" Foreground="#666666"/>
+                                <TextBlock Text="2. Task 설정 (이름, 기간, 시작일, ParentSet)" FontSize="10" Foreground="#666666"/>
+                                <TextBlock Text="3. 'Refresh Preview'로 미리보기 확인" FontSize="10" Foreground="#666666"/>
+                                <TextBlock Text="4. 'Generate CSV' 또는 'To TimeLiner' 실행" FontSize="10" Foreground="#666666"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- 탭 5: 정보 -->
             <TabItem Header="ℹ️ Info">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12">
@@ -1005,8 +1240,12 @@
                                 <TextBlock Text="  Select in 3D, Show Only, Zoom, ViewPoint 저장"
                                            FontSize="10" Foreground="#666666" Margin="0,0,0,10"/>
 
-                                <TextBlock Text="• AWP 4D Automation (NEW)" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                                <TextBlock Text="• AWP 4D Automation" FontWeight="SemiBold" Margin="0,0,0,3"/>
                                 <TextBlock Text="  CSV → Property → Selection Set → TimeLiner 자동화"
+                                           FontSize="10" Foreground="#666666" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="• Schedule Builder (NEW)" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                                <TextBlock Text="  선택 데이터 → Schedule CSV 자동 생성"
                                            FontSize="10" Foreground="#666666"/>
                             </StackPanel>
                         </Border>
@@ -1015,7 +1254,7 @@
                                 Padding="15" CornerRadius="4">
                             <StackPanel>
                                 <TextBlock Text="버전 정보" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <TextBlock Text="Version: 0.6.0" FontSize="11" Margin="0,0,0,3"/>
+                                <TextBlock Text="Version: 0.8.0" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="Target: Navisworks Manage 2025" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="Framework: .NET Framework 4.8" FontSize="11" Margin="0,0,0,3"/>
                                 <TextBlock Text="GitHub: github.com/tygwan/DXTnavis"

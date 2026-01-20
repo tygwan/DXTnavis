@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 using Autodesk.Navisworks.Api;
 using DXTnavis.Helpers;
@@ -52,14 +51,6 @@ namespace DXTnavis.ViewModels
 
         // Snapshot Service (Phase 4)
         private readonly SnapshotService _snapshotService;
-        private readonly ValidationService _validationService; // Phase 5
-
-        // Load Hierarchy Service (Phase 10)
-        private readonly LoadHierarchyService _loadHierarchyService;
-        private System.Threading.CancellationTokenSource _loadCts;
-        private bool _isLoadingHierarchy;
-        private double _loadProgressPercentage;
-        private string _loadProgressText;
 
         // Tree Expand/Collapse (Phase 2)
         private int _selectedExpandLevel;
@@ -67,13 +58,17 @@ namespace DXTnavis.ViewModels
         // Object Search (v0.4.0)
         private string _objectSearchQuery;
 
-        // Select All (v0.7.0 Phase 9)
+        // Select All (v0.6.1)
         private bool _isAllSelected;
         private bool _isUpdatingSelectAll;
 
-        // Group View (v0.7.0 Phase 9)
-        private bool _isGroupViewEnabled = true;
-        private ICollectionView _groupedPropertiesView;
+        // Grouped View (Phase 11 → Phase 12: 기본 그룹 뷰)
+        private bool _isGroupedViewEnabled = true;  // Phase 12: 기본값 true
+        private bool _isGroupedViewAvailable = true;
+
+        // Phase 12: Grouped Data Structure
+        private bool _isGroupSelectAll;
+        private bool _isUpdatingGroupSelectAll;
 
         #endregion
 
@@ -90,7 +85,12 @@ namespace DXTnavis.ViewModels
         public AWP4DViewModel AWP4D { get; }
 
         /// <summary>
-        /// 전체 선택 상태 (v0.7.0 Phase 9)
+        /// Schedule Builder ViewModel (Phase 10)
+        /// </summary>
+        public ScheduleBuilderViewModel ScheduleBuilder { get; }
+
+        /// <summary>
+        /// 전체 선택 상태 (v0.6.1)
         /// </summary>
         public bool IsAllSelected
         {
@@ -112,62 +112,16 @@ namespace DXTnavis.ViewModels
         }
 
         /// <summary>
-        /// 그룹 뷰 활성화 여부 (v0.7.0 Phase 9)
+        /// Select All 사용 가능 여부 (v0.9.0: 10,000개 이하일 때만 활성화)
         /// </summary>
-        public bool IsGroupViewEnabled
-        {
-            get => _isGroupViewEnabled;
-            set
-            {
-                if (_isGroupViewEnabled != value)
-                {
-                    _isGroupViewEnabled = value;
-                    OnPropertyChanged(nameof(IsGroupViewEnabled));
-                    OnPropertyChanged(nameof(GroupExpandCollapseText));
-                    UpdateGroupedPropertiesView();
-                }
-            }
-        }
+        public bool IsSelectAllAvailable => FilteredHierarchicalProperties.Count <= 10000;
 
         /// <summary>
-        /// 그룹화된 속성 뷰 (v0.7.0 Phase 9)
-        /// CollectionViewSource를 통해 Object/Category별 그룹화 제공
+        /// Select All 툴팁 (사용 불가 시 이유 표시)
         /// </summary>
-        public ICollectionView GroupedPropertiesView
-        {
-            get
-            {
-                if (_groupedPropertiesView == null)
-                {
-                    UpdateGroupedPropertiesView();
-                }
-                return _groupedPropertiesView;
-            }
-        }
-
-        /// <summary>
-        /// 그룹 확장/축소 상태 텍스트 (v0.7.0)
-        /// </summary>
-        public string GroupExpandCollapseText
-        {
-            get
-            {
-                if (!_isGroupViewEnabled)
-                    return "";
-
-                int objectCount = FilteredHierarchicalProperties
-                    .Select(p => p.DisplayName)
-                    .Distinct()
-                    .Count();
-
-                int categoryCount = FilteredHierarchicalProperties
-                    .Select(p => $"{p.DisplayName}|{p.Category}")
-                    .Distinct()
-                    .Count();
-
-                return $"({objectCount} objects, {categoryCount} groups)";
-            }
-        }
+        public string SelectAllTooltip => IsSelectAllAvailable
+            ? $"전체 선택/해제 ({FilteredHierarchicalProperties.Count}개)"
+            : $"Select All은 10,000개 이하에서만 사용 가능합니다 (현재: {FilteredHierarchicalProperties.Count:N0}개). 필터를 적용해주세요.";
 
         /// <summary>
         /// UI에 표시될 속성 목록
@@ -283,13 +237,26 @@ namespace DXTnavis.ViewModels
 
         /// <summary>
         /// 선택된 속성 개수 (체크박스 선택된 항목)
+        /// Phase 12: 그룹 기반 선택 반영
         /// </summary>
         public string SelectedPropertiesCount
         {
             get
             {
-                int count = FilteredHierarchicalProperties.Count(p => p.IsSelected);
-                return $"{count} selected";
+                // Phase 12: 그룹 기반 카운팅
+                if (FilteredObjectGroups.Count > 0)
+                {
+                    int groupCount = FilteredObjectGroups.Count(g => g.IsSelected);
+                    int propCount = FilteredObjectGroups
+                        .Where(g => g.IsSelected)
+                        .Sum(g => g.FilteredPropertyCount);
+                    return $"{groupCount} groups ({propCount} props)";
+                }
+                else
+                {
+                    int count = FilteredHierarchicalProperties.Count(p => p.IsSelected);
+                    return $"{count} selected";
+                }
             }
         }
 
@@ -448,50 +415,139 @@ namespace DXTnavis.ViewModels
         }
 
         /// <summary>
-        /// 계층 구조 로딩 중 여부 (Phase 10)
+        /// 그룹화 뷰 활성화 여부 (Phase 11)
         /// </summary>
-        public bool IsLoadingHierarchy
+        public bool IsGroupedViewEnabled
         {
-            get => _isLoadingHierarchy;
+            get => _isGroupedViewEnabled;
             set
             {
-                _isLoadingHierarchy = value;
-                OnPropertyChanged(nameof(IsLoadingHierarchy));
-                OnPropertyChanged(nameof(LoadButtonText));
-                ((RelayCommand)CancelLoadCommand)?.RaiseCanExecuteChanged();
+                if (_isGroupedViewEnabled != value)
+                {
+                    _isGroupedViewEnabled = value;
+                    OnPropertyChanged(nameof(IsGroupedViewEnabled));
+
+                    if (value)
+                    {
+                        RefreshGroupedProperties();
+                    }
+                }
             }
         }
 
         /// <summary>
-        /// 로딩 진행률 (0-100) (Phase 10)
+        /// 그룹화 뷰 사용 가능 여부 (필터링된 아이템 &lt; 10,000일 때만 true)
         /// </summary>
-        public double LoadProgressPercentage
+        public bool IsGroupedViewAvailable
         {
-            get => _loadProgressPercentage;
-            set
+            get => _isGroupedViewAvailable;
+            private set
             {
-                _loadProgressPercentage = value;
-                OnPropertyChanged(nameof(LoadProgressPercentage));
+                if (_isGroupedViewAvailable != value)
+                {
+                    _isGroupedViewAvailable = value;
+                    OnPropertyChanged(nameof(IsGroupedViewAvailable));
+                    OnPropertyChanged(nameof(GroupedViewTooltip));
+
+                    // 사용 불가능해지면 그룹화 뷰 해제
+                    if (!value && _isGroupedViewEnabled)
+                    {
+                        _isGroupedViewEnabled = false;
+                        OnPropertyChanged(nameof(IsGroupedViewEnabled));
+                    }
+                }
             }
         }
 
         /// <summary>
-        /// 로딩 진행 상태 텍스트 (Phase 10)
+        /// 그룹화 뷰 툴팁 (사용 불가 시 이유 표시)
         /// </summary>
-        public string LoadProgressText
+        public string GroupedViewTooltip => IsGroupedViewAvailable
+            ? "객체별 그룹화 보기 활성화 (현재 아이템 수: " + FilteredHierarchicalProperties.Count + ")"
+            : "그룹화 뷰는 10,000개 미만의 아이템에서만 사용 가능합니다 (현재: " + FilteredHierarchicalProperties.Count + ")";
+
+        /// <summary>
+        /// 그룹화된 속성 목록 (Phase 11)
+        /// </summary>
+        public ObservableCollection<ObjectGroupViewModel> GroupedProperties { get; }
+
+        /// <summary>
+        /// 그룹 개수
+        /// </summary>
+        public int GroupCount => GroupedProperties?.Count ?? 0;
+
+        #region Phase 12: Grouped Data Structure
+
+        /// <summary>
+        /// Phase 12: 전체 객체 그룹 목록
+        /// </summary>
+        public ObservableCollection<ObjectGroupModel> AllObjectGroups { get; }
+
+        /// <summary>
+        /// Phase 12: 필터링된 객체 그룹 목록
+        /// </summary>
+        public ObservableCollection<ObjectGroupModel> FilteredObjectGroups { get; }
+
+        /// <summary>
+        /// Phase 12: 레벨 필터 옵션 (체크박스 기반)
+        /// </summary>
+        public ObservableCollection<FilterOption> LevelFilterOptions { get; }
+
+        /// <summary>
+        /// Phase 12: 카테고리 필터 옵션 (체크박스 기반)
+        /// </summary>
+        public ObservableCollection<FilterOption> CategoryFilterOptions { get; }
+
+        /// <summary>
+        /// Phase 12: 필터링된 그룹 수
+        /// </summary>
+        public int FilteredGroupCount => FilteredObjectGroups?.Count ?? 0;
+
+        /// <summary>
+        /// Phase 12: 필터링된 총 속성 수
+        /// </summary>
+        public int FilteredPropertyCount => FilteredObjectGroups?.Sum(g => g.FilteredPropertyCount) ?? 0;
+
+        /// <summary>
+        /// Phase 12: 그룹 전체 선택
+        /// </summary>
+        public bool IsGroupSelectAll
         {
-            get => _loadProgressText;
+            get => _isGroupSelectAll;
             set
             {
-                _loadProgressText = value;
-                OnPropertyChanged(nameof(LoadProgressText));
+                if (_isGroupSelectAll != value)
+                {
+                    _isGroupSelectAll = value;
+                    OnPropertyChanged(nameof(IsGroupSelectAll));
+
+                    if (!_isUpdatingGroupSelectAll)
+                    {
+                        SelectAllGroups(value);
+                    }
+                }
             }
         }
 
         /// <summary>
-        /// Load 버튼 텍스트 (Phase 10)
+        /// Phase 12: 선택된 그룹 수
         /// </summary>
-        public string LoadButtonText => IsLoadingHierarchy ? "Loading..." : "Load Hierarchy";
+        public int SelectedGroupCount => FilteredObjectGroups?.Count(g => g.IsSelected) ?? 0;
+
+        /// <summary>
+        /// Phase 12: 선택 상태 요약
+        /// </summary>
+        public string SelectionSummary
+        {
+            get
+            {
+                int selectedGroups = SelectedGroupCount;
+                int totalGroups = FilteredGroupCount;
+                return $"{selectedGroups:N0} / {totalGroups:N0} groups selected";
+            }
+        }
+
+        #endregion
 
         #endregion
 
@@ -506,7 +562,6 @@ namespace DXTnavis.ViewModels
         public ICommand ExportSelectionHierarchyCommand { get; }  // Selection × Hierarchy
         public ICommand CreateSearchSetCommand { get; }
         public ICommand LoadHierarchyCommand { get; }
-        public ICommand CancelLoadCommand { get; }  // Phase 10
         public ICommand ApplyFilterCommand { get; }
         public ICommand ClearFilterCommand { get; }
 
@@ -536,13 +591,6 @@ namespace DXTnavis.ViewModels
         public ICommand ClearSearchCommand { get; }
         public ICommand ZoomToSearchResultCommand { get; }
 
-        // Select All Command (v0.7.0 Phase 9)
-        public ICommand SelectAllCommand { get; }
-        public ICommand DeselectAllCommand { get; }
-
-        // Validation Command (v0.7.0 Phase 5)
-        public ICommand ValidatePropertiesCommand { get; }
-
         #endregion
 
         #region Constructor
@@ -556,6 +604,15 @@ namespace DXTnavis.ViewModels
             AvailableCategories = new ObservableCollection<string>();
             AvailableLevels = new ObservableCollection<string>();
 
+            // Grouped Properties 초기화 (Phase 11)
+            GroupedProperties = new ObservableCollection<ObjectGroupViewModel>();
+
+            // Phase 12: Grouped Data Structure 초기화
+            AllObjectGroups = new ObservableCollection<ObjectGroupModel>();
+            FilteredObjectGroups = new ObservableCollection<ObjectGroupModel>();
+            LevelFilterOptions = new ObservableCollection<FilterOption>();
+            CategoryFilterOptions = new ObservableCollection<FilterOption>();
+
             // Tree Expand Levels 초기화 (Phase 2)
             AvailableExpandLevels = new ObservableCollection<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
             SelectedExpandLevel = 2; // 기본값: Level 2까지 확장
@@ -566,18 +623,17 @@ namespace DXTnavis.ViewModels
             // Snapshot Service 초기화 (Phase 4)
             _snapshotService = new SnapshotService();
 
-            // Validation Service 초기화 (Phase 5)
-            _validationService = new ValidationService();
-
-            // Load Hierarchy Service 초기화 (Phase 10)
-            _loadHierarchyService = new LoadHierarchyService();
-            _loadProgressText = "Ready";
-
             // CSV Viewer 초기화 (v0.5.0)
             CsvViewer = new CsvViewerViewModel();
 
             // AWP 4D Automation 초기화 (Phase 8)
             AWP4D = new AWP4DViewModel();
+
+            // Schedule Builder 초기화 (Phase 10)
+            // Phase 12: 그룹 기반 선택 지원
+            ScheduleBuilder = new ScheduleBuilderViewModel(
+                () => GetSelectedHierarchicalRecords(),
+                null);
 
             // 초기 상태 메시지
             StatusMessage = "Ready - Select objects to view hierarchy";
@@ -652,12 +708,7 @@ namespace DXTnavis.ViewModels
                 canExecute: _ => FilteredHierarchicalProperties.Any(p => p.IsSelected));
 
             LoadHierarchyCommand = new AsyncRelayCommand(
-                execute: async _ => await LoadModelHierarchyOptimizedAsync(),
-                canExecute: _ => !IsLoadingHierarchy);
-
-            CancelLoadCommand = new RelayCommand(
-                execute: _ => CancelLoad(),
-                canExecute: _ => IsLoadingHierarchy);
+                execute: async _ => await LoadModelHierarchyAsync());
 
             ApplyFilterCommand = new RelayCommand(
                 execute: _ => ApplyFilter());
@@ -734,39 +785,28 @@ namespace DXTnavis.ViewModels
             ZoomToSearchResultCommand = new RelayCommand(
                 execute: _ => ZoomToSearchResult(),
                 canExecute: _ => FilteredHierarchicalProperties.Count > 0 && FilteredHierarchicalProperties.Count <= 100);
-
-            // v0.7.0: Select All / Deselect All commands
-            SelectAllCommand = new RelayCommand(
-                execute: _ => SelectAllProperties(true),
-                canExecute: _ => FilteredHierarchicalProperties.Count > 0);
-
-            DeselectAllCommand = new RelayCommand(
-                execute: _ => SelectAllProperties(false),
-                canExecute: _ => FilteredHierarchicalProperties.Any(p => p.IsSelected));
-
-            // Phase 5: Validation Command
-            ValidatePropertiesCommand = new RelayCommand(
-                execute: _ => ValidateProperties(),
-                canExecute: _ => FilteredHierarchicalProperties.Count > 0);
         }
 
         private void OnPropertyRecordChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(HierarchicalPropertyRecord.IsSelected))
             {
+                // v0.9.0: Select All 대량 업데이트 중에는 개별 이벤트 처리 건너뛰기 (성능 최적화)
+                if (_isUpdatingSelectAll) return;
+
                 OnPropertyChanged(nameof(SelectedPropertiesCount));
                 OnPropertyChanged(nameof(SelectedPropertyInfo));
 
                 // 체크박스 선택이 변경되었으니, CreateSearchSetCommand의 CanExecute를 다시 평가
                 ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
 
-                // v0.7.0: Update IsAllSelected state based on current selections
+                // v0.6.1: Update IsAllSelected state based on current selections
                 UpdateSelectAllState();
             }
         }
 
         /// <summary>
-        /// 전체 선택/해제 (v0.7.0 Phase 9)
+        /// 전체 선택/해제 (v0.6.1)
         /// </summary>
         private void SelectAllProperties(bool selectAll)
         {
@@ -785,8 +825,6 @@ namespace DXTnavis.ViewModels
 
                 // Update command states
                 ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)SelectAllCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)DeselectAllCommand).RaiseCanExecuteChanged();
             }
             finally
             {
@@ -810,38 +848,11 @@ namespace DXTnavis.ViewModels
                 // All selected → true, none selected → false, partial → false
                 _isAllSelected = totalCount > 0 && selectedCount == totalCount;
                 OnPropertyChanged(nameof(IsAllSelected));
-
-                // Update command states
-                ((RelayCommand)SelectAllCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)DeselectAllCommand).RaiseCanExecuteChanged();
             }
             finally
             {
                 _isUpdatingSelectAll = false;
             }
-        }
-
-        /// <summary>
-        /// GroupedPropertiesView 업데이트 (v0.7.0 Phase 9)
-        /// IsGroupViewEnabled 상태에 따라 그룹화 여부 결정
-        /// </summary>
-        private void UpdateGroupedPropertiesView()
-        {
-            var cvs = new CollectionViewSource
-            {
-                Source = FilteredHierarchicalProperties
-            };
-
-            if (_isGroupViewEnabled)
-            {
-                // 2-level grouping: DisplayName (Object) → Category
-                cvs.GroupDescriptions.Add(new PropertyGroupDescription("DisplayName"));
-                cvs.GroupDescriptions.Add(new PropertyGroupDescription("Category"));
-            }
-
-            _groupedPropertiesView = cvs.View;
-            OnPropertyChanged(nameof(GroupedPropertiesView));
-            OnPropertyChanged(nameof(GroupExpandCollapseText));
         }
 
 
@@ -1041,146 +1052,9 @@ namespace DXTnavis.ViewModels
         }
 
         /// <summary>
-        /// 모델 전체 계층 구조를 TreeView로 로드 (Phase 10 최적화 버전)
-        /// - 비동기 로딩 with 진행률 표시
-        /// - 취소 기능 지원
-        /// - 단일 순회 최적화
-        /// </summary>
-        private async Task LoadModelHierarchyOptimizedAsync()
-        {
-            // 이미 로딩 중이면 무시
-            if (IsLoadingHierarchy) return;
-
-            try
-            {
-                // 로딩 상태 시작
-                IsLoadingHierarchy = true;
-                LoadProgressPercentage = 0;
-                LoadProgressText = "Initializing...";
-                ExportStatusMessage = "모델 계층 구조 로딩 중...";
-
-                // CancellationTokenSource 생성
-                _loadCts?.Cancel();
-                _loadCts?.Dispose();
-                _loadCts = new System.Threading.CancellationTokenSource();
-
-                // 진행률 보고 핸들러
-                var progress = new Progress<LoadProgress>(p =>
-                {
-                    LoadProgressPercentage = p.Percentage;
-                    LoadProgressText = p.ProgressText;
-                });
-
-                // 비동기 로딩 실행
-                var result = await _loadHierarchyService.LoadHierarchyAsync(progress, _loadCts.Token);
-
-                // 취소된 경우
-                if (result.IsCancelled)
-                {
-                    LoadProgressText = "Cancelled";
-                    StatusMessage = "Loading cancelled by user";
-                    return;
-                }
-
-                // 오류 발생 시
-                if (!string.IsNullOrEmpty(result.ErrorMessage))
-                {
-                    MessageBox.Show(result.ErrorMessage, "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // 데이터가 없는 경우
-                if (result.TotalNodeCount == 0)
-                {
-                    MessageBox.Show("모델에서 데이터를 추출할 수 없습니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                // UI 업데이트 (TreeView)
-                LoadProgressText = "Updating UI...";
-                ObjectHierarchyRoot.Clear();
-                foreach (var treeNode in result.TreeNodes)
-                {
-                    ObjectHierarchyRoot.Add(treeNode);
-                }
-
-                // TreeView 선택 이벤트 구독
-                SubscribeTreeNodeEvents(result.TreeNodes);
-
-                // 속성 데이터 업데이트
-                AllHierarchicalProperties.Clear();
-                foreach (var record in result.Properties)
-                {
-                    AllHierarchicalProperties.Add(record);
-                }
-
-                // FilteredHierarchicalProperties 동기화
-                SyncFilteredProperties();
-
-                // 트리 명령 갱신 (Phase 2)
-                RefreshTreeCommands();
-
-                // 기본적으로 Level 2까지 확장
-                ExpandTreeToLevel(SelectedExpandLevel);
-
-                // 완료 메시지
-                ExportStatusMessage = "Hierarchy loaded!";
-                LoadProgressText = $"Complete: {result.TotalNodeCount:N0} nodes, {result.TotalPropertyCount:N0} properties";
-                StatusMessage = $"Loaded: {result.TotalPropertyCount:N0} properties from {result.TotalNodeCount:N0} nodes";
-            }
-            catch (OperationCanceledException)
-            {
-                LoadProgressText = "Cancelled";
-                StatusMessage = "Loading cancelled";
-            }
-            catch (Exception ex)
-            {
-                ExportStatusMessage = $"❌ 오류: {ex.Message}";
-                LoadProgressText = "Error";
-                MessageBox.Show(
-                    $"계층 구조 로드 중 오류가 발생했습니다:\n\n{ex.Message}",
-                    "오류",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoadingHierarchy = false;
-                ((RelayCommand)LoadHierarchyCommand)?.RaiseCanExecuteChanged();
-            }
-        }
-
-        /// <summary>
-        /// 로딩 취소 (Phase 10)
-        /// </summary>
-        private void CancelLoad()
-        {
-            if (_loadCts != null && !_loadCts.IsCancellationRequested)
-            {
-                _loadCts.Cancel();
-                LoadProgressText = "Cancelling...";
-            }
-        }
-
-        /// <summary>
-        /// TreeNode 이벤트 구독 (재귀)
-        /// </summary>
-        private void SubscribeTreeNodeEvents(IEnumerable<TreeNodeModel> nodes)
-        {
-            foreach (var node in nodes)
-            {
-                node.PropertyChanged += OnTreeNodeSelectionChanged;
-                if (node.Children?.Count > 0)
-                {
-                    SubscribeTreeNodeEvents(node.Children);
-                }
-            }
-        }
-
-        /// <summary>
-        /// [Legacy] 모델 전체 계층 구조를 TreeView로 로드
+        /// 모델 전체 계층 구조를 TreeView로 로드
         /// v0.4.1: ModelItem 계층 구조를 직접 사용하여 모든 레벨 노드 포함
-        /// Note: Phase 10에서 LoadModelHierarchyOptimizedAsync로 대체됨
+        /// Phase 12: 그룹화된 데이터 구조로 로드 (445K → ~5K 그룹)
         /// </summary>
         private Task LoadModelHierarchyAsync()
         {
@@ -1196,7 +1070,6 @@ namespace DXTnavis.ViewModels
                 }
 
                 // *** v0.4.1: ModelItem에서 직접 TreeView 구조 생성 ***
-                // 컨테이너 노드(속성 없음)도 포함하여 완전한 계층 구조 유지
                 ObjectHierarchyRoot.Clear();
                 var allNodes = new List<TreeNodeModel>();
                 int totalNodeCount = 0;
@@ -1220,28 +1093,40 @@ namespace DXTnavis.ViewModels
                     return Task.CompletedTask;
                 }
 
-                // TreeView 선택 이벤트 구독 (IsSelected 속성 변경 감지)
+                // TreeView 선택 이벤트 구독
                 foreach (var node in allNodes)
                 {
                     node.PropertyChanged += OnTreeNodeSelectionChanged;
                 }
 
-                // *** 중앙 패널용 HierarchicalPropertyRecord 데이터 추출 ***
+                // *** Phase 12: 그룹화된 데이터로 직접 로드 ***
                 var extractor = new NavisworksDataExtractor();
-                var allData = new List<HierarchicalPropertyRecord>();
+                var allGroups = extractor.ExtractAllAsGroups();
 
-                foreach (var model in doc.Models)
+                // ObjectGroups 초기화
+                AllObjectGroups.Clear();
+                foreach (var group in allGroups)
                 {
-                    extractor.TraverseAndExtractProperties(model.RootItem, Guid.Empty, 0, allData);
+                    // 그룹 선택 이벤트 구독
+                    group.PropertyChanged += OnGroupPropertyChangedHandler;
+                    AllObjectGroups.Add(group);
                 }
 
+                // Phase 12: 필터 옵션 초기화
+                InitializeFilterOptions();
+
+                // Phase 12: 필터링된 그룹 동기화
+                SyncFilteredGroups();
+
+                // *** 기존 호환성: HierarchicalPropertyRecord도 유지 (TimeLiner 등) ***
                 AllHierarchicalProperties.Clear();
-                foreach (var record in allData)
+                foreach (var group in allGroups)
                 {
-                    AllHierarchicalProperties.Add(record);
+                    foreach (var record in group.ToHierarchicalRecords())
+                    {
+                        AllHierarchicalProperties.Add(record);
+                    }
                 }
-
-                // FilteredHierarchicalProperties 동기화 (필터링 기능 활성화)
                 SyncFilteredProperties();
 
                 // 트리 명령 갱신 (Phase 2)
@@ -1250,8 +1135,15 @@ namespace DXTnavis.ViewModels
                 // 기본적으로 Level 2까지 확장
                 ExpandTreeToLevel(SelectedExpandLevel);
 
+                // Phase 12: 그룹 뷰를 기본으로 활성화
+                _isGroupedViewEnabled = true;
+                _isGroupedViewAvailable = true;
+                OnPropertyChanged(nameof(IsGroupedViewEnabled));
+                OnPropertyChanged(nameof(IsGroupedViewAvailable));
+
+                int totalProps = allGroups.Sum(g => g.PropertyCount);
                 ExportStatusMessage = $"Hierarchy loaded!";
-                StatusMessage = $"Loaded: {allData.Count} properties from {totalNodeCount} nodes (including containers)";
+                StatusMessage = $"Loaded: {allGroups.Count:N0} groups ({totalProps:N0} properties)";
 
                 return Task.CompletedTask;
             }
@@ -1266,6 +1158,203 @@ namespace DXTnavis.ViewModels
 
                 return Task.CompletedTask;
             }
+        }
+
+        /// <summary>
+        /// Phase 12: 그룹 PropertyChanged 이벤트 핸들러
+        /// </summary>
+        private void OnGroupPropertyChangedHandler(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ObjectGroupModel.IsSelected))
+            {
+                if (_isUpdatingGroupSelectAll) return;
+
+                OnPropertyChanged(nameof(SelectedGroupCount));
+                OnPropertyChanged(nameof(SelectionSummary));
+                OnPropertyChanged(nameof(SelectedPropertiesCount));
+
+                // 선택 상태에 따라 IsGroupSelectAll 업데이트
+                UpdateGroupSelectAllState();
+
+                // CreateSearchSetCommand 갱신
+                ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
+            }
+        }
+
+        /// <summary>
+        /// Phase 12: 그룹 전체 선택/해제
+        /// </summary>
+        private void SelectAllGroups(bool selectAll)
+        {
+            _isUpdatingGroupSelectAll = true;
+            try
+            {
+                foreach (var group in FilteredObjectGroups)
+                {
+                    group.IsSelected = selectAll;
+                }
+
+                OnPropertyChanged(nameof(SelectedGroupCount));
+                OnPropertyChanged(nameof(SelectionSummary));
+                OnPropertyChanged(nameof(SelectedPropertiesCount));
+                ((RelayCommand)CreateSearchSetCommand).RaiseCanExecuteChanged();
+            }
+            finally
+            {
+                _isUpdatingGroupSelectAll = false;
+            }
+        }
+
+        /// <summary>
+        /// Phase 12: IsGroupSelectAll 상태 업데이트
+        /// </summary>
+        private void UpdateGroupSelectAllState()
+        {
+            if (_isUpdatingGroupSelectAll) return;
+
+            _isUpdatingGroupSelectAll = true;
+            try
+            {
+                var totalCount = FilteredObjectGroups.Count;
+                var selectedCount = FilteredObjectGroups.Count(g => g.IsSelected);
+                _isGroupSelectAll = totalCount > 0 && selectedCount == totalCount;
+                OnPropertyChanged(nameof(IsGroupSelectAll));
+            }
+            finally
+            {
+                _isUpdatingGroupSelectAll = false;
+            }
+        }
+
+        /// <summary>
+        /// Phase 12: 필터 옵션 초기화
+        /// </summary>
+        private void InitializeFilterOptions()
+        {
+            // Level 필터 옵션
+            LevelFilterOptions.Clear();
+            var levelCounts = AllObjectGroups
+                .GroupBy(g => g.Level)
+                .OrderBy(g => g.Key)
+                .Select(g => new FilterOption($"L{g.Key}", g.Key, g.Count(), true));
+
+            foreach (var opt in levelCounts)
+            {
+                opt.PropertyChanged += OnFilterOptionChanged;
+                LevelFilterOptions.Add(opt);
+            }
+
+            // Category 필터 옵션
+            CategoryFilterOptions.Clear();
+            var categoryCounts = AllObjectGroups
+                .SelectMany(g => g.Categories)
+                .GroupBy(c => c)
+                .OrderBy(g => g.Key)
+                .Select(g => new FilterOption(g.Key, g.Count(), true));
+
+            foreach (var opt in categoryCounts)
+            {
+                opt.PropertyChanged += OnFilterOptionChanged;
+                CategoryFilterOptions.Add(opt);
+            }
+        }
+
+        /// <summary>
+        /// Phase 12: 필터 옵션 변경 이벤트 핸들러
+        /// </summary>
+        private void OnFilterOptionChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(FilterOption.IsChecked))
+            {
+                // 디바운스 적용
+                TriggerFilterDebounce();
+            }
+        }
+
+        /// <summary>
+        /// Phase 12: 선택된 그룹에서 HierarchicalPropertyRecord 반환 (TimeLiner/ScheduleBuilder 호환)
+        /// </summary>
+        public IEnumerable<HierarchicalPropertyRecord> GetSelectedHierarchicalRecords()
+        {
+            // Phase 12: 그룹 기반
+            if (FilteredObjectGroups.Count > 0)
+            {
+                foreach (var group in FilteredObjectGroups.Where(g => g.IsSelected))
+                {
+                    foreach (var record in group.ToHierarchicalRecords())
+                    {
+                        yield return record;
+                    }
+                }
+            }
+            else
+            {
+                // Fallback: 기존 방식
+                foreach (var record in FilteredHierarchicalProperties.Where(p => p.IsSelected))
+                {
+                    yield return record;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Phase 12: 선택된 ObjectId 목록 반환 (TimeLiner용)
+        /// </summary>
+        public IEnumerable<Guid> GetSelectedObjectIds()
+        {
+            return FilteredObjectGroups
+                .Where(g => g.IsSelected)
+                .Select(g => g.ObjectId);
+        }
+
+        /// <summary>
+        /// Phase 12: 필터링된 그룹 동기화
+        /// </summary>
+        private void SyncFilteredGroups()
+        {
+            FilteredObjectGroups.Clear();
+
+            // 선택된 레벨 집합
+            var selectedLevels = new HashSet<int>(
+                LevelFilterOptions
+                    .Where(o => o.IsChecked)
+                    .Select(o => (int)o.Value));
+
+            // 선택된 카테고리 집합
+            var selectedCategories = new HashSet<string>(
+                CategoryFilterOptions
+                    .Where(o => o.IsChecked)
+                    .Select(o => o.Name));
+
+            foreach (var group in AllObjectGroups)
+            {
+                // 레벨 필터 (전체 선택 또는 일치)
+                if (selectedLevels.Count > 0 && !selectedLevels.Contains(group.Level))
+                    continue;
+
+                // 카테고리 필터: 그룹 내 속성 필터링
+                if (selectedCategories.Count > 0)
+                {
+                    group.ApplyFilter(selectedCategories, PropertyNameFilter, PropertyValueFilter);
+                    if (group.FilteredPropertyCount == 0)
+                        continue;
+                }
+                else
+                {
+                    group.ApplyFilter(null, PropertyNameFilter, PropertyValueFilter);
+                    if (group.FilteredPropertyCount == 0)
+                        continue;
+                }
+
+                FilteredObjectGroups.Add(group);
+            }
+
+            OnPropertyChanged(nameof(FilteredGroupCount));
+            OnPropertyChanged(nameof(FilteredPropertyCount));
+            OnPropertyChanged(nameof(SelectedGroupCount));
+            OnPropertyChanged(nameof(SelectionSummary));
+
+            StatusMessage = $"Filtered: {FilteredGroupCount:N0} groups ({FilteredPropertyCount:N0} properties)";
         }
 
         /// <summary>
@@ -1318,49 +1407,6 @@ namespace DXTnavis.ViewModels
 
         #endregion
 
-        #region Phase 5: Validation Methods
-
-        /// <summary>
-        /// 현재 필터링된 속성에 대해 유효성 검증 수행
-        /// </summary>
-        private void ValidateProperties()
-        {
-            try
-            {
-                if (FilteredHierarchicalProperties.Count == 0)
-                {
-                    StatusMessage = "검증할 데이터가 없습니다.";
-                    return;
-                }
-
-                StatusMessage = "데이터 검증 중...";
-
-                var report = _validationService.ValidateAll(FilteredHierarchicalProperties);
-                var summary = _validationService.GenerateReportSummary(report);
-
-                // 결과 표시 (StatusMessage 또는 별도 창)
-                if (report.ErrorCount == 0 && report.WarningCount == 0)
-                {
-                    StatusMessage = $"✅ 검증 완료: {report.TotalObjects}개 객체 모두 통과";
-                }
-                else
-                {
-                    StatusMessage = $"⚠️ 검증 완료: {report.ErrorCount}개 오류, {report.WarningCount}개 경고 발견";
-                }
-
-                // 검증 결과를 Debug 출력으로 확인 가능
-                System.Diagnostics.Debug.WriteLine(summary);
-
-                // 향후: 검증 결과 창 표시 또는 CSV 내보내기
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"검증 오류: {ex.Message}";
-                System.Diagnostics.Debug.WriteLine($"Validation Error: {ex}");
-            }
-        }
-
-        #endregion
 
         #region INotifyPropertyChanged Implementation
 
