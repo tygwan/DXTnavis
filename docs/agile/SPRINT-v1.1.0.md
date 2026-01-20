@@ -453,5 +453,56 @@ private async void ExecuteDirectToTimeLiner()
 
 ---
 
+## 🔧 Minor Fix: v1.2.1
+
+### MF-001: TextBox 한글/영어/숫자 입력 오류 수정
+
+| Field | Value |
+|-------|-------|
+| Priority | 🟡 P2 Medium |
+| Type | Bug Fix |
+| Files | `Views/DXwindow.xaml.cs` |
+| Status | 🚧 Planned |
+
+**증상:**
+- Schedule Builder 탭의 Task Prefix, Duration, Custom Set 등 TextBox에서 한글/영어/숫자 입력이 안 됨
+- IME 조합 문자 입력 불가
+
+**원인:**
+```csharp
+// TextBox_PreviewKeyDown 핸들러에서 IME 키 처리 누락
+// Key.ImeProcessed가 처리되지 않아 한글 입력 차단
+default:
+    if (e.Key >= Key.A && e.Key <= Key.Z || ...)  // ❌ IME 키 없음
+```
+
+**해결책:**
+```csharp
+// 방법 1: IME 키 추가
+case Key.ImeProcessed:
+    e.Handled = false;  // IME가 처리하도록 허용
+    break;
+
+// 방법 2: default에서 모든 키 허용
+default:
+    e.Handled = false;  // 기본적으로 모든 키 TextBox에 전달
+    break;
+```
+
+**영향 범위:**
+- Property Name Filter TextBox
+- Task Prefix TextBox
+- Duration TextBox
+- Level TextBox
+- Custom Set TextBox
+- 기타 모든 TextBox
+
+**Tasks:**
+- [ ] `TextBox_PreviewKeyDown`에 `Key.ImeProcessed` 처리 추가
+- [ ] 한글, 영어, 숫자, 특수문자 입력 테스트
+- [ ] Navisworks 환경에서 검증
+
+---
+
 **Created**: 2026-01-20
-**Last Updated**: 2026-01-20
+**Last Updated**: 2026-01-21

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1] - Planned 🚧
+
+### Bug Fix: TextBox IME 입력 오류
+
+#### 증상
+- Schedule Builder 탭 TextBox에서 한글/영어/숫자 입력 불가
+- IME (Input Method Editor) 조합 문자 입력 차단
+
+#### 원인
+- `TextBox_PreviewKeyDown` 핸들러에서 `Key.ImeProcessed` 미처리
+
+#### 수정 내용 (Planned)
+- [ ] `Key.ImeProcessed` 처리 추가
+- [ ] 모든 TextBox 입력 테스트 검증
+
+#### 영향 파일
+- `Views/DXwindow.xaml.cs`
+
+---
+
 ## [1.2.0] - 2026-01-21
 
 ### Direct TimeLiner Execution (Phase 14)
