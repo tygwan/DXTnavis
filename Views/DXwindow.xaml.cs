@@ -71,7 +71,9 @@ namespace DXTnavis.Views
         /// <summary>
         /// TextBox의 PreviewKeyDown 이벤트 핸들러
         /// Navisworks가 키보드 입력을 가로채는 것을 방지합니다.
-        /// 영문/한글 입력이 정상적으로 TextBox에 전달되도록 합니다.
+        /// 영문/한글/숫자 입력이 정상적으로 TextBox에 전달되도록 합니다.
+        ///
+        /// [v1.2.1 Fix] Key.ImeProcessed 추가로 한글 IME 입력 지원
         /// </summary>
         private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -97,18 +99,45 @@ namespace DXTnavis.Views
                     // Tab 키: 기본 동작 허용
                     break;
 
+                case Key.ImeProcessed:
+                    // [v1.2.1] 한글 IME 입력 처리
+                    // IME가 조합 중인 문자를 처리하도록 허용
+                    e.Handled = false;
+                    break;
+
                 default:
                     // Navisworks 단축키 충돌 방지:
-                    // 문자, 숫자, 특수문자 키는 모두 TextBox에서 처리되도록
-                    // e.Handled = true로 설정하여 Navisworks가 가로채지 못하게 함
-                    if (e.Key >= Key.D0 && e.Key <= Key.D9 ||
-                        e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9 ||
-                        e.Key >= Key.A && e.Key <= Key.Z ||
-                        e.Key == Key.Back || e.Key == Key.Delete ||
-                        e.Key == Key.Left || e.Key == Key.Right ||
-                        e.Key == Key.Home || e.Key == Key.End ||
-                        e.Key == Key.OemPeriod || e.Key == Key.OemMinus ||
-                        e.Key == Key.Space)
+                    // 문자, 숫자, 특수문자 키는 모두 TextBox에서 처리되도록 함
+                    //
+                    // [v1.2.1] OEM 키 확장: 모든 특수문자 입력 허용
+                    // - OemPlus (+), OemComma (,), OemQuestion (?), OemOpenBrackets ([)
+                    // - OemCloseBrackets (]), OemPipe (|), OemQuotes ("), OemSemicolon (;)
+                    // - OemTilde (~), OemBackslash (\)
+                    if (e.Key >= Key.D0 && e.Key <= Key.D9 ||           // 숫자 0-9
+                        e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9 || // 넘패드 0-9
+                        e.Key >= Key.A && e.Key <= Key.Z ||             // 영문 A-Z
+                        e.Key == Key.Back || e.Key == Key.Delete ||     // 삭제 키
+                        e.Key == Key.Left || e.Key == Key.Right ||      // 방향 키
+                        e.Key == Key.Home || e.Key == Key.End ||        // Home/End
+                        e.Key == Key.Space ||                           // 스페이스
+                        // OEM 키 (특수문자)
+                        e.Key == Key.OemPeriod ||    // .
+                        e.Key == Key.OemMinus ||     // -
+                        e.Key == Key.OemPlus ||      // +
+                        e.Key == Key.OemComma ||     // ,
+                        e.Key == Key.OemQuestion ||  // ?
+                        e.Key == Key.OemQuotes ||    // "
+                        e.Key == Key.OemSemicolon || // ;
+                        e.Key == Key.OemTilde ||     // ~
+                        e.Key == Key.OemBackslash || // \
+                        e.Key == Key.OemOpenBrackets ||  // [
+                        e.Key == Key.OemCloseBrackets || // ]
+                        e.Key == Key.OemPipe ||      // |
+                        e.Key == Key.Multiply ||     // *
+                        e.Key == Key.Divide ||       // /
+                        e.Key == Key.Add ||          // + (넘패드)
+                        e.Key == Key.Subtract ||     // - (넘패드)
+                        e.Key == Key.Decimal)        // . (넘패드)
                     {
                         e.Handled = false;  // TextBox가 처리하도록 함
                     }

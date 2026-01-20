@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.2.1] - Planned 🚧
+## [1.2.1] - 2026-01-21
 
 ### Bug Fix: TextBox IME 입력 오류
 
@@ -18,9 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 원인
 - `TextBox_PreviewKeyDown` 핸들러에서 `Key.ImeProcessed` 미처리
 
-#### 수정 내용 (Planned)
-- [ ] `Key.ImeProcessed` 처리 추가
-- [ ] 모든 TextBox 입력 테스트 검증
+#### 수정 내용
+- [x] `Key.ImeProcessed` case 추가 - 한글 IME 조합 문자 지원
+- [x] OEM 키 확장 - 모든 특수문자 입력 지원 (+, ,, ?, ", ;, ~, \, [, ], |, *, /)
+- [x] 빌드 검증 통과
 
 #### 영향 파일
 - `Views/DXwindow.xaml.cs`
