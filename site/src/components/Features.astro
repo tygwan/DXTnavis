@@ -1,0 +1,102 @@
+---
+const features = [
+  {
+    icon: 'H',
+    title: 'Hierarchy Navigation',
+    description: '모델 전체 계층 구조 TreeView 시각화. Level-based Expand/Collapse (L0~L10), 색상 배지, 노드 아이콘, 하위 개수 표시.',
+    accent: 'blue',
+    version: 'v0.1.0',
+  },
+  {
+    icon: 'P',
+    title: 'Property Viewer',
+    description: '실시간 속성 표시 (Category → Property → Value). Level Filter, SysPath Filter, 445K+ 속성 처리 최적화.',
+    accent: 'sky',
+    version: 'v0.1.0',
+  },
+  {
+    icon: 'C',
+    title: 'CSV Import & Export',
+    description: 'Raw + Refined CSV 동시 저장. 외부 CSV 로드, 컬럼별 필터링, 인코딩 자동 감지 (UTF-8, EUC-KR).',
+    accent: 'violet',
+    version: 'v0.4.0',
+  },
+  {
+    icon: '4D',
+    title: 'AWP 4D Automation',
+    description: 'CSV → Property Write → Selection Set → TimeLiner Task. SyncID 기반 자동 매칭, Dry Run 검증 모드.',
+    accent: 'amber',
+    version: 'v0.6.0',
+  },
+  {
+    icon: 'S',
+    title: 'Schedule Builder',
+    description: '선택된 객체에서 Schedule CSV 자동 생성. Task 설정, ParentSet 전략 (ByLevel, ByProperty, Custom), 미리보기.',
+    accent: 'emerald',
+    version: 'v0.8.0',
+  },
+  {
+    icon: 'G',
+    title: 'Object Grouping',
+    description: '객체별 속성 그룹화 (Expander UI). Flat/Grouped Mode 토글, 10K 미만 필터링 시 활성화, 그룹 선택 연동.',
+    accent: 'rose',
+    version: 'v0.9.0',
+  },
+  {
+    icon: '3D',
+    title: '3D Object Control',
+    description: 'Select in 3D, Show Only, Show All, Zoom, Reset Home. 필터링된 객체를 Navisworks 뷰포트에서 직접 제어.',
+    accent: 'cyan',
+    version: 'v0.2.0',
+  },
+  {
+    icon: 'Q',
+    title: 'Object Search',
+    description: '객체 이름, 속성값, SysPath 검색. 검색 결과 자동 3D 선택 연동 및 Zoom 기능.',
+    accent: 'orange',
+    version: 'v0.4.0',
+  },
+];
+
+const accentMap: Record<string, { border: string; bg: string; text: string; iconBg: string }> = {
+  blue:    { border: 'border-blue-500/20',    bg: 'bg-blue-500/8',    text: 'text-blue-400',    iconBg: 'bg-blue-500/15 text-blue-400' },
+  sky:     { border: 'border-sky-500/20',     bg: 'bg-sky-500/8',     text: 'text-sky-400',     iconBg: 'bg-sky-500/15 text-sky-400' },
+  violet:  { border: 'border-violet-500/20',  bg: 'bg-violet-500/8',  text: 'text-violet-400',  iconBg: 'bg-violet-500/15 text-violet-400' },
+  amber:   { border: 'border-amber-500/20',   bg: 'bg-amber-500/8',   text: 'text-amber-400',   iconBg: 'bg-amber-500/15 text-amber-400' },
+  emerald: { border: 'border-emerald-500/20', bg: 'bg-emerald-500/8', text: 'text-emerald-400', iconBg: 'bg-emerald-500/15 text-emerald-400' },
+  rose:    { border: 'border-rose-500/20',    bg: 'bg-rose-500/8',    text: 'text-rose-400',    iconBg: 'bg-rose-500/15 text-rose-400' },
+  cyan:    { border: 'border-cyan-500/20',    bg: 'bg-cyan-500/8',    text: 'text-cyan-400',    iconBg: 'bg-cyan-500/15 text-cyan-400' },
+  orange:  { border: 'border-orange-500/20',  bg: 'bg-orange-500/8',  text: 'text-orange-400',  iconBg: 'bg-orange-500/15 text-orange-400' },
+};
+---
+
+<section id="features" class="py-24">
+  <div class="mx-auto max-w-7xl px-6">
+
+    <h2 class="section-heading">Features</h2>
+    <p class="section-sub">
+      BIM 속성 관리부터 4D 자동화까지, 11개 개발 단계를 거쳐 완성된 기능들
+    </p>
+
+    <div class="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {features.map((f) => {
+        const a = accentMap[f.accent];
+        return (
+          <div class={`group rounded-xl border ${a.border} ${a.bg} p-5 transition-all duration-300 hover:bg-opacity-20 card-glow`}>
+            <div class="flex items-center justify-between mb-3">
+              <span class={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold font-mono ${a.iconBg}`}>
+                {f.icon}
+              </span>
+              <span class={`text-[10px] font-mono ${a.text} ${a.bg} border ${a.border} rounded-full px-2 py-0.5`}>
+                {f.version}
+              </span>
+            </div>
+            <h3 class="text-sm font-semibold text-white mb-2">{f.title}</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">{f.description}</p>
+          </div>
+        );
+      })}
+    </div>
+
+  </div>
+</section>

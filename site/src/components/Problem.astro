@@ -1,0 +1,68 @@
+---
+const problems = [
+  {
+    icon: 'S',
+    title: 'BIM 속성 검색의 수동 작업',
+    description: 'Navisworks 기본 기능은 445K+ 속성을 효율적으로 필터링할 수 없습니다. 레벨별 검색, 경로 필터링, 대량 내보내기가 불가능하여 수작업에 의존합니다.',
+    accent: 'blue',
+  },
+  {
+    icon: 'M',
+    title: 'CSV → TimeLiner 매핑의 반복',
+    description: '스케줄 CSV 데이터를 TimeLiner 4D 시뮬레이션으로 변환하려면 SyncID 매칭, Property Write, Selection Set 생성, Task 연결을 수동으로 반복해야 합니다.',
+    accent: 'amber',
+  },
+  {
+    icon: 'A',
+    title: 'AWP 자동화 필요성',
+    description: 'Advanced Work Packaging 기반 4D 시뮬레이션은 BIM 데이터와 스케줄의 정확한 연동이 필수입니다. 수동 매핑은 오류가 잦고 대규모 프로젝트에서 비현실적입니다.',
+    accent: 'emerald',
+  },
+];
+
+const accentMap: Record<string, string> = {
+  blue: 'border-blue-500/20 bg-blue-500/8 text-blue-400',
+  amber: 'border-amber-500/20 bg-amber-500/8 text-amber-400',
+  emerald: 'border-emerald-500/20 bg-emerald-500/8 text-emerald-400',
+};
+
+const iconBgMap: Record<string, string> = {
+  blue: 'bg-blue-500/15 text-blue-400',
+  amber: 'bg-amber-500/15 text-amber-400',
+  emerald: 'bg-emerald-500/15 text-emerald-400',
+};
+---
+
+<section id="problem" class="py-24">
+  <div class="mx-auto max-w-7xl px-6">
+
+    <h2 class="section-heading">Why DXTnavis?</h2>
+    <p class="section-sub">
+      BIM 프로젝트 관리에서 반복되는 수작업을 자동화하기 위해 만들었습니다
+    </p>
+
+    <div class="mt-12 grid gap-6 md:grid-cols-3">
+      {problems.map((p) => (
+        <div class={`rounded-xl border p-6 transition hover:bg-opacity-20 card-glow ${accentMap[p.accent]}`}>
+          <div class="flex items-center gap-3 mb-4">
+            <span class={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold font-mono ${iconBgMap[p.accent]}`}>
+              {p.icon}
+            </span>
+            <h3 class="text-base font-semibold text-white">{p.title}</h3>
+          </div>
+          <p class="text-sm text-slate-400 leading-relaxed">{p.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- Solution summary -->
+    <div class="mt-8 rounded-xl border border-blue-500/20 bg-blue-500/5 p-5">
+      <p class="text-sm text-slate-400 leading-relaxed">
+        <span class="text-slate-200 font-medium">Solution:</span> DXTnavis는 Navisworks 2025 네이티브 플러그인으로,
+        계층 탐색 + 속성 필터링 + 3D 제어 + CSV 관리 + AWP 4D 자동화를 하나의 통합 인터페이스에서 제공합니다.
+        .NET API와 ComAPI를 결합한 하이브리드 아키텍처로 Navisworks의 기본 제한을 극복합니다.
+      </p>
+    </div>
+
+  </div>
+</section>

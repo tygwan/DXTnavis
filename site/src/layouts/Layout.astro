@@ -1,0 +1,168 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = 'Navisworks BIM Property Viewer & AWP 4D Automation Plugin — C# WPF MVVM',
+} = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const navLinks = [
+  { label: 'Problem',       href: `${base}#problem` },
+  { label: 'Screenshot',    href: `${base}#screenshot` },
+  { label: 'Architecture',  href: `${base}#architecture` },
+  { label: 'Features',      href: `${base}#features` },
+  { label: 'Tech Stack',    href: `${base}#techstack` },
+];
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-[#0f1117] antialiased">
+
+    <!-- ===================== NAVBAR ===================== -->
+    <nav class="fixed top-0 z-50 w-full border-b border-slate-800/60 bg-[#0f1117]/80 backdrop-blur-xl">
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
+
+        <!-- Logo -->
+        <a href={base} class="flex items-center gap-2.5 text-lg font-bold text-white group">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400 text-sm font-mono transition group-hover:bg-blue-500/25">
+            DX
+          </span>
+          <span class="hidden sm:inline">DXTnavis</span>
+        </a>
+
+        <!-- Desktop links -->
+        <div class="hidden md:flex items-center gap-1">
+          {navLinks.map((link) => (
+            <a
+              href={link.href}
+              class="rounded-lg px-3.5 py-2 text-sm text-slate-400 transition hover:text-white hover:bg-slate-800/60"
+            >
+              {link.label}
+            </a>
+          ))}
+          <div class="mx-2 h-4 w-px bg-slate-800"></div>
+          <a
+            href="https://github.com/tygwan/DXTnavis"
+            target="_blank"
+            rel="noopener"
+            class="rounded-lg border border-slate-700/60 bg-slate-800/40 px-3.5 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white hover:border-slate-600"
+          >
+            GitHub
+          </a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button
+          id="mobile-menu-btn"
+          class="md:hidden flex items-center justify-center rounded-lg p-2 text-slate-400 hover:text-white hover:bg-slate-800/60"
+          aria-label="Toggle menu"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile menu -->
+      <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800/60 bg-[#0f1117]/95 backdrop-blur-xl">
+        <div class="space-y-1 px-6 py-4">
+          {navLinks.map((link) => (
+            <a
+              href={link.href}
+              class="mobile-nav-link block rounded-lg px-4 py-2.5 text-sm text-slate-400 transition hover:text-white hover:bg-slate-800/60"
+            >
+              {link.label}
+            </a>
+          ))}
+          <a
+            href="https://github.com/tygwan/DXTnavis"
+            target="_blank"
+            rel="noopener"
+            class="mt-2 block rounded-lg border border-slate-700/60 bg-slate-800/40 px-4 py-2.5 text-center text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+          >
+            GitHub
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ===================== MAIN ===================== -->
+    <main>
+      <slot />
+    </main>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="border-t border-slate-800/60 bg-slate-950/40">
+      <div class="mx-auto max-w-7xl px-6 py-16">
+        <div class="grid gap-8 md:grid-cols-3">
+          <!-- Brand -->
+          <div>
+            <div class="flex items-center gap-2.5 text-lg font-bold text-white">
+              <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400 text-sm font-mono">DX</span>
+              DXTnavis
+            </div>
+            <p class="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">
+              Navisworks BIM Property Viewer & AWP 4D Automation Plugin for construction project management.
+            </p>
+          </div>
+          <!-- Links -->
+          <div>
+            <h4 class="text-sm font-semibold text-slate-300 mb-3">Navigation</h4>
+            <div class="space-y-2">
+              {navLinks.map((link) => (
+                <a href={link.href} class="block text-sm text-slate-500 transition hover:text-slate-300">
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+          <!-- External -->
+          <div>
+            <h4 class="text-sm font-semibold text-slate-300 mb-3">Links</h4>
+            <div class="space-y-2">
+              <a href="https://github.com/tygwan/DXTnavis" target="_blank" rel="noopener" class="block text-sm text-slate-500 transition hover:text-slate-300">GitHub Repository</a>
+              <a href="https://tygwan.github.io/portfolio/" target="_blank" rel="noopener" class="block text-sm text-slate-500 transition hover:text-slate-300">Back to Portfolio</a>
+            </div>
+          </div>
+        </div>
+        <div class="mt-12 border-t border-slate-800/40 pt-6 text-center text-xs text-slate-600">
+          DXTnavis -- Navisworks BIM Property Viewer & AWP 4D Automation
+        </div>
+      </div>
+    </footer>
+
+    <!-- Mobile menu toggle script -->
+    <script>
+      const btn = document.getElementById('mobile-menu-btn');
+      const menu = document.getElementById('mobile-menu');
+      btn?.addEventListener('click', () => {
+        menu?.classList.toggle('hidden');
+      });
+      document.querySelectorAll('.mobile-nav-link').forEach((link) => {
+        link.addEventListener('click', () => {
+          menu?.classList.add('hidden');
+        });
+      });
+    </script>
+  </body>
+</html>

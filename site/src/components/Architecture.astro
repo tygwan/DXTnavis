@@ -1,0 +1,121 @@
+---
+const pipelineSteps = [
+  { label: 'CSV File',           color: 'sky',     desc: 'Schedule data', icon: '1' },
+  { label: 'Schedule Parser',    color: 'violet',  desc: 'Column mapping', icon: '2' },
+  { label: 'Object Matcher',     color: 'orange',  desc: 'SyncID → Item', icon: '3' },
+  { label: 'Property Write',     color: 'emerald', desc: 'ComAPI', icon: '4' },
+  { label: 'Selection Set',      color: 'rose',    desc: '.NET API', icon: '5' },
+  { label: 'TimeLiner Task',     color: 'blue',    desc: '.NET API', icon: '6' },
+];
+
+const colorMap: Record<string, string> = {
+  sky:     'bg-sky-500/10 border-sky-500/20 text-sky-400',
+  violet:  'bg-violet-500/10 border-violet-500/20 text-violet-400',
+  orange:  'bg-orange-500/10 border-orange-500/20 text-orange-400',
+  emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+  rose:    'bg-rose-500/10 border-rose-500/20 text-rose-400',
+  blue:    'bg-blue-500/10 border-blue-500/20 text-blue-400',
+};
+
+const apiStrategy = [
+  { feature: 'Property Write', api: 'ComAPI', reason: '.NET API는 Read-Only' },
+  { feature: 'Selection Set', api: '.NET API', reason: 'AddCopy/InsertCopy 메서드' },
+  { feature: 'TimeLiner Task', api: '.NET API', reason: 'TasksCopyFrom 메서드' },
+  { feature: 'Property Read', api: '.NET API', reason: '표준 데이터 접근' },
+  { feature: '3D Viewport', api: '.NET API', reason: 'Selection, Visibility' },
+];
+
+const mvvmLayers = [
+  { layer: 'View', desc: 'DXwindow.xaml (WPF XAML)', detail: 'TabControl, TreeView, DataGrid, Buttons', icon: 'V' },
+  { layer: 'ViewModel', desc: 'Partial Class Pattern', detail: '5+ partial classes for separation of concerns', icon: 'VM' },
+  { layer: 'Model', desc: 'Data Models', detail: 'TreeNodeModel, PropertyInfo, ScheduleData', icon: 'M' },
+  { layer: 'Services', desc: 'Business Logic', detail: 'Extractor, Matcher, Writer, Validator', icon: 'S' },
+];
+---
+
+<section id="architecture" class="py-24">
+  <div class="mx-auto max-w-7xl px-6">
+
+    <h2 class="section-heading">Architecture</h2>
+    <p class="section-sub">
+      MVVM 패턴, 하이브리드 API 전략, 6단계 자동화 파이프라인
+    </p>
+
+    <!-- ========== AWP 4D Pipeline ========== -->
+    <div class="mt-12 rounded-2xl border border-slate-800/80 bg-slate-900/40 p-6 sm:p-8">
+      <h3 class="text-lg font-semibold text-white mb-6">AWP 4D Automation Pipeline</h3>
+      <div class="flex flex-col items-center gap-2 sm:flex-row sm:gap-0 sm:justify-between">
+        {pipelineSteps.map((step, i) => (
+          <>
+            <div class={`rounded-lg border px-4 py-2.5 text-center ${colorMap[step.color]} w-full sm:w-auto`}>
+              <div class="text-xs font-mono opacity-60 mb-0.5">Step {step.icon}</div>
+              <div class="text-sm font-medium">{step.label}</div>
+              <div class="text-[10px] opacity-70 mt-0.5">{step.desc}</div>
+            </div>
+            {i < pipelineSteps.length - 1 && (
+              <>
+                <div class="hidden sm:block text-slate-600 px-2 text-lg">&rarr;</div>
+                <div class="sm:hidden text-slate-600 text-lg">&darr;</div>
+              </>
+            )}
+          </>
+        ))}
+      </div>
+    </div>
+
+    <!-- ========== MVVM Architecture ========== -->
+    <div class="mt-12 grid gap-6 lg:grid-cols-2">
+
+      <!-- MVVM Layers -->
+      <div class="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-6">
+        <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded bg-blue-500/20 text-xs font-mono">M</span>
+          MVVM Architecture
+        </h3>
+        <div class="space-y-3">
+          {mvvmLayers.map((l) => (
+            <div class="flex items-center gap-3">
+              <span class="flex h-7 w-7 items-center justify-center rounded bg-blue-500/15 text-blue-400 text-[10px] font-mono shrink-0">{l.icon}</span>
+              <div class="flex-1">
+                <div class="text-xs text-slate-500">{l.layer}</div>
+                <div class="text-sm text-slate-300">{l.desc}</div>
+                <div class="text-xs text-slate-500 mt-0.5">{l.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- API Strategy -->
+      <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
+        <h3 class="text-lg font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded bg-emerald-500/20 text-xs font-mono">A</span>
+          Hybrid API Strategy
+        </h3>
+        <div class="space-y-3">
+          {apiStrategy.map((a) => (
+            <div class="flex items-center gap-3">
+              <span class={`shrink-0 rounded px-2 py-0.5 text-xs font-mono ${a.api === 'ComAPI' ? 'bg-amber-500/15 text-amber-400' : 'bg-sky-500/15 text-sky-400'}`}>
+                {a.api}
+              </span>
+              <div class="flex-1">
+                <div class="text-sm text-slate-300">{a.feature}</div>
+                <div class="text-xs text-slate-500">{a.reason}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Key insight -->
+    <div class="mt-8 rounded-xl border border-slate-800/60 bg-slate-900/40 p-5">
+      <p class="text-sm text-slate-400 leading-relaxed">
+        <span class="text-slate-200 font-medium">Key Insight:</span> Navisworks .NET API는 Property Read-Only 제한이 있습니다.
+        DXTnavis는 ComAPI를 통해 이 제한을 우회하여 Custom Property를 기입합니다.
+        Selection Set과 TimeLiner Task는 .NET API가 더 안정적이므로, 두 API를 용도에 맞게 조합하는 하이브리드 전략을 사용합니다.
+      </p>
+    </div>
+
+  </div>
+</section>

@@ -1,0 +1,103 @@
+---
+const base = import.meta.env.BASE_URL;
+
+const heroMetrics = [
+  { value: 'v0.9.0', label: 'Latest Release', sub: '11 phases complete', accent: 'text-blue-400' },
+  { value: '445K+', label: 'Properties Handled', sub: 'BIM model scale', accent: 'text-emerald-400' },
+  { value: '5-Step', label: 'AWP Pipeline', sub: 'CSV to TimeLiner', accent: 'text-amber-400' },
+];
+---
+
+<section class="relative flex min-h-[100vh] items-center overflow-hidden pt-16">
+  <!-- Background layers -->
+  <div class="absolute inset-0 bg-gradient-to-br from-[#0f1117] via-[#0f1117] to-blue-950"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(59,130,246,0.07)_0%,_transparent_50%)]"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(16,185,129,0.05)_0%,_transparent_50%)]"></div>
+
+  <!-- Subtle grid -->
+  <div class="absolute inset-0 opacity-[0.025]"
+    style="background-image: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 64px 64px;">
+  </div>
+
+  <div class="relative z-10 mx-auto max-w-7xl px-6 py-20 w-full">
+    <div class="grid gap-16 lg:grid-cols-5 lg:items-center">
+
+      <!-- Left column: text content -->
+      <div class="lg:col-span-3">
+        <!-- Badge -->
+        <div class="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-sm text-blue-400">
+          <span class="inline-block h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
+          Navisworks Plugin
+        </div>
+
+        <!-- Title -->
+        <h1 class="animate-fade-in-up-delay-1 mt-6 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+          DXTnavis
+          <span class="block bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            BIM Property Viewer
+          </span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="animate-fade-in-up-delay-2 mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
+          Navisworks 2025 플러그인으로 <span class="text-slate-200 font-medium">BIM 모델 속성을 효율적으로 관리</span>하고
+          <span class="text-slate-200 font-medium">AWP 4D 시뮬레이션을 자동화</span>합니다.
+          CSV에서 TimeLiner까지 5단계 파이프라인을 원클릭으로 실행합니다.
+        </p>
+
+        <!-- CTA row -->
+        <div class="animate-fade-in-up-delay-3 mt-8 flex flex-wrap gap-3">
+          <a href={`${base}#features`}
+            class="rounded-xl bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-400 hover:shadow-blue-400/25">
+            View Features
+          </a>
+          <a href={`${base}#architecture`}
+            class="rounded-xl border border-slate-700 bg-slate-800/50 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
+            Architecture
+          </a>
+          <a href="https://github.com/tygwan/DXTnavis" target="_blank" rel="noopener"
+            class="rounded-xl border border-slate-700 bg-slate-800/50 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
+            GitHub
+          </a>
+        </div>
+      </div>
+
+      <!-- Right column: metric cards -->
+      <div class="lg:col-span-2 animate-fade-in-up-delay-3">
+        <div class="space-y-4">
+          {heroMetrics.map((m) => (
+            <div class="rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-sm p-5 transition hover:border-slate-700 card-glow">
+              <div class="flex items-baseline justify-between">
+                <span class={`text-3xl font-bold font-mono ${m.accent}`}>{m.value}</span>
+                <span class="text-xs text-slate-500 uppercase tracking-wider">{m.sub}</span>
+              </div>
+              <div class="mt-1.5 text-sm text-slate-400">{m.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <!-- Version history mini -->
+        <div class="mt-6 rounded-xl border border-slate-800/80 bg-slate-900/60 p-4">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+            <span>Development Progress</span>
+            <span class="font-mono text-slate-300">11/11 phases</span>
+          </div>
+          <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" style="width: 100%"></div>
+          </div>
+          <div class="mt-2 flex items-center gap-4 text-xs text-slate-500">
+            <span class="flex items-center gap-1.5"><span class="inline-block h-2 w-2 rounded-full bg-emerald-400"></span> v0.9.0 latest</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block h-2 w-2 rounded-full bg-blue-400"></span> 8 features</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-slate-600">
+    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7" />
+    </svg>
+  </div>
+</section>
