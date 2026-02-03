@@ -27,7 +27,7 @@ const colorMap: Record<string, string> = {
     </p>
 
     <!-- Screenshot with callouts -->
-    <div class="relative mt-12 rounded-2xl border border-slate-800/80 bg-slate-900/40 p-2 sm:p-4 overflow-hidden">
+    <div class="relative mt-12 rounded-2xl border border-slate-200 bg-slate-50 p-2 sm:p-4 overflow-hidden dark:border-slate-800/80 dark:bg-slate-900/40">
       <img
         src={`${base}images/dxtnavis-main.png`}
         alt="DXTnavis Plugin Interface"
@@ -48,8 +48,8 @@ const colorMap: Record<string, string> = {
     <!-- Feature highlights below screenshot -->
     <div class="mt-8 grid grid-cols-2 sm:grid-cols-5 gap-3">
       {callouts.map((c) => (
-        <div class={`rounded-lg border border-slate-800/60 bg-slate-900/40 px-3 py-2.5 text-center`}>
-          <div class="text-xs font-medium text-slate-300">{c.label}</div>
+        <div class="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-center dark:border-slate-800/60 dark:bg-slate-900/40">
+          <div class="text-xs font-medium text-slate-700 dark:text-slate-300">{c.label}</div>
         </div>
       ))}
     </div>

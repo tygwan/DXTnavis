@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark, .dark *));
+
 @theme {
   --color-slate-850: #1a2332;
   --color-blue-950: #0a1628;
@@ -10,21 +12,65 @@
   --color-danger: #ef4444;
 }
 
+/* ---------- Theme variables ---------- */
+:root {
+  --bg-body: #ffffff;
+  --bg-nav: rgba(255, 255, 255, 0.85);
+  --bg-hero: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-section: #ffffff;
+  --bg-section-alt: #f8fafc;
+  --bg-code: #f1f5f9;
+  --c-heading: #0f172a;
+  --c-body: #475569;
+  --c-muted: #94a3b8;
+  --c-border: #e2e8f0;
+  --c-border-light: #f1f5f9;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 4px 16px rgba(59,130,246,0.08);
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+}
+
+:root.dark {
+  --bg-body: #0f1117;
+  --bg-nav: rgba(15, 17, 23, 0.80);
+  --bg-hero: #0f1117;
+  --bg-card: rgba(15, 23, 42, 0.60);
+  --bg-card-hover: rgba(15, 23, 42, 0.80);
+  --bg-section: #0f1117;
+  --bg-section-alt: rgba(15, 23, 42, 0.40);
+  --bg-code: #1e293b;
+  --c-heading: #f1f5f9;
+  --c-body: #94a3b8;
+  --c-muted: #64748b;
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border-light: rgba(255, 255, 255, 0.04);
+  --shadow-card: none;
+  --shadow-card-hover: 0 0 30px rgba(59, 130, 246, 0.08);
+  --scrollbar-track: #1e293b;
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748b;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: #0f1117;
-  color: #e2e8f0;
+  background-color: var(--bg-body);
+  color: var(--c-body);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #1e293b; }
-::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #64748b; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
 /* ---------- Animations ---------- */
 @keyframes fade-in-up {
@@ -68,7 +114,7 @@ body {
 .section-heading {
   font-size: 1.875rem;
   font-weight: 700;
-  color: white;
+  color: var(--c-heading);
   text-align: center;
 }
 @media (min-width: 640px) {
@@ -77,18 +123,29 @@ body {
 .section-sub {
   margin-top: 1rem;
   text-align: center;
-  color: #94a3b8;
+  color: var(--c-muted);
   max-width: 42rem;
   margin-inline: auto;
 }
 
-/* ---------- Card glow on hover ---------- */
+/* ---------- Theme card ---------- */
+.theme-card {
+  background: var(--bg-card);
+  border-color: var(--c-border);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
+}
+.theme-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--c-border);
+}
+
+/* ---------- Card glow ---------- */
 .card-glow {
   transition: all 0.3s ease;
 }
 .card-glow:hover {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.08);
-  border-color: #334155;
+  box-shadow: var(--shadow-card-hover);
 }
 
 /* ---------- Mono font for data ---------- */
