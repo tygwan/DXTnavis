@@ -1,0 +1,383 @@
+@prefix dxt: <http://dxtnavis.org/ontology#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ============================================================
+# DXTnavis Ontology Schema
+# ============================================================
+# Purpose: Navisworks Hierarchy Data를 기반으로 한 BIM 온톨로지
+# Author: AWP Research Project
+# Date: 2026-01-26
+# ============================================================
+
+<http://dxtnavis.org/ontology> a owl:Ontology ;
+    rdfs:label "DXTnavis Ontology"@en ;
+    rdfs:label "DXTnavis 온톨로지"@ko ;
+    rdfs:comment "Navisworks에서 추출한 Hierarchy Data 기반 BIM-Schedule 온톨로지"@ko ;
+    owl:versionInfo "1.0.0" .
+
+# ============================================================
+# CLASSES - 객체 분류 체계
+# ============================================================
+
+# ------------------------------------------------------------
+# 최상위: 모든 Navisworks 객체
+# ------------------------------------------------------------
+dxt:NavisObject a owl:Class ;
+    rdfs:label "Navisworks Object"@en ;
+    rdfs:label "Navisworks 객체"@ko ;
+    rdfs:comment "DXTnavis에서 추출된 모든 객체의 기본 클래스" .
+
+# ------------------------------------------------------------
+# 구조 요소 (Structural)
+# ------------------------------------------------------------
+dxt:StructuralElement a owl:Class ;
+    rdfs:subClassOf dxt:NavisObject ;
+    rdfs:label "Structural Element"@en ;
+    rdfs:label "구조 요소"@ko ;
+    rdfs:comment "건물의 구조적 기능을 담당하는 요소" .
+
+dxt:Foundation a owl:Class ;
+    rdfs:subClassOf dxt:StructuralElement ;
+    rdfs:label "Foundation"@en ;
+    rdfs:label "기초"@ko ;
+    rdfs:comment "건물의 기초 구조물" .
+
+dxt:Column a owl:Class ;
+    rdfs:subClassOf dxt:StructuralElement ;
+    rdfs:label "Column"@en ;
+    rdfs:label "기둥"@ko ;
+    rdfs:comment "수직 하중을 지지하는 기둥" .
+
+dxt:Beam a owl:Class ;
+    rdfs:subClassOf dxt:StructuralElement ;
+    rdfs:label "Beam"@en ;
+    rdfs:label "보"@ko ;
+    rdfs:comment "수평 하중을 지지하는 보" .
+
+dxt:Slab a owl:Class ;
+    rdfs:subClassOf dxt:StructuralElement ;
+    rdfs:label "Slab"@en ;
+    rdfs:label "슬래브"@ko ;
+    rdfs:comment "바닥 및 지붕 슬래브" .
+
+dxt:Wall a owl:Class ;
+    rdfs:subClassOf dxt:StructuralElement ;
+    rdfs:label "Wall"@en ;
+    rdfs:label "벽체"@ko ;
+    rdfs:comment "구조벽 및 내력벽" .
+
+dxt:Stair a owl:Class ;
+    rdfs:subClassOf dxt:StructuralElement ;
+    rdfs:label "Stair"@en ;
+    rdfs:label "계단"@ko .
+
+# ------------------------------------------------------------
+# 건축 요소 (Architectural)
+# ------------------------------------------------------------
+dxt:ArchitecturalElement a owl:Class ;
+    rdfs:subClassOf dxt:NavisObject ;
+    rdfs:label "Architectural Element"@en ;
+    rdfs:label "건축 요소"@ko .
+
+dxt:Door a owl:Class ;
+    rdfs:subClassOf dxt:ArchitecturalElement ;
+    rdfs:label "Door"@en ;
+    rdfs:label "문"@ko .
+
+dxt:Window a owl:Class ;
+    rdfs:subClassOf dxt:ArchitecturalElement ;
+    rdfs:label "Window"@en ;
+    rdfs:label "창문"@ko .
+
+dxt:Curtainwall a owl:Class ;
+    rdfs:subClassOf dxt:ArchitecturalElement ;
+    rdfs:label "Curtain Wall"@en ;
+    rdfs:label "커튼월"@ko .
+
+# ------------------------------------------------------------
+# MEP 요소 (Mechanical, Electrical, Plumbing)
+# ------------------------------------------------------------
+dxt:MEPElement a owl:Class ;
+    rdfs:subClassOf dxt:NavisObject ;
+    rdfs:label "MEP Element"@en ;
+    rdfs:label "MEP 요소"@ko ;
+    owl:disjointWith dxt:StructuralElement .
+
+dxt:Duct a owl:Class ;
+    rdfs:subClassOf dxt:MEPElement ;
+    rdfs:label "Duct"@en ;
+    rdfs:label "덕트"@ko .
+
+dxt:Pipe a owl:Class ;
+    rdfs:subClassOf dxt:MEPElement ;
+    rdfs:label "Pipe"@en ;
+    rdfs:label "배관"@ko .
+
+dxt:Equipment a owl:Class ;
+    rdfs:subClassOf dxt:MEPElement ;
+    rdfs:label "Equipment"@en ;
+    rdfs:label "장비"@ko .
+
+# ------------------------------------------------------------
+# 공간 클래스 (Spatial)
+# ------------------------------------------------------------
+dxt:SpatialZone a owl:Class ;
+    rdfs:label "Spatial Zone"@en ;
+    rdfs:label "공간 영역"@ko .
+
+dxt:Level a owl:Class ;
+    rdfs:subClassOf dxt:SpatialZone ;
+    rdfs:label "Level"@en ;
+    rdfs:label "층"@ko ;
+    rdfs:comment "건물의 층 (지하층, 지상층)" .
+
+dxt:Area a owl:Class ;
+    rdfs:subClassOf dxt:SpatialZone ;
+    rdfs:label "Area"@en ;
+    rdfs:label "구역"@ko ;
+    rdfs:comment "공간적 구역 (Zone-A, Zone-B 등)" .
+
+# ------------------------------------------------------------
+# 일정 클래스 (Schedule)
+# ------------------------------------------------------------
+dxt:ScheduleTask a owl:Class ;
+    rdfs:label "Schedule Task"@en ;
+    rdfs:label "일정 작업"@ko ;
+    rdfs:comment "시공 일정의 개별 작업" .
+
+dxt:WorkPackage a owl:Class ;
+    rdfs:label "Work Package"@en ;
+    rdfs:label "작업 패키지"@ko ;
+    rdfs:comment "관련 작업들의 그룹 (CWP)" .
+
+# ============================================================
+# OBJECT PROPERTIES - 관계
+# ============================================================
+
+# ------------------------------------------------------------
+# 계층 관계 (Hierarchy)
+# ------------------------------------------------------------
+dxt:hasParent a owl:ObjectProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range dxt:NavisObject ;
+    rdfs:label "has parent"@en ;
+    rdfs:label "상위 객체"@ko ;
+    rdfs:comment "Navisworks 계층 구조에서의 부모 객체" .
+
+dxt:hasChild a owl:ObjectProperty ;
+    owl:inverseOf dxt:hasParent ;
+    rdfs:label "has child"@en ;
+    rdfs:label "하위 객체"@ko .
+
+# ------------------------------------------------------------
+# 공간 관계 (Spatial)
+# ------------------------------------------------------------
+dxt:onLevel a owl:ObjectProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range dxt:Level ;
+    rdfs:label "on level"@en ;
+    rdfs:label "위치한 층"@ko ;
+    rdfs:comment "객체가 위치한 층" .
+
+dxt:inArea a owl:ObjectProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range dxt:Area ;
+    rdfs:label "in area"@en ;
+    rdfs:label "위치한 구역"@ko .
+
+dxt:inZone a owl:ObjectProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range dxt:SpatialZone ;
+    rdfs:label "in zone"@en ;
+    rdfs:comment "상위 공간 관계 (Level 또는 Area)" .
+
+# ------------------------------------------------------------
+# 선행 관계 (Precedence) - 핵심!
+# ------------------------------------------------------------
+dxt:mustPrecede a owl:ObjectProperty, owl:TransitiveProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range dxt:NavisObject ;
+    rdfs:label "must precede"@en ;
+    rdfs:label "선행 필수"@ko ;
+    rdfs:comment "이 객체의 시공이 완료되어야 대상 객체 시공 가능" .
+
+dxt:mustFollow a owl:ObjectProperty ;
+    owl:inverseOf dxt:mustPrecede ;
+    rdfs:label "must follow"@en ;
+    rdfs:label "후행 필수"@ko .
+
+dxt:canParallel a owl:ObjectProperty, owl:SymmetricProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range dxt:NavisObject ;
+    rdfs:label "can parallel"@en ;
+    rdfs:label "병행 가능"@ko ;
+    rdfs:comment "두 객체가 동시에 시공 가능" .
+
+# ------------------------------------------------------------
+# 일정 관계 (Schedule)
+# ------------------------------------------------------------
+dxt:assignedTo a owl:ObjectProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range dxt:ScheduleTask ;
+    rdfs:label "assigned to"@en ;
+    rdfs:label "할당된 작업"@ko ;
+    rdfs:comment "BIM 객체가 할당된 일정 작업" .
+
+dxt:belongsToPackage a owl:ObjectProperty ;
+    rdfs:domain dxt:ScheduleTask ;
+    rdfs:range dxt:WorkPackage ;
+    rdfs:label "belongs to package"@en ;
+    rdfs:label "소속 패키지"@ko .
+
+dxt:taskPrecedes a owl:ObjectProperty, owl:TransitiveProperty ;
+    rdfs:domain dxt:ScheduleTask ;
+    rdfs:range dxt:ScheduleTask ;
+    rdfs:label "task precedes"@en ;
+    rdfs:label "작업 선행"@ko .
+
+# ============================================================
+# DATATYPE PROPERTIES - 속성값
+# ============================================================
+
+# ------------------------------------------------------------
+# 식별 속성
+# ------------------------------------------------------------
+dxt:objectId a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "Object ID"@en ;
+    rdfs:comment "Navisworks 객체의 고유 GUID" .
+
+dxt:systemPath a owl:DatatypeProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "System Path"@en ;
+    rdfs:label "시스템 경로"@ko ;
+    rdfs:comment "Navisworks 계층 경로 (예: Model/Structure/Columns/1F-C1)" .
+
+dxt:displayName a owl:DatatypeProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "Display Name"@en ;
+    rdfs:label "표시 이름"@ko .
+
+# ------------------------------------------------------------
+# 분류 속성
+# ------------------------------------------------------------
+dxt:categoryName a owl:DatatypeProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "Category"@en ;
+    rdfs:label "카테고리"@ko ;
+    rdfs:comment "Navisworks/Revit 카테고리 이름" .
+
+dxt:levelName a owl:DatatypeProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "Level Name"@en ;
+    rdfs:label "층 이름"@ko ;
+    rdfs:comment "객체가 위치한 층 이름 (1층, B1층 등)" .
+
+dxt:levelOrder a owl:DatatypeProperty ;
+    rdfs:domain dxt:Level ;
+    rdfs:range xsd:integer ;
+    rdfs:label "Level Order"@en ;
+    rdfs:label "층 순서"@ko ;
+    rdfs:comment "층의 시공 순서 (지하2층=-2, 1층=1, 2층=2...)" .
+
+# ------------------------------------------------------------
+# 물리적 속성
+# ------------------------------------------------------------
+dxt:material a owl:DatatypeProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "Material"@en ;
+    rdfs:label "재료"@ko .
+
+dxt:volume a owl:DatatypeProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "Volume"@en ;
+    rdfs:label "체적"@ko .
+
+dxt:area a owl:DatatypeProperty ;
+    rdfs:domain dxt:NavisObject ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "Area"@en ;
+    rdfs:label "면적"@ko .
+
+# ------------------------------------------------------------
+# 일정 속성
+# ------------------------------------------------------------
+dxt:taskId a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain dxt:ScheduleTask ;
+    rdfs:range xsd:string ;
+    rdfs:label "Task ID"@en .
+
+dxt:taskName a owl:DatatypeProperty ;
+    rdfs:domain dxt:ScheduleTask ;
+    rdfs:range xsd:string ;
+    rdfs:label "Task Name"@en ;
+    rdfs:label "작업명"@ko .
+
+dxt:plannedStart a owl:DatatypeProperty ;
+    rdfs:domain dxt:ScheduleTask ;
+    rdfs:range xsd:date ;
+    rdfs:label "Planned Start"@en ;
+    rdfs:label "계획 시작일"@ko .
+
+dxt:plannedEnd a owl:DatatypeProperty ;
+    rdfs:domain dxt:ScheduleTask ;
+    rdfs:range xsd:date ;
+    rdfs:label "Planned End"@en ;
+    rdfs:label "계획 종료일"@ko .
+
+dxt:duration a owl:DatatypeProperty ;
+    rdfs:domain dxt:ScheduleTask ;
+    rdfs:range xsd:integer ;
+    rdfs:label "Duration"@en ;
+    rdfs:label "기간 (일)"@ko .
+
+# ============================================================
+# CATEGORY → CLASS 매핑 (한영 지원)
+# ============================================================
+# 이 매핑은 HierarchyToRdfConverter에서 사용됨
+#
+# Korean → Class:
+#   "기둥" → dxt:Column
+#   "보" → dxt:Beam
+#   "슬래브", "슬라브" → dxt:Slab
+#   "벽", "벽체" → dxt:Wall
+#   "기초" → dxt:Foundation
+#   "문" → dxt:Door
+#   "창", "창문" → dxt:Window
+#   "덕트" → dxt:Duct
+#   "배관" → dxt:Pipe
+#
+# English → Class:
+#   "Column", "COL" → dxt:Column
+#   "Beam", "BM" → dxt:Beam
+#   "Slab", "Floor" → dxt:Slab
+#   "Wall" → dxt:Wall
+#   "Foundation", "Footing" → dxt:Foundation
+#   "Door" → dxt:Door
+#   "Window" → dxt:Window
+#   "Duct" → dxt:Duct
+#   "Pipe" → dxt:Pipe
+# ============================================================
+
+# ============================================================
+# 시공 순서 규칙 (Construction Sequence Rules)
+# ============================================================
+# 이 규칙들은 InferenceEngine의 SPARQL CONSTRUCT로 구현됨
+#
+# Rule 1: 같은 층에서 Foundation → Column
+# Rule 2: 같은 층에서 Column → Beam
+# Rule 3: 같은 층에서 Beam → Slab (상부층)
+# Rule 4: 하부층 요소 → 상부층 같은 타입 요소
+# Rule 5: 구조 요소 → MEP 요소 (같은 공간)
+# Rule 6: Wall → Door/Window (같은 벽체 내)
+# ============================================================

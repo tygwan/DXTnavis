@@ -10,6 +10,7 @@ using Autodesk.Navisworks.Api;
 using DXTnavis.Helpers;
 using DXTnavis.Models;
 using DXTnavis.Services;
+// using DXTnavis.Services.Ontology; // Phase 14: 임시 비활성화
 using Microsoft.Win32;
 
 namespace DXTnavis.ViewModels
@@ -70,6 +71,9 @@ namespace DXTnavis.ViewModels
         private bool _isGroupSelectAll;
         private bool _isUpdatingGroupSelectAll;
 
+        // Phase 14: Ontology ViewModel (타입을 object로 변경하여 지연 로딩)
+        private object _ontologyVM;
+
         #endregion
 
         #region Properties
@@ -88,6 +92,21 @@ namespace DXTnavis.ViewModels
         /// Schedule Builder ViewModel (Phase 10)
         /// </summary>
         public ScheduleBuilderViewModel ScheduleBuilder { get; }
+
+        /// <summary>
+        /// Ontology ViewModel (Phase 14)
+        /// 타입을 object로 변경하여 OntologyViewModel 어셈블리 지연 로딩
+        /// XAML 바인딩은 FallbackValue로 처리됨
+        /// </summary>
+        public object OntologyVM
+        {
+            get => _ontologyVM;
+            set
+            {
+                _ontologyVM = value;
+                OnPropertyChanged(nameof(OntologyVM));
+            }
+        }
 
         /// <summary>
         /// 전체 선택 상태 (v0.6.1)
@@ -560,6 +579,9 @@ namespace DXTnavis.ViewModels
         public ICommand ExportSelectionPropertiesCommand { get; } // Selection × Properties
         public ICommand ExportAllHierarchyCommand { get; }        // All × Hierarchy
         public ICommand ExportSelectionHierarchyCommand { get; }  // Selection × Hierarchy
+        // Geometry Export Commands (Phase 15)
+        public ICommand ExportGeometryCommand { get; }             // All × Geometry (BoundingBox)
+        public ICommand ExportSelectionGeometryCommand { get; }    // Selection × Geometry
         public ICommand CreateSearchSetCommand { get; }
         public ICommand LoadHierarchyCommand { get; }
         public ICommand ApplyFilterCommand { get; }
@@ -635,6 +657,21 @@ namespace DXTnavis.ViewModels
                 () => GetSelectedHierarchicalRecords(),
                 null);
 
+            // Phase 14: Ontology ViewModel 초기화 (임시 비활성화 - 플러그인 로딩 테스트)
+            // TODO: dotNetRdf/Neo4j 어셈블리 로딩 문제 해결 후 활성화
+            OntologyVM = null;
+            /*
+            try
+            {
+                OntologyVM = new OntologyViewModel(() => GetAllHierarchicalRecords());
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DXwindowViewModel] OntologyVM init failed: {ex.Message}");
+                OntologyVM = null;
+            }
+            */
+
             // 초기 상태 메시지
             StatusMessage = "Ready - Select objects to view hierarchy";
 
@@ -701,6 +738,14 @@ namespace DXTnavis.ViewModels
 
             ExportSelectionHierarchyCommand = new AsyncRelayCommand(
                 execute: async _ => await ExportSelectionHierarchyAsync(),
+                canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
+
+            // Geometry Export Commands (Phase 15)
+            ExportGeometryCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportGeometryAsync());
+
+            ExportSelectionGeometryCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportSelectionGeometryAsync(),
                 canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
 
             CreateSearchSetCommand = new RelayCommand(
@@ -1272,6 +1317,32 @@ namespace DXTnavis.ViewModels
         }
 
         /// <summary>
+        /// Phase 14: 모든 HierarchicalPropertyRecord 반환 (Ontology 변환용)
+        /// </summary>
+        public IEnumerable<HierarchicalPropertyRecord> GetAllHierarchicalRecords()
+        {
+            // Phase 12: 모든 ObjectGroups에서 HierarchicalRecords 변환
+            if (AllObjectGroups.Count > 0)
+            {
+                foreach (var group in AllObjectGroups)
+                {
+                    foreach (var record in group.ToHierarchicalRecords())
+                    {
+                        yield return record;
+                    }
+                }
+            }
+            else
+            {
+                // Fallback: 기존 AllHierarchicalProperties 사용
+                foreach (var record in AllHierarchicalProperties)
+                {
+                    yield return record;
+                }
+            }
+        }
+
+        /// <summary>
         /// Phase 12: 선택된 그룹에서 HierarchicalPropertyRecord 반환 (TimeLiner/ScheduleBuilder 호환)
         /// </summary>
         public IEnumerable<HierarchicalPropertyRecord> GetSelectedHierarchicalRecords()
@@ -1438,6 +1509,9 @@ namespace DXTnavis.ViewModels
                 _filterDebounceTimer.Stop();
                 _filterDebounceTimer = null;
             }
+
+            // Phase 14: OntologyVM 정리
+            (_ontologyVM as IDisposable)?.Dispose();
         }
 
         #endregion

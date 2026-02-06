@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using DXTnavis.Models;
 using DXTnavis.Services;
+using DXTnavis.Services.Geometry;
 using Microsoft.Win32;
+using FolderBrowser = System.Windows.Forms.FolderBrowserDialog;
 
 namespace DXTnavis.ViewModels
 {
@@ -393,5 +396,210 @@ namespace DXTnavis.ViewModels
         }
 
         #endregion
+
+        #region Geometry Export Methods (Phase 15)
+
+        /// <summary>
+        /// 전체 모델의 Geometry (BoundingBox) 데이터를 manifest.json으로 내보내기
+        /// Phase 15: Geometry Export System
+        /// </summary>
+        private async Task ExportGeometryAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("활성 문서가 없습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // 폴더 선택 다이얼로그
+                using (var folderDialog = new FolderBrowser())
+                {
+                    folderDialog.Description = "Geometry Export 폴더 선택";
+                    folderDialog.ShowNewFolderButton = true;
+
+                    if (folderDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                        return;
+
+                    var exportPath = folderDialog.SelectedPath;
+
+                    IsExporting = true;
+                    ExportProgressPercentage = 0;
+                    ExportStatusMessage = "Geometry 추출 준비 중...";
+
+                    // 서비스 인스턴스 생성
+                    var extractor = new GeometryExtractor();
+                    var writer = new GeometryFileWriter();
+
+                    // 진행률 이벤트 연결
+                    extractor.ProgressChanged += (s, p) =>
+                    {
+                        ExportProgressPercentage = (int)(p * 0.8); // 80%까지 추출
+                        System.Windows.Application.Current?.Dispatcher?.Invoke(() => { });
+                    };
+                    extractor.StatusChanged += (s, msg) =>
+                    {
+                        ExportStatusMessage = msg;
+                        System.Windows.Application.Current?.Dispatcher?.Invoke(() => { });
+                    };
+
+                    writer.ProgressChanged += (s, p) =>
+                    {
+                        ExportProgressPercentage = 80 + (int)(p * 0.2); // 80-100% 저장
+                        System.Windows.Application.Current?.Dispatcher?.Invoke(() => { });
+                    };
+                    writer.StatusChanged += (s, msg) =>
+                    {
+                        ExportStatusMessage = msg;
+                        System.Windows.Application.Current?.Dispatcher?.Invoke(() => { });
+                    };
+
+                    // UI 스레드에서 Navisworks API 호출 (BoundingBox 추출)
+                    ExportStatusMessage = "BoundingBox 데이터 추출 중...";
+                    var geometryRecords = extractor.ExtractFromDocument(doc);
+
+                    if (geometryRecords == null || geometryRecords.Count == 0)
+                    {
+                        ExportStatusMessage = "";
+                        MessageBox.Show("모델에서 Geometry 데이터를 추출할 수 없습니다.", "데이터 없음", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // 폴더 구조 생성
+                    var structure = writer.CreateExportStructure(exportPath);
+                    if (!structure.IsValid)
+                    {
+                        MessageBox.Show("Export 폴더 구조 생성에 실패했습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+
+                    // 파일 저장 (백그라운드)
+                    string manifestPath = null;
+                    await Task.Run(() =>
+                    {
+                        // manifest.json 저장
+                        manifestPath = writer.WriteManifest(geometryRecords, exportPath, doc.Title ?? "Navisworks Model");
+
+                        // geometry.csv도 함께 저장 (대안 포맷)
+                        writer.WriteCsv(geometryRecords, structure.CsvPath);
+                    });
+
+                    ExportProgressPercentage = 100;
+                    ExportStatusMessage = "✅ Geometry Export 완료!";
+                    StatusMessage = $"Geometry Exported: {geometryRecords.Count} objects";
+
+                    MessageBox.Show(
+                        $"Geometry Export 완료!\n\n" +
+                        $"• 객체 수: {geometryRecords.Count:N0}\n" +
+                        $"• manifest.json: {System.IO.Path.GetFileName(manifestPath)}\n" +
+                        $"• geometry.csv: {System.IO.Path.GetFileName(structure.CsvPath)}\n\n" +
+                        $"폴더: {exportPath}",
+                        "Geometry Export 완료",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = $"❌ Geometry Export 오류: {ex.Message}";
+                MessageBox.Show(
+                    $"Geometry Export 중 오류가 발생했습니다:\n\n{ex.Message}",
+                    "오류",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        /// <summary>
+        /// 선택된 객체의 Geometry 데이터를 내보내기
+        /// </summary>
+        private async Task ExportSelectionGeometryAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("활성 문서가 없습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var selectedItems = doc.CurrentSelection.SelectedItems;
+                if (selectedItems == null || selectedItems.Count == 0)
+                {
+                    MessageBox.Show("먼저 객체를 선택해주세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // 폴더 선택
+                using (var folderDialog = new FolderBrowser())
+                {
+                    folderDialog.Description = "Selection Geometry Export 폴더 선택";
+                    folderDialog.ShowNewFolderButton = true;
+
+                    if (folderDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                        return;
+
+                    var exportPath = folderDialog.SelectedPath;
+
+                    IsExporting = true;
+                    ExportProgressPercentage = 0;
+                    ExportStatusMessage = "선택 객체 Geometry 추출 중...";
+
+                    var extractor = new GeometryExtractor();
+                    var writer = new GeometryFileWriter();
+
+                    // 진행률 연결
+                    extractor.ProgressChanged += (s, p) => ExportProgressPercentage = (int)(p * 0.8);
+                    extractor.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+                    writer.ProgressChanged += (s, p) => ExportProgressPercentage = 80 + (int)(p * 0.2);
+
+                    // UI 스레드에서 추출
+                    var geometryRecords = extractor.ExtractFromSelection(selectedItems);
+
+                    if (geometryRecords == null || geometryRecords.Count == 0)
+                    {
+                        ExportStatusMessage = "";
+                        MessageBox.Show("선택된 객체에서 Geometry를 추출할 수 없습니다.", "데이터 없음", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // 저장
+                    var structure = writer.CreateExportStructure(exportPath);
+                    await Task.Run(() =>
+                    {
+                        writer.WriteManifest(geometryRecords, exportPath, "Selection Export");
+                        writer.WriteCsv(geometryRecords, structure.CsvPath);
+                    });
+
+                    ExportProgressPercentage = 100;
+                    ExportStatusMessage = "✅ Selection Geometry Export 완료!";
+
+                    MessageBox.Show(
+                        $"Selection Geometry Export 완료!\n\n객체 수: {geometryRecords.Count:N0}",
+                        "Export 완료",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = $"❌ 오류: {ex.Message}";
+                MessageBox.Show($"Selection Geometry Export 오류:\n\n{ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        #endregion
     }
 }
+

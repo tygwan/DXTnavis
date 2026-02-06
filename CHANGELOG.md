@@ -7,6 +7,146 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2026-02-06
+
+### Geometry Export System (Phase 15)
+
+**🎯 목표: Palantir-style 3D+Ontology 시각화를 위한 Geometry 데이터 Export**
+
+#### Hybrid Approach
+- **BoundingBox (필수)**: 모든 객체에 대해 World 좌표계 AABB 추출
+- **Centroid**: BoundingBox 중심점 자동 계산
+- **Mesh (선택)**: Phase 15.3에서 COM API로 구현 예정
+
+#### New Models (`Models/Geometry/`)
+- **Point3D.cs** - 3D 좌표 구조체 (X, Y, Z)
+- **BBox3D.cs** - Axis-Aligned Bounding Box (Min, Max, 공간 쿼리)
+- **GeometryRecord.cs** - 기하학 레코드 (ObjectId, BBox, Centroid, MeshUri)
+
+#### New Services (`Services/Geometry/`)
+- **GeometryExtractor.cs** - Navisworks BoundingBox 추출
+  - `ExtractBoundingBox()` - 단일 ModelItem 추출
+  - `ExtractAllBoundingBoxes()` - 배치 처리 (진행률/취소 지원)
+  - `ExtractFromDocument()` - 전체 문서 추출
+  - `ExtractFromSelection()` - 선택 객체 추출
+  - `GetStableObjectId()` - NavisworksDataExtractor 패턴 재사용
+- **GeometryFileWriter.cs** - 파일 출력
+  - `WriteManifest()` - manifest.json (Three.js/CesiumJS/deck.gl 호환)
+  - `WriteCsv()` - geometry.csv (대안 포맷)
+  - `CreateExportStructure()` - export/ 폴더 구조 생성
+
+#### UI Commands
+- **ExportGeometryCommand** - 전체 모델 Geometry Export
+- **ExportSelectionGeometryCommand** - 선택 객체 Geometry Export
+
+#### Output Format
+```
+export/
+├── manifest.json      # 객체별 BBox + Centroid + MeshUri
+├── geometry.csv       # 스프레드시트 호환 포맷
+└── mesh/              # GLB 파일 (Phase 15.3)
+```
+
+#### manifest.json 구조
+```json
+{
+  "metadata": {
+    "version": "1.0.0",
+    "generator": "DXTnavis v1.4.0",
+    "exportDate": "2026-02-06T...",
+    "objectCount": 5000,
+    "globalBoundingBox": { "min": {...}, "max": {...} }
+  },
+  "objects": [
+    {
+      "objectId": "guid",
+      "displayName": "Column-001",
+      "bbox": { "min": {...}, "max": {...} },
+      "centroid": { "x": 0, "y": 0, "z": 0 },
+      "hasMesh": false,
+      "meshUri": null
+    }
+  ]
+}
+```
+
+#### Knowledge Graph 연동
+- **ObjectId as Join Key** - RDF Triple의 Subject와 Geometry의 ObjectId 동일
+- **External 3D Viewer** 통합 가능: Three.js, CesiumJS, deck.gl, Potree
+- **Ontology Rules** - `dxtnavis-rules.yaml`에서 `dxt:` → `bso:` 네임스페이스 마이그레이션 완료
+
+#### Phase 15.3: COM Mesh Export (Optional)
+- **MeshExtractor.cs** - COM API InwOaFragment3.GenerateSimplePrimitives()
+  - `ExtractMesh()` - 단일 ModelItem Mesh 추출
+  - `ExtractMeshes()` - 배치 처리 (진행률/취소 지원)
+  - `SaveToGlb()` - GLB 파일 출력
+  - `SaveToObj()` - OBJ 파일 출력 (대안 포맷)
+- **MeshCallbackSink** - Triangle/Vertex 수집 콜백
+
+#### Phase 15.5: RDF Geometry Integration
+- **GeometryRdfIntegrator.cs** - Geometry → RDF/TTL 변환
+  - `WriteGeometryTtl()` - TTL 파일 생성
+  - `AppendGeometryToTtl()` - 기존 TTL에 추가
+  - `ToSparqlInsert()` - SPARQL INSERT 생성
+  - `BBoxToWkt()` - GeoSPARQL WKT POLYGON
+  - `CentroidToWkt()` - GeoSPARQL WKT POINT
+- **BSO Ontology Properties**:
+  - `bso:hasBoundingBox`, `bso:minX/Y/Z`, `bso:maxX/Y/Z`
+  - `bso:centroidX/Y/Z`, `bso:centroidWKT`
+  - `bso:volume`, `bso:hasMesh`, `bso:meshUri`
+  - `geo:asWKT` (GeoSPARQL)
+
+#### UI Enhancement
+- **Geometry Export 버튼 추가** - XAML Export 영역에 보라색 버튼 2개
+  - 🔲 All BBox - 전체 모델 Geometry Export
+  - 🔲 Selection - 선택 객체 Geometry Export
+
+#### Modified Files
+- `DXTnavis.csproj` - Phase 15 파일 참조 추가
+- `ViewModels/DXwindowViewModel.cs` - Geometry Export Commands
+- `ViewModels/DXwindowViewModel.Export.cs` - Export 메서드 추가
+- `Views/DXwindow.xaml` - Geometry Export 버튼 추가
+- `Resources/Ontology/dxtnavis-rules.yaml` - bso: 네임스페이스 통일
+
+---
+
+## [1.3.0] - 2026-02-05
+
+### Synthetic ID Generation for Hierarchy Preservation
+
+**🎯 목표: InstanceGuid가 Empty인 경우에도 계층 구조 보존**
+
+#### 문제 분석 (Codex gpt-5-codex 분석)
+- **InstanceGuid 한계** - CATIA/PDMS 등 일부 포맷은 GUID 미제공
+- **Navisworks 내부 노드** - Search folder, quantification 등은 항상 Guid.Empty
+- **다중 파일 Append** - 동일 GUID가 여러 파일에서 중복 가능
+
+#### Synthetic ID 생성 시스템
+- **GetStableObjectId()** - 안정적인 고유 ID 생성 헬퍼
+- **Fallback 순서**: InstanceGuid → Item GUID Property → Authoring ID → Hierarchy Path Hash
+- **CreateDeterministicGuid()** - MD5 해시 기반 결정적 GUID 생성
+
+#### Authoring ID 지원
+- **Revit Element ID** - `Element ID`, `Id`, `ElementId` 속성 탐지
+- **AutoCAD Handle** - `Handle`, `Object Handle` 속성 탐지
+- **IFC GlobalId** - `GlobalId`, `IfcGlobalId` 속성 탐지
+
+#### 수정된 메서드
+- `TraverseAndExtractProperties()` - Synthetic ID 사용, 컨테이너 노드 계층 유지
+- `TraverseAndExtractGroups()` - 동일한 Synthetic ID 로직 적용
+- `ConvertToHierarchyNode()` - Synthetic ID 사용
+- `GetDisplayName()` - ClassDisplayName 및 Authoring ID 폴백 추가
+
+#### 기대 효과
+- **계층 보존** - ParentId가 최상위로 flatten되는 문제 해결
+- **온톨로지 호환** - RDF/TTL 변환 시 parent-child 관계 정확히 표현
+- **다중 파일 지원** - ModelFile.SourceGuid 조합으로 전역 고유성 보장
+
+#### Modified Files
+- `Services/NavisworksDataExtractor.cs` - Synthetic ID 생성 시스템 전체
+
+---
+
 ## [1.2.1] - 2026-01-21
 
 ### Bug Fix: TextBox IME 입력 오류

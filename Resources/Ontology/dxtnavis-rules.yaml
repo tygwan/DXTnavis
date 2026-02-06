@@ -1,0 +1,522 @@
+# ============================================================
+# DXTnavis Ontology Rules
+# ============================================================
+# Hot-Reload 지원: 이 파일 수정 시 자동으로 재로드됩니다.
+# 재컴파일 없이 규칙 변경 가능
+# ============================================================
+
+# ============================================================
+# 1. 분류 규칙 (Category → OWL Class)
+# ============================================================
+# Navisworks Category 키워드를 OWL 클래스로 매핑
+# keywords: 대소문자 무시, 부분 문자열 매칭
+# target_class: bso: 네임스페이스 사용
+
+classification_rules:
+  - name: "Column Classification"
+    keywords:
+      - "Column"
+      - "기둥"
+      - "COL"
+      - "柱"
+      - "Columns"
+      - "Structural Column"
+    target_class: "bso:Column"
+    enabled: true
+
+  - name: "Beam Classification"
+    keywords:
+      - "Beam"
+      - "보"
+      - "BM"
+      - "梁"
+      - "Beams"
+      - "Structural Framing"
+      - "Girder"
+      - "큰보"
+      - "작은보"
+    target_class: "bso:Beam"
+    enabled: true
+
+  - name: "Slab Classification"
+    keywords:
+      - "Slab"
+      - "슬래브"
+      - "슬라브"
+      - "Floor"
+      - "SL"
+      - "Floors"
+      - "바닥"
+      - "Deck"
+    target_class: "bso:Slab"
+    enabled: true
+
+  - name: "Wall Classification"
+    keywords:
+      - "Wall"
+      - "벽"
+      - "벽체"
+      - "WL"
+      - "Walls"
+      - "내벽"
+      - "외벽"
+      - "Curtain Wall"
+      - "커튼월"
+    target_class: "bso:Wall"
+    enabled: true
+
+  - name: "Foundation Classification"
+    keywords:
+      - "Foundation"
+      - "기초"
+      - "Footing"
+      - "FD"
+      - "Foundations"
+      - "Mat Foundation"
+      - "매트기초"
+      - "Pile"
+      - "말뚝"
+    target_class: "bso:Foundation"
+    enabled: true
+
+  - name: "Stair Classification"
+    keywords:
+      - "Stair"
+      - "계단"
+      - "Stairs"
+      - "ST"
+    target_class: "bso:Stair"
+    enabled: true
+
+  - name: "Door Classification"
+    keywords:
+      - "Door"
+      - "문"
+      - "Doors"
+      - "DR"
+    target_class: "bso:Door"
+    enabled: true
+
+  - name: "Window Classification"
+    keywords:
+      - "Window"
+      - "창"
+      - "창문"
+      - "Windows"
+      - "WN"
+    target_class: "bso:Window"
+    enabled: true
+
+  - name: "Duct Classification"
+    keywords:
+      - "Duct"
+      - "덕트"
+      - "Ducts"
+      - "Air Duct"
+      - "공조덕트"
+    target_class: "bso:Duct"
+    enabled: true
+
+  - name: "Pipe Classification"
+    keywords:
+      - "Pipe"
+      - "배관"
+      - "Pipes"
+      - "Piping"
+      - "급수관"
+      - "배수관"
+    target_class: "bso:Pipe"
+    enabled: true
+
+  - name: "Equipment Classification"
+    keywords:
+      - "Equipment"
+      - "장비"
+      - "Mechanical Equipment"
+      - "기계장비"
+      - "AHU"
+      - "공조기"
+    target_class: "bso:Equipment"
+    enabled: true
+
+# ============================================================
+# 1.5 SystemPath 기반 분류 규칙 (SmartPlant 3D 등)
+# ============================================================
+# categoryName이 일반적일 때 (예: "SmartPlant 3D") SystemPath에서 분류
+# 키워드가 SystemPath에 포함되면 해당 클래스로 분류
+# priority: 높을수록 우선 (동일 객체에 여러 규칙 매칭 시)
+
+systempath_classification:
+  # === 구조 (Structural) ===
+  - name: "Structural Element (General)"
+    keywords:
+      - "Structural"
+      - "Structure"
+      - "Civil_Structure"
+    target_class: "bso:StructuralElement"
+    priority: 1
+    enabled: true
+
+  - name: "Column from SystemPath"
+    keywords:
+      - "Column"
+      - "Columns"
+      - "Vertical Member"
+    target_class: "bso:Column"
+    priority: 10
+    enabled: true
+
+  - name: "Beam from SystemPath"
+    keywords:
+      - "Beam"
+      - "Beams"
+      - "Girder"
+      - "Horizontal Braces"
+      - "Stringers"
+    target_class: "bso:Beam"
+    priority: 10
+    enabled: true
+
+  - name: "Brace from SystemPath"
+    keywords:
+      - "Vertical Braces"
+      - "Braces"
+      - "Brace"
+      - "Bracing"
+    target_class: "bso:Brace"
+    priority: 10
+    enabled: true
+
+  - name: "Foundation from SystemPath"
+    keywords:
+      - "Foundation"
+      - "Footing"
+      - "Pile"
+      - "Mat"
+      - "Drainage Ditches"
+    target_class: "bso:Foundation"
+    priority: 10
+    enabled: true
+
+  - name: "Slab from SystemPath"
+    keywords:
+      - "Slab"
+      - "Floor"
+      - "Deck"
+    target_class: "bso:Slab"
+    priority: 10
+    enabled: true
+
+  - name: "Wall from SystemPath"
+    keywords:
+      - "Wall"
+      - "Walls"
+      - "RightWall"
+      - "LeftWall"
+    target_class: "bso:Wall"
+    priority: 10
+    enabled: true
+
+  # === MEP (Piping, HVAC, Electrical) ===
+  - name: "Pipe from SystemPath"
+    keywords:
+      - "Piping"
+      - "Pipe"
+      - "PipeSys"
+      - "Pipeline"
+    target_class: "bso:Pipe"
+    priority: 10
+    enabled: true
+
+  - name: "Duct from SystemPath"
+    keywords:
+      - "Duct"
+      - "HVAC"
+      - "Air"
+      - "Ventilation"
+    target_class: "bso:Duct"
+    priority: 10
+    enabled: true
+
+  - name: "Equipment from SystemPath"
+    keywords:
+      - "Equipment"
+      - "Pump"
+      - "Tank"
+      - "Vessel"
+      - "Exchanger"
+      - "Compressor"
+      - "Kettle"
+      - "Recovery"
+    target_class: "bso:Equipment"
+    priority: 10
+    enabled: true
+
+  - name: "Electrical from SystemPath"
+    keywords:
+      - "Electrical"
+      - "Cable"
+      - "Tray"
+      - "Conduit"
+    target_class: "bso:ElectricalElement"
+    priority: 10
+    enabled: true
+
+  - name: "Water System"
+    keywords:
+      - "Water"
+      - "-W-"
+      - "-W>"
+    target_class: "bso:Pipe"
+    priority: 5
+    enabled: true
+
+# ============================================================
+# 1.6 Area/Zone 추출 패턴 (SystemPath에서 Level 대체)
+# ============================================================
+# SystemPath에서 Area, Unit, Zone 정보를 추출하여 분류
+# 패턴: 정규식 사용
+
+area_extraction_patterns:
+  # Area 패턴 (A1, A2, A3 등)
+  - name: "Area Pattern"
+    pattern: "\\b(A[0-9]+)\\b"
+    property: "bso:areaName"
+    enabled: true
+
+  # Unit 패턴 (U01, U02, U03 등)
+  - name: "Unit Pattern"
+    pattern: "\\b(U[0-9]+)\\b"
+    property: "bso:unitName"
+    enabled: true
+
+  # Zone 패턴 (Zone-A, Zone-B 등)
+  - name: "Zone Pattern"
+    pattern: "(Zone-[A-Za-z0-9]+)"
+    property: "bso:zoneName"
+    enabled: true
+
+  # Level 패턴 (Level 1, L1, 1F 등)
+  - name: "Level Pattern"
+    pattern: "\\b(Level\\s*[0-9]+|L[0-9]+|[0-9]+F|B[0-9]+)\\b"
+    property: "bso:levelName"
+    enabled: true
+
+# ============================================================
+# 2. 선행관계 규칙 (시공 순서 추론)
+# ============================================================
+# condition 종류:
+#   - same_level: 같은 층에서만 적용
+#   - lower_level_first: 하부층 → 상부층 (같은 타입)
+#   - always: 층 무관하게 항상 적용
+
+precedence_rules:
+  # 구조 시공 순서 (같은 층)
+  - name: "Foundation before Column"
+    predecessor_class: "bso:Foundation"
+    successor_class: "bso:Column"
+    condition: "same_level"
+    priority: 1
+    enabled: true
+
+  - name: "Column before Beam"
+    predecessor_class: "bso:Column"
+    successor_class: "bso:Beam"
+    condition: "same_level"
+    priority: 2
+    enabled: true
+
+  - name: "Beam before Slab"
+    predecessor_class: "bso:Beam"
+    successor_class: "bso:Slab"
+    condition: "same_level"
+    priority: 3
+    enabled: true
+
+  - name: "Structure before Wall"
+    predecessor_class: "bso:StructuralElement"
+    successor_class: "bso:Wall"
+    condition: "same_level"
+    priority: 4
+    enabled: true
+
+  # 건축 시공 순서 (같은 층)
+  - name: "Wall before Door"
+    predecessor_class: "bso:Wall"
+    successor_class: "bso:Door"
+    condition: "same_level"
+    priority: 5
+    enabled: true
+
+  - name: "Wall before Window"
+    predecessor_class: "bso:Wall"
+    successor_class: "bso:Window"
+    condition: "same_level"
+    priority: 5
+    enabled: true
+
+  # 층간 선행관계
+  - name: "Lower to Upper Level (Same Type)"
+    predecessor_class: "*"
+    successor_class: "*"
+    condition: "lower_level_first"
+    priority: 0
+    enabled: true
+
+  # 구조 → MEP 순서
+  - name: "Structure before MEP"
+    predecessor_class: "bso:StructuralElement"
+    successor_class: "bso:MEPElement"
+    condition: "same_level"
+    priority: 10
+    enabled: true
+
+  # === Area/Unit 기반 선행관계 (SmartPlant 3D용) ===
+  # 같은 Area 내 구조 → MEP
+  - name: "Structure before MEP (Same Area)"
+    predecessor_class: "bso:StructuralElement"
+    successor_class: "bso:MEPElement"
+    condition: "same_area"
+    priority: 10
+    enabled: true
+
+  # 같은 Unit 내 구조 시공 순서
+  - name: "Foundation before Column (Same Unit)"
+    predecessor_class: "bso:Foundation"
+    successor_class: "bso:Column"
+    condition: "same_unit"
+    priority: 1
+    enabled: true
+
+  - name: "Column before Beam (Same Unit)"
+    predecessor_class: "bso:Column"
+    successor_class: "bso:Beam"
+    condition: "same_unit"
+    priority: 2
+    enabled: true
+
+  - name: "Foundation before Brace (Same Unit)"
+    predecessor_class: "bso:Foundation"
+    successor_class: "bso:Brace"
+    condition: "same_unit"
+    priority: 1
+    enabled: true
+
+  # Brace와 Beam은 동시 또는 순차
+  - name: "Brace before Beam (Same Unit)"
+    predecessor_class: "bso:Brace"
+    successor_class: "bso:Beam"
+    condition: "same_unit"
+    priority: 2
+    enabled: true
+
+  # 구조 완료 후 배관
+  - name: "Structure before Pipe (Same Unit)"
+    predecessor_class: "bso:StructuralElement"
+    successor_class: "bso:Pipe"
+    condition: "same_unit"
+    priority: 10
+    enabled: true
+
+  # 구조 완료 후 장비 설치
+  - name: "Structure before Equipment (Same Unit)"
+    predecessor_class: "bso:StructuralElement"
+    successor_class: "bso:Equipment"
+    condition: "same_unit"
+    priority: 10
+    enabled: true
+
+# ============================================================
+# 3. 층 순서 매핑 (시공 순서 결정용)
+# ============================================================
+# 음수: 지하층, 양수: 지상층, 큰 값: 상부층
+
+level_order:
+  # === 지하층 ===
+  "B5": -5
+  "B4": -4
+  "B3": -3
+  "B2": -2
+  "B1": -1
+  "지하5층": -5
+  "지하4층": -4
+  "지하3층": -3
+  "지하2층": -2
+  "지하1층": -1
+
+  # === 지상층 ===
+  "1F": 1
+  "2F": 2
+  "3F": 3
+  "4F": 4
+  "5F": 5
+  "6F": 6
+  "7F": 7
+  "8F": 8
+  "9F": 9
+  "10F": 10
+  "11F": 11
+  "12F": 12
+  "13F": 13
+  "14F": 14
+  "15F": 15
+  "16F": 16
+  "17F": 17
+  "18F": 18
+  "19F": 19
+  "20F": 20
+
+  # === 한글 층 이름 ===
+  "1층": 1
+  "2층": 2
+  "3층": 3
+  "4층": 4
+  "5층": 5
+  "6층": 6
+  "7층": 7
+  "8층": 8
+  "9층": 9
+  "10층": 10
+
+  # === 특수층 ===
+  "GL": 0
+  "Ground": 0
+  "지상": 0
+  "RF": 100
+  "Roof": 100
+  "옥상": 100
+  "옥상층": 100
+  "PH": 101
+  "Penthouse": 101
+  "펜트하우스": 101
+
+# ============================================================
+# 4. 매칭 가중치 (Schedule Matching용)
+# ============================================================
+# 합계 = 1.0 권장
+
+matching_weights:
+  level_match: 0.30        # 층 일치 가중치
+  category_match: 0.25     # 카테고리 일치 가중치
+  name_similarity: 0.25    # 이름 유사도 가중치 (FuzzySharp)
+  sys_path_match: 0.20     # SysPath 일치 가중치
+
+# ============================================================
+# 5. 고급 설정
+# ============================================================
+
+advanced_settings:
+  # 최소 매칭 점수 (0.0 ~ 1.0)
+  min_match_score: 0.7
+
+  # 추론 최대 깊이 (TransitiveProperty 제한)
+  max_inference_depth: 5
+
+  # 대용량 데이터 임계값 (이상 시 배치 처리)
+  batch_threshold: 10000
+
+  # SPARQL 쿼리 타임아웃 (초)
+  query_timeout: 30
+
+  # 디버그 모드 (상세 로깅)
+  debug_mode: false

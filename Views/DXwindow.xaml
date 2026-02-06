@@ -608,6 +608,22 @@
                                     ToolTip="선택된 객체의 계층 구조를 CSV/JSON으로 내보내기"
                                     Width="100"/>
                         </StackPanel>
+                        <!-- Row 3: Geometry Export (Phase 15) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="Geometry:" VerticalAlignment="Center" Width="60" FontWeight="SemiBold" FontSize="11"/>
+                            <Button Content="🔲 All BBox"
+                                    Style="{StaticResource ActionButton}"
+                                    Background="#9C27B0"
+                                    Command="{Binding ExportGeometryCommand}"
+                                    ToolTip="전체 모델의 BoundingBox를 manifest.json으로 내보내기 (3D 뷰어 연동용)"
+                                    Width="100"/>
+                            <Button Content="🔲 Selection"
+                                    Style="{StaticResource ActionButton}"
+                                    Background="#7B1FA2"
+                                    Command="{Binding ExportSelectionGeometryCommand}"
+                                    ToolTip="선택된 객체의 BoundingBox를 manifest.json으로 내보내기"
+                                    Width="100"/>
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- 3D 선택 버튼 (Phase 3) -->
@@ -1211,7 +1227,179 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 탭 5: 정보 -->
+            <!-- 탭 5: Ontology (Phase 14) -->
+            <TabItem Header="🧠 Ontology">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="10">
+                    <StackPanel>
+                        <!-- 헤더 -->
+                        <Border Background="#E8F4FD" Padding="12" Margin="0,0,0,10" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="BIM Ontology System" FontSize="14" FontWeight="Bold"/>
+                                <TextBlock Text="Hierarchy Data → RDF → Inference → Schedule Automation"
+                                           FontSize="11" Foreground="#666" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 통계 카드 -->
+                        <Border Background="White" BorderBrush="#DDD" BorderThickness="1"
+                                Padding="12" Margin="0,0,0,10" CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Triples -->
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding OntologyVM.TotalTriplesDisplay, FallbackValue='0'}"
+                                               FontSize="24" FontWeight="Bold" Foreground="#0078D4"/>
+                                    <TextBlock Text="Triples" FontSize="10" Foreground="#666"/>
+                                </StackPanel>
+
+                                <!-- Objects -->
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding OntologyVM.TotalObjectsDisplay, FallbackValue='0'}"
+                                               FontSize="24" FontWeight="Bold" Foreground="#28A745"/>
+                                    <TextBlock Text="Objects" FontSize="10" Foreground="#666"/>
+                                </StackPanel>
+
+                                <!-- Precedence -->
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding OntologyVM.PrecedenceCountDisplay, FallbackValue='0'}"
+                                               FontSize="24" FontWeight="Bold" Foreground="#FFC107"/>
+                                    <TextBlock Text="Precedence" FontSize="10" Foreground="#666"/>
+                                </StackPanel>
+
+                                <!-- Levels -->
+                                <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding OntologyVM.LevelCountDisplay, FallbackValue='0'}"
+                                               FontSize="24" FontWeight="Bold" Foreground="#DC3545"/>
+                                    <TextBlock Text="Levels" FontSize="10" Foreground="#666"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- 컨트롤 버튼 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Button Content="Build Ontology"
+                                    Command="{Binding OntologyVM.BuildOntologyCommand}"
+                                    Style="{StaticResource SuccessButton}"
+                                    Width="110" Height="28"/>
+                            <Button Content="Run Inference"
+                                    Command="{Binding OntologyVM.RunInferenceCommand}"
+                                    Style="{StaticResource ActionButton}"
+                                    Width="110" Height="28" Margin="6,0,0,0"/>
+                            <Button Content="Export RDF"
+                                    Command="{Binding OntologyVM.ExportRdfCommand}"
+                                    Style="{StaticResource FilterButton}"
+                                    Width="90" Height="28" Margin="6,0,0,0"/>
+                            <Button Content="Clear"
+                                    Command="{Binding OntologyVM.ClearOntologyCommand}"
+                                    Style="{StaticResource FilterButton}"
+                                    Width="60" Height="28" Margin="6,0,0,0"/>
+                        </StackPanel>
+
+                        <!-- Level 필터 -->
+                        <Border Background="#F5F5F5" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Level Filter" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox ItemsSource="{Binding OntologyVM.AvailableLevels}"
+                                              SelectedItem="{Binding OntologyVM.SelectedLevel}"
+                                              Width="150" Height="28"/>
+                                    <Button Content="Refresh"
+                                            Command="{Binding OntologyVM.RefreshLevelViewCommand}"
+                                            Style="{StaticResource FilterButton}"
+                                            Width="70" Height="28" Margin="8,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 분류 결과 DataGrid -->
+                        <Border Background="White" BorderBrush="#DDD" BorderThickness="1"
+                                Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Classification Results" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <DataGrid ItemsSource="{Binding OntologyVM.CurrentNodes}"
+                                          AutoGenerateColumns="False"
+                                          IsReadOnly="True"
+                                          MaxHeight="150"
+                                          CanUserAddRows="False"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          AlternatingRowBackground="#FAFAFA"
+                                          ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="*"/>
+                                        <DataGridTextColumn Header="Type" Binding="{Binding RdfType}" Width="70"/>
+                                        <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="90"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 선행관계 DataGrid -->
+                        <Border Background="White" BorderBrush="#DDD" BorderThickness="1"
+                                Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Inferred Precedence Relations" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <DataGrid ItemsSource="{Binding OntologyVM.PrecedenceRelations}"
+                                          AutoGenerateColumns="False"
+                                          IsReadOnly="True"
+                                          MaxHeight="150"
+                                          CanUserAddRows="False"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          AlternatingRowBackground="#FAFAFA"
+                                          ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Predecessor" Binding="{Binding PredecessorName}" Width="*"/>
+                                        <DataGridTextColumn Header="→" Width="30">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="→"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="Foreground" Value="#0078D4"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Successor" Binding="{Binding SuccessorName}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- SPARQL 쿼리 -->
+                        <Border Background="White" BorderBrush="#DDD" BorderThickness="1"
+                                Padding="10" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Custom SPARQL Query" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <TextBox Text="{Binding OntologyVM.CustomSparql, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="70" AcceptsReturn="True" TextWrapping="Wrap"
+                                         FontFamily="Consolas" FontSize="10"
+                                         VerticalScrollBarVisibility="Auto"/>
+                                <Button Content="Execute Query"
+                                        Command="{Binding OntologyVM.ExecuteQueryCommand}"
+                                        Style="{StaticResource ActionButton}"
+                                        Width="110" HorizontalAlignment="Left" Margin="0,8,0,8"/>
+                                <TextBox Text="{Binding OntologyVM.QueryResult, Mode=OneWay}"
+                                         Height="80" IsReadOnly="True" TextWrapping="Wrap"
+                                         FontFamily="Consolas" FontSize="9" Background="#F5F5F5"
+                                         VerticalScrollBarVisibility="Auto"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 상태 표시 -->
+                        <TextBlock Text="{Binding OntologyVM.StatusMessage, FallbackValue='Ready'}"
+                                   Foreground="#666" FontSize="11" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- 탭 6: 정보 -->
             <TabItem Header="ℹ️ Info">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12">

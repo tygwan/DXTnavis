@@ -1,142 +1,133 @@
-# Sprint: DXTnavis Standalone Development
+# Current Sprint: v1.4.0 - Geometry Export System
 
-| Field | Value |
-|-------|-------|
-| **Sprint Name** | DXTnavis Property Viewer v0.3 |
-| **Start Date** | 2025-12-29 |
-| **Status** | In Progress |
-| **Goal** | Standalone Navisworks property viewer with 3D integration |
+> **Status**: 🚀 Active
+> **Started**: 2026-02-06
+> **Target Release**: v1.4.0
+> **Full Document**: [SPRINT-v1.4.0.md](SPRINT-v1.4.0.md)
+
+---
+
+## Sprint Overview
+
+**Goal**: Geometry 추출 및 외부 3D 뷰어 연동 (Palantir-style 3D + Ontology)
+
+```
+Navisworks Model → BoundingBox/Mesh → manifest.json + GLB → External 3D Viewer
+     (Source)         (Extract)           (Export)              (Visualize)
+```
 
 ---
 
 ## Sprint Progress
 
 ```
-Progress: [==================>     ] 75%
+Phase 15.1 (GeometryRecord 모델):
+Progress: [████████████████████] 100% ✅
 
-Completed: 12 features
-In Progress: 2 features
-Remaining: 3 features
+Phase 15.2 (BoundingBox 추출):
+Progress: [████████████████████] 100% ✅
+
+Phase 15.3 (COM Mesh 추출):
+Progress: [████████████████████] 100% ✅
+
+Phase 15.4 (GeometryFileWriter):
+Progress: [████████████████████] 100% ✅
+
+Phase 15.5 (RDF Geometry 통합):
+Progress: [████████████████████] 100% ✅
+
+Phase 15.6 (UI):
+Progress: [████████████████████] 100% ✅
+
+Overall:  [████████████████████] 100% ✅ COMPLETE
 ```
 
 ---
 
-## Feature Status
+## Phase 15 Sub-Documents
 
-### Phase 1: Property Filtering (100%)
-| Feature | Status | Commit |
-|---------|:------:|--------|
-| Level Filter (L0~L10) | ✅ | 65e2a5a |
-| SysPath Filter | ✅ | 65e2a5a |
-| TreeView Hierarchy | ✅ | - |
-| Visual Level Badges | ✅ | - |
+| Phase | Document | Status | Est. |
+|-------|----------|--------|------|
+| **15.1** | GeometryRecord 모델 | 📋 TODO | 4h |
+| **15.2** | BoundingBox 추출 | 📋 TODO | 6h |
+| **15.3** | COM Mesh 추출 (Optional) | 📋 TODO | 12h |
+| **15.4** | GeometryFileWriter | 📋 TODO | 8h |
+| **15.5** | RDF Geometry 통합 | 📋 TODO | 4h |
+| **15.6** | Geometry Export UI | 📋 TODO | 4h |
 
-### Phase 2: UI Enhancement (70%)
-| Feature | Status | Commit |
-|---------|:------:|--------|
-| Level-based Expand/Collapse | ✅ | 88cd306 |
-| Expand All / Collapse All | ✅ | 88cd306 |
-| Node Icons (📁/🔷/📄) | ✅ | - |
-| Vertical Layout Option | 📋 | - |
-| Advanced Filter UI | 📋 | - |
-
-### Phase 3: 3D Integration (100%)
-| Feature | Status | Commit |
-|---------|:------:|--------|
-| Select in 3D | ✅ | 2d99618 |
-| Show Only | ✅ | 2d99618 |
-| Show All | ✅ | 2d99618 |
-| Zoom to Selection | ✅ | 2d99618 |
-
-### Phase 4: Snapshot (Planned)
-| Feature | Status | Priority |
-|---------|:------:|----------|
-| PNG Snapshot | 📋 | Medium |
-| ViewPoint Save | 📋 | Low |
-
-### Phase 5: Validation (Planned)
-| Feature | Status | Priority |
-|---------|:------:|----------|
-| Unit Mismatch Detection | 📋 | High |
+**Phase Document**: [phase-15-geometry-export.md](../phases/phase-15-geometry-export.md)
 
 ---
 
-## Development Timeline
+## Current Focus: Phase 15.1
 
+### Epic 15.1: GeometryRecord 모델 (4h)
+| Task | Status |
+|------|--------|
+| Point3D.cs 생성 | 📋 TODO |
+| BBox3D.cs 생성 | 📋 TODO |
+| GeometryRecord.cs 생성 | 📋 TODO |
+| 빌드 검증 | 📋 TODO |
+
+---
+
+## Files to Create (Phase 15)
+
+### New Files
 ```
-Week 1 (12/29-01/03): Phase 1 - Property Filtering
-  └─ Level & SysPath filter implementation
+Models/Geometry/
+├── Point3D.cs         (Phase 15.1)
+├── BBox3D.cs          (Phase 15.1)
+└── GeometryRecord.cs  (Phase 15.1)
 
-Week 2 (01/04-01/05): Phase 3 - 3D Integration
-  └─ Selection, visibility, zoom controls
-
-Week 3 (01/06-01/07): Phase 2 - UI Enhancement
-  └─ Tree expand/collapse functionality
+Services/Geometry/
+├── GeometryExtractor.cs   (Phase 15.2)
+├── MeshExtractor.cs       (Phase 15.3)
+└── GeometryFileWriter.cs  (Phase 15.4)
 ```
 
----
-
-## Key Components
-
-### Services (dxtnavis/Services/)
-| File | Purpose | Status |
-|------|---------|:------:|
-| NavisworksDataExtractor.cs | 속성 추출 | ✅ |
-| NavisworksSelectionService.cs | 3D 선택 | ✅ |
-| HierarchyFileWriter.cs | CSV 내보내기 | ✅ |
-
-### ViewModels (dxtnavis/ViewModels/)
-| File | Purpose | Status |
-|------|---------|:------:|
-| DXwindowViewModel.cs | 메인 VM | ✅ |
-| HierarchyNodeViewModel.cs | 트리 노드 | ✅ |
-
-### Views (dxtnavis/Views/)
-| File | Purpose | Status |
-|------|---------|:------:|
-| DXwindow.xaml | 메인 UI | ✅ |
+### Modified Files
+- HierarchyToRdfConverter.cs (Phase 15.5)
+- OntologyViewModel.cs (Phase 15.6)
+- DXwindow.xaml (Phase 15.6)
 
 ---
 
-## Technical Constraints
+## Key Metrics (Target)
 
-| Constraint | Solution | Status |
-|------------|----------|:------:|
-| Thread Safety | UI thread only | ✅ |
-| Memory (Large Models) | Virtualization | 🔄 |
-| Navisworks API x64 | x64 build only | ✅ |
-
----
-
-## Recent Commits (DXTnavis Only)
-
-```
-112c1a5 docs(DXTnavis): Redesign README with fancy styling
-b196e5b docs(DXTnavis): Add Quick Start section and update date
-3201262 docs(DXTnavis): Rewrite README with clean structure
-4844428 docs(DXTnavis): Update CLAUDE.md with tree expand/collapse
-88cd306 feat(DXTnavis): Add level-based tree expand/collapse
-2d99618 feat(DXTnavis): Add 3D object selection and visibility control
-65e2a5a feat(DXTnavis): Add Level and SysPath filtering
-```
+| Metric | Target | Current |
+|--------|--------|---------|
+| BBox 추출 속도 | < 5초/5K objects | - |
+| Mesh 추출 속도 | < 30초/100 objects | - |
+| manifest.json 크기 | < 5MB | - |
+| GLB 전체 크기 | < 50MB | - |
 
 ---
 
-## Next Actions
+## Blockers
 
-1. [ ] Phase 2 완료: Vertical Layout Option
-2. [ ] Phase 4 시작: Snapshot 기능
-3. [ ] Phase 5: Unit mismatch detection
+_현재 블로커 없음_
 
 ---
 
-## Velocity
+## Related Tasks (Pending)
 
-| Sprint | Points | Features |
-|--------|:------:|----------|
-| Current | 26 | 12 |
-| Average | - | - |
+| Task | Description | Status |
+|------|-------------|--------|
+| dxtnavis-rules.yaml | dxt: → bso: namespace 마이그레이션 | 📋 Pending |
+| README.md | 버전 v0.9.0 → v1.3.0 업데이트 | 📋 Pending |
+| E2E Testing | Navisworks 환경 테스트 | 📋 Navisworks 필요 |
 
 ---
 
-**Last Updated**: 2026-01-07
+## Daily Log
+
+### 2026-02-06
+- ✅ Codex 5.3 xhigh 분석 완료 (Geometry Export Hybrid)
+- ✅ SPRINT-v1.4.0.md 작성
+- ✅ phase-15-geometry-export.md 작성
+- 📋 Next: Phase 15.1 GeometryRecord 모델 구현
+
+---
+
+**Last Updated**: 2026-02-06
