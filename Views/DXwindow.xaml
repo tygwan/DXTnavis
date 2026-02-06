@@ -624,6 +624,22 @@
                                     ToolTip="선택된 객체의 BoundingBox를 manifest.json으로 내보내기"
                                     Width="100"/>
                         </StackPanel>
+                        <!-- Row 4: Unified CSV Export (Phase 16 - Ontology 연동) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="Ontology:" VerticalAlignment="Center" Width="60" FontWeight="SemiBold" FontSize="11"/>
+                            <Button Content="📊 All Unified"
+                                    Style="{StaticResource ActionButton}"
+                                    Background="#E65100"
+                                    Command="{Binding ExportUnifiedCsvCommand}"
+                                    ToolTip="Hierarchy + Geometry 통합 CSV (bim-ontology 연동용)"
+                                    Width="100"/>
+                            <Button Content="📊 Selection"
+                                    Style="{StaticResource ActionButton}"
+                                    Background="#BF360C"
+                                    Command="{Binding ExportSelectionUnifiedCsvCommand}"
+                                    ToolTip="선택 객체의 Hierarchy + Geometry 통합 CSV"
+                                    Width="100"/>
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- 3D 선택 버튼 (Phase 3) -->

@@ -600,6 +600,144 @@ namespace DXTnavis.ViewModels
         }
 
         #endregion
+
+        #region Unified CSV Export Methods (Phase 16)
+
+        /// <summary>
+        /// 전체 모델의 통합 CSV 내보내기 (Hierarchy + Geometry + Manifest)
+        /// Phase 16: Unified CSV Export for Ontology Conversion
+        /// </summary>
+        private async Task ExportUnifiedCsvAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("활성 문서가 없습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var saveDialog = new SaveFileDialog
+                {
+                    Filter = "CSV 파일|*.csv",
+                    DefaultExt = "csv",
+                    FileName = $"UnifiedExport_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                if (saveDialog.ShowDialog() != true) return;
+
+                IsExporting = true;
+                ExportProgressPercentage = 0;
+                ExportStatusMessage = "통합 CSV 내보내기 준비 중...";
+
+                var exporter = new UnifiedCsvExporter();
+
+                // 진행률 이벤트 연결
+                exporter.ProgressChanged += (s, p) =>
+                {
+                    ExportProgressPercentage = p;
+                    System.Windows.Application.Current?.Dispatcher?.Invoke(() => { });
+                };
+                exporter.StatusChanged += (s, msg) =>
+                {
+                    ExportStatusMessage = msg;
+                    System.Windows.Application.Current?.Dispatcher?.Invoke(() => { });
+                };
+
+                // UI 스레드에서 Navisworks API 호출이 필요하므로 동기 실행
+                int exportedCount = exporter.ExportFromDocument(saveDialog.FileName);
+
+                ExportProgressPercentage = 100;
+                ExportStatusMessage = "✅ 통합 CSV 내보내기 완료!";
+                StatusMessage = $"Unified CSV Exported: {exportedCount} objects";
+
+                MessageBox.Show(
+                    $"통합 CSV 내보내기 완료!\n\n" +
+                    $"• 객체 수: {exportedCount:N0}\n" +
+                    $"• 파일: {System.IO.Path.GetFileName(saveDialog.FileName)}\n\n" +
+                    $"이 파일을 bim-ontology 프로젝트에서 사용할 수 있습니다.",
+                    "Unified CSV Export 완료",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = $"❌ Unified CSV 오류: {ex.Message}";
+                MessageBox.Show(
+                    $"통합 CSV 내보내기 중 오류가 발생했습니다:\n\n{ex.Message}",
+                    "오류",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        /// <summary>
+        /// 선택된 객체의 통합 CSV 내보내기
+        /// </summary>
+        private async Task ExportSelectionUnifiedCsvAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("활성 문서가 없습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var selectedItems = doc.CurrentSelection.SelectedItems;
+                if (selectedItems == null || selectedItems.Count == 0)
+                {
+                    MessageBox.Show("먼저 객체를 선택해주세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var saveDialog = new SaveFileDialog
+                {
+                    Filter = "CSV 파일|*.csv",
+                    DefaultExt = "csv",
+                    FileName = $"UnifiedSelection_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                if (saveDialog.ShowDialog() != true) return;
+
+                IsExporting = true;
+                ExportProgressPercentage = 0;
+                ExportStatusMessage = "선택 객체 통합 CSV 내보내기 중...";
+
+                var exporter = new UnifiedCsvExporter();
+
+                exporter.ProgressChanged += (s, p) => ExportProgressPercentage = p;
+                exporter.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+
+                int exportedCount = exporter.ExportFromSelection(selectedItems, saveDialog.FileName);
+
+                ExportProgressPercentage = 100;
+                ExportStatusMessage = "✅ Selection Unified CSV 완료!";
+
+                MessageBox.Show(
+                    $"선택 객체 통합 CSV 내보내기 완료!\n\n객체 수: {exportedCount:N0}",
+                    "Export 완료",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = $"❌ 오류: {ex.Message}";
+                MessageBox.Show($"Selection Unified CSV 오류:\n\n{ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        #endregion
     }
 }
 

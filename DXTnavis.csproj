@@ -188,6 +188,9 @@
     <Compile Include="Models\Geometry\Point3D.cs" />
     <Compile Include="Models\Geometry\BBox3D.cs" />
     <Compile Include="Models\Geometry\GeometryRecord.cs" />
+    <!-- Phase 16: Unified CSV Export -->
+    <Compile Include="Models\UnifiedObjectRecord.cs" />
+    <Compile Include="Services\UnifiedCsvExporter.cs" />
     <!-- Phase 15: Geometry Services -->
     <Compile Include="Services\Geometry\GeometryExtractor.cs" />
     <Compile Include="Services\Geometry\GeometryFileWriter.cs" />
