@@ -738,6 +738,199 @@ namespace DXTnavis.ViewModels
         }
 
         #endregion
+
+        #region Spatial Adjacency Export Methods (Phase 17)
+
+        /// <summary>
+        /// Phase 17: 전체 모델 Spatial Adjacency Export
+        /// </summary>
+        private async System.Threading.Tasks.Task ExportAdjacencyAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("Navisworks 문서가 열려있지 않습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var folderDialog = new System.Windows.Forms.FolderBrowserDialog
+                {
+                    Description = "Spatial 분석 결과를 저장할 폴더를 선택하세요",
+                    ShowNewFolderButton = true
+                };
+
+                if (folderDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+                string outputDir = System.IO.Path.Combine(folderDialog.SelectedPath,
+                    string.Format("spatial_{0:yyyyMMdd_HHmmss}", DateTime.Now));
+
+                IsExporting = true;
+                ExportProgressPercentage = 0;
+                ExportStatusMessage = "Geometry 추출 중...";
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                // 1) Geometry 추출
+                var geoExtractor = new Services.Geometry.GeometryExtractor();
+                geoExtractor.ProgressChanged += (s, p) => ExportProgressPercentage = p / 3;
+                geoExtractor.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+
+                var geometries = geoExtractor.ExtractFromDocument(doc);
+
+                // 2) Adjacency 검출
+                ExportStatusMessage = string.Format("Adjacency 검출 중... ({0:N0}개 객체)", geometries.Count);
+                var detector = new Services.Spatial.AdjacencyDetector();
+                detector.ProgressChanged += (s, p) => ExportProgressPercentage = 33 + p / 3;
+                detector.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+
+                var adjacencies = detector.Detect(geometries);
+
+                // 3) Connected Components
+                ExportStatusMessage = "연결 그룹 분석 중...";
+                ExportProgressPercentage = 66;
+                var componentFinder = new Services.Spatial.ConnectedComponentFinder();
+                var groups = componentFinder.FindAndCompute(adjacencies, geometries);
+
+                // 4) 파일 출력
+                ExportStatusMessage = "파일 저장 중...";
+                var writer = new Services.Spatial.SpatialRelationshipWriter();
+                writer.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+
+                writer.WriteAdjacencyCsv(adjacencies, outputDir);
+                writer.WriteGroupsCsv(groups, outputDir);
+                writer.WriteTtl(adjacencies, groups, outputDir);
+
+                sw.Stop();
+                writer.WriteSummary(adjacencies, groups, outputDir, sw.Elapsed.TotalSeconds);
+
+                ExportProgressPercentage = 100;
+                ExportStatusMessage = "Spatial 분석 완료!";
+
+                MessageBox.Show(
+                    string.Format("Spatial 분석 완료!\n\n"
+                        + "객체 수: {0:N0}\n"
+                        + "인접 관계: {1:N0}\n"
+                        + "연결 그룹: {2:N0}\n"
+                        + "처리 시간: {3:F1}초\n\n"
+                        + "저장 위치: {4}",
+                        geometries.Count, adjacencies.Count, groups.Count,
+                        sw.Elapsed.TotalSeconds, outputDir),
+                    "Spatial Analysis",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = string.Format("오류: {0}", ex.Message);
+                MessageBox.Show(string.Format("Spatial 분석 오류:\n\n{0}", ex.Message), "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        /// <summary>
+        /// Phase 17: 선택 객체 Spatial Adjacency Export
+        /// </summary>
+        private async System.Threading.Tasks.Task ExportSelectionAdjacencyAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("Navisworks 문서가 열려있지 않습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var selectedItems = doc.CurrentSelection.SelectedItems;
+                if (selectedItems == null || selectedItems.Count == 0)
+                {
+                    MessageBox.Show("먼저 객체를 선택해주세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var folderDialog = new System.Windows.Forms.FolderBrowserDialog
+                {
+                    Description = "Spatial 분석 결과를 저장할 폴더를 선택하세요",
+                    ShowNewFolderButton = true
+                };
+
+                if (folderDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+                string outputDir = System.IO.Path.Combine(folderDialog.SelectedPath,
+                    string.Format("spatial_sel_{0:yyyyMMdd_HHmmss}", DateTime.Now));
+
+                IsExporting = true;
+                ExportProgressPercentage = 0;
+                ExportStatusMessage = "선택 객체 Geometry 추출 중...";
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                // 1) 선택 객체 Geometry 추출
+                var geoExtractor = new Services.Geometry.GeometryExtractor();
+                geoExtractor.ProgressChanged += (s, p) => ExportProgressPercentage = p / 3;
+                geoExtractor.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+
+                var geometries = geoExtractor.ExtractFromSelection(selectedItems);
+
+                // 2) Adjacency 검출
+                ExportStatusMessage = string.Format("Adjacency 검출 중... ({0:N0}개 객체)", geometries.Count);
+                var detector = new Services.Spatial.AdjacencyDetector();
+                detector.ProgressChanged += (s, p) => ExportProgressPercentage = 33 + p / 3;
+                detector.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+
+                var adjacencies = detector.Detect(geometries);
+
+                // 3) Connected Components
+                ExportStatusMessage = "연결 그룹 분석 중...";
+                ExportProgressPercentage = 66;
+                var componentFinder = new Services.Spatial.ConnectedComponentFinder();
+                var groups = componentFinder.FindAndCompute(adjacencies, geometries);
+
+                // 4) 파일 출력
+                ExportStatusMessage = "파일 저장 중...";
+                var writer = new Services.Spatial.SpatialRelationshipWriter();
+                writer.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+
+                writer.WriteAdjacencyCsv(adjacencies, outputDir);
+                writer.WriteGroupsCsv(groups, outputDir);
+                writer.WriteTtl(adjacencies, groups, outputDir);
+
+                sw.Stop();
+                writer.WriteSummary(adjacencies, groups, outputDir, sw.Elapsed.TotalSeconds);
+
+                ExportProgressPercentage = 100;
+                ExportStatusMessage = "Selection Spatial 분석 완료!";
+
+                MessageBox.Show(
+                    string.Format("Selection Spatial 분석 완료!\n\n"
+                        + "객체 수: {0:N0}\n"
+                        + "인접 관계: {1:N0}\n"
+                        + "연결 그룹: {2:N0}\n"
+                        + "처리 시간: {3:F1}초\n\n"
+                        + "저장 위치: {4}",
+                        geometries.Count, adjacencies.Count, groups.Count,
+                        sw.Elapsed.TotalSeconds, outputDir),
+                    "Spatial Analysis",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = string.Format("오류: {0}", ex.Message);
+                MessageBox.Show(string.Format("Selection Spatial 분석 오류:\n\n{0}", ex.Message), "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        #endregion
     }
 }
 

@@ -191,6 +191,12 @@
     <!-- Phase 16: Unified CSV Export -->
     <Compile Include="Models\UnifiedObjectRecord.cs" />
     <Compile Include="Services\UnifiedCsvExporter.cs" />
+    <!-- Phase 17: Spatial Connectivity & Adjacency -->
+    <Compile Include="Models\Spatial\AdjacencyRecord.cs" />
+    <Compile Include="Models\Spatial\ConnectedGroup.cs" />
+    <Compile Include="Services\Spatial\AdjacencyDetector.cs" />
+    <Compile Include="Services\Spatial\ConnectedComponentFinder.cs" />
+    <Compile Include="Services\Spatial\SpatialRelationshipWriter.cs" />
     <!-- Phase 15: Geometry Services -->
     <Compile Include="Services\Geometry\GeometryExtractor.cs" />
     <Compile Include="Services\Geometry\GeometryFileWriter.cs" />

@@ -640,6 +640,22 @@
                                     ToolTip="선택 객체의 Hierarchy + Geometry 통합 CSV"
                                     Width="100"/>
                         </StackPanel>
+                        <!-- Row 5: Spatial Adjacency Export (Phase 17) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="Spatial:" VerticalAlignment="Center" Width="60" FontWeight="SemiBold" FontSize="11"/>
+                            <Button Content="🔗 All Adjacency"
+                                    Style="{StaticResource ActionButton}"
+                                    Background="#00695C"
+                                    Command="{Binding ExportAdjacencyCommand}"
+                                    ToolTip="전체 모델 BBox 인접성 분석 (adjacency.csv + connected_groups.csv + TTL)"
+                                    Width="100"/>
+                            <Button Content="🔗 Selection"
+                                    Style="{StaticResource ActionButton}"
+                                    Background="#004D40"
+                                    Command="{Binding ExportSelectionAdjacencyCommand}"
+                                    ToolTip="선택 객체의 BBox 인접성 분석"
+                                    Width="100"/>
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- 3D 선택 버튼 (Phase 3) -->

@@ -585,6 +585,9 @@ namespace DXTnavis.ViewModels
         // Unified CSV Export Commands (Phase 16)
         public ICommand ExportUnifiedCsvCommand { get; }           // All × Unified (Hierarchy + Geometry)
         public ICommand ExportSelectionUnifiedCsvCommand { get; }  // Selection × Unified
+        // Spatial Adjacency Export Commands (Phase 17)
+        public ICommand ExportAdjacencyCommand { get; }            // All × Adjacency
+        public ICommand ExportSelectionAdjacencyCommand { get; }   // Selection × Adjacency
         public ICommand CreateSearchSetCommand { get; }
         public ICommand LoadHierarchyCommand { get; }
         public ICommand ApplyFilterCommand { get; }
@@ -757,6 +760,14 @@ namespace DXTnavis.ViewModels
 
             ExportSelectionUnifiedCsvCommand = new AsyncRelayCommand(
                 execute: async _ => await ExportSelectionUnifiedCsvAsync(),
+                canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
+
+            // Spatial Adjacency Export Commands (Phase 17)
+            ExportAdjacencyCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportAdjacencyAsync());
+
+            ExportSelectionAdjacencyCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportSelectionAdjacencyAsync(),
                 canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
 
             CreateSearchSetCommand = new RelayCommand(

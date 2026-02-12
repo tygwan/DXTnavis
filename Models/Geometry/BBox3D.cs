@@ -203,6 +203,49 @@ namespace DXTnavis.Models.Geometry
 
         #endregion
 
+        #region Phase 17: 인접성 검출 지원
+
+        /// <summary>
+        /// 두 BBox 간 최소 거리 (겹치면 0 반환)
+        /// </summary>
+        public double DistanceTo(BBox3D other)
+        {
+            if (other == null) return double.MaxValue;
+
+            // 각 축에서 갭 계산 (겹치면 0)
+            double dx = Math.Max(0, Math.Max(Min.X - other.Max.X, other.Min.X - Max.X));
+            double dy = Math.Max(0, Math.Max(Min.Y - other.Max.Y, other.Min.Y - Max.Y));
+            double dz = Math.Max(0, Math.Max(Min.Z - other.Max.Z, other.Min.Z - Max.Z));
+
+            return Math.Sqrt(dx * dx + dy * dy + dz * dz);
+        }
+
+        /// <summary>
+        /// tolerance 이내로 인접한지 판정
+        /// </summary>
+        public bool IsAdjacentTo(BBox3D other, double tolerance)
+        {
+            if (other == null) return false;
+            return DistanceTo(other) <= tolerance;
+        }
+
+        /// <summary>
+        /// 겹침 체적 반환 (겹치지 않으면 0)
+        /// </summary>
+        public double OverlapVolume(BBox3D other)
+        {
+            if (other == null || !Intersects(other)) return 0;
+
+            double dx = Math.Min(Max.X, other.Max.X) - Math.Max(Min.X, other.Min.X);
+            double dy = Math.Min(Max.Y, other.Max.Y) - Math.Max(Min.Y, other.Min.Y);
+            double dz = Math.Min(Max.Z, other.Max.Z) - Math.Max(Min.Z, other.Min.Z);
+
+            if (dx <= 0 || dy <= 0 || dz <= 0) return 0;
+            return dx * dy * dz;
+        }
+
+        #endregion
+
         #region 직렬화
 
         /// <summary>
