@@ -52,8 +52,8 @@ namespace DXTnavis.Models.Spatial
         {
             return string.Format(CultureInfo.InvariantCulture,
                 "{0},{1},{2},{3},{4:F6},{5:F6},{6},{7},{8},{9:F4}",
-                SourceObjectId.ToString("N"),
-                TargetObjectId.ToString("N"),
+                SourceObjectId.ToString("D"),
+                TargetObjectId.ToString("D"),
                 EscapeCsv(SourceName),
                 EscapeCsv(TargetName),
                 Distance,
@@ -66,26 +66,39 @@ namespace DXTnavis.Models.Spatial
 
         /// <summary>
         /// TTL 트리플 문자열로 변환
+        /// bim-ontology URI 패턴: inst:navis_{safe_id}
         /// </summary>
-        public string ToTtl(string prefix = "bso")
+        public string ToTtl()
         {
+            var srcUri = "inst:navis_" + ToSafeId(SourceObjectId);
+            var tgtUri = "inst:navis_" + ToSafeId(TargetObjectId);
             var sb = new StringBuilder();
-            sb.AppendFormat("{0}:Object_{1} spatial:adjacentTo {0}:Object_{2} .",
-                prefix, SourceObjectId.ToString("N"), TargetObjectId.ToString("N"));
+
+            sb.AppendFormat("{0} spatial:adjacentTo {1} .", srcUri, tgtUri);
             sb.AppendLine();
 
-            sb.AppendFormat("{0}:Object_{1} spatial:distanceTo [ spatial:target {0}:Object_{2} ; spatial:distance \"{3:F6}\"^^xsd:double ] .",
-                prefix, SourceObjectId.ToString("N"), TargetObjectId.ToString("N"), Distance);
+            sb.AppendFormat(CultureInfo.InvariantCulture,
+                "{0} spatial:distanceTo [ spatial:target {1} ; spatial:distance \"{2:F6}\"^^xsd:double ] .",
+                srcUri, tgtUri, Distance);
             sb.AppendLine();
 
             if (OverlapVolume > 0)
             {
-                sb.AppendFormat("{0}:Object_{1} spatial:overlapsWith [ spatial:target {0}:Object_{2} ; spatial:overlapVolume \"{3:F6}\"^^xsd:double ] .",
-                    prefix, SourceObjectId.ToString("N"), TargetObjectId.ToString("N"), OverlapVolume);
+                sb.AppendFormat(CultureInfo.InvariantCulture,
+                    "{0} spatial:overlapsWith [ spatial:target {1} ; spatial:overlapVolume \"{2:F6}\"^^xsd:double ] .",
+                    srcUri, tgtUri, OverlapVolume);
                 sb.AppendLine();
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// GUID를 bim-ontology safe_id 형식으로 변환 (하이픈→언더스코어)
+        /// </summary>
+        internal static string ToSafeId(Guid id)
+        {
+            return id.ToString("D").Replace('-', '_');
         }
 
         public override string ToString() =>

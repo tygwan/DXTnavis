@@ -86,7 +86,7 @@ namespace DXTnavis.Services.Spatial
             {
                 // Prefixes
                 sw.WriteLine("@prefix spatial: <http://example.org/bim-ontology/spatial#> .");
-                sw.WriteLine("@prefix bso: <http://example.org/bso#> .");
+                sw.WriteLine("@prefix inst: <http://example.org/bim-ontology/instance#> .");
                 sw.WriteLine("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .");
                 sw.WriteLine("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .");
                 sw.WriteLine();
@@ -106,7 +106,7 @@ namespace DXTnavis.Services.Spatial
                     sw.WriteLine();
                     foreach (var adj in adjacencies)
                     {
-                        sw.Write(adj.ToTtl("bso"));
+                        sw.Write(adj.ToTtl());
                     }
                     sw.WriteLine();
                 }

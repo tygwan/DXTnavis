@@ -82,7 +82,7 @@ namespace DXTnavis.Models.Spatial
         public static string CsvHeader =>
             "GroupId,ElementCount,EdgeCount,TotalVolume,DominantCategory," +
             "BBoxMinX,BBoxMinY,BBoxMinZ,BBoxMaxX,BBoxMaxY,BBoxMaxZ," +
-            "CentroidX,CentroidY,CentroidZ";
+            "CentroidX,CentroidY,CentroidZ,MemberObjectIds";
 
         /// <summary>
         /// CSV 행 문자열로 변환
@@ -90,8 +90,10 @@ namespace DXTnavis.Models.Spatial
         public string ToCsvRow()
         {
             var c = Centroid;
+            // 멤버 ObjectId를 세미콜론 구분 문자열로 (하이픈 있는 UUID)
+            var memberIds = string.Join(";", ElementIds.Select(id => id.ToString("D")));
             return string.Format(CultureInfo.InvariantCulture,
-                "G{0:D3},{1},{2},{3:F4},{4},{5:F4},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12:F4},{13:F4}",
+                "G{0:D3},{1},{2},{3:F4},{4},{5:F4},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12:F4},{13:F4},{14}",
                 GroupId,
                 ElementCount,
                 EdgeCount,
@@ -99,7 +101,8 @@ namespace DXTnavis.Models.Spatial
                 EscapeCsv(DominantCategory),
                 GroupBBox?.Min.X ?? 0, GroupBBox?.Min.Y ?? 0, GroupBBox?.Min.Z ?? 0,
                 GroupBBox?.Max.X ?? 0, GroupBBox?.Max.Y ?? 0, GroupBBox?.Max.Z ?? 0,
-                c.X, c.Y, c.Z);
+                c.X, c.Y, c.Z,
+                EscapeCsv(memberIds));
         }
 
         /// <summary>
@@ -119,11 +122,11 @@ namespace DXTnavis.Models.Spatial
             sb.AppendLine();
             sb.AppendLine();
 
-            // 각 요소를 그룹에 연결
+            // 각 요소를 그룹에 연결 (inst:navis_ URI 패턴)
             foreach (var id in ElementIds)
             {
-                sb.AppendFormat("bso:Object_{0} {1}:inGroup {2} .",
-                    id.ToString("N"), prefix, groupUri);
+                sb.AppendFormat("inst:navis_{0} {1}:inGroup {2} .",
+                    AdjacencyRecord.ToSafeId(id), prefix, groupUri);
                 sb.AppendLine();
             }
 
