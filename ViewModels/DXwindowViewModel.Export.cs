@@ -931,6 +931,124 @@ namespace DXTnavis.ViewModels
         }
 
         #endregion
+
+        #region Full Pipeline Export (Unified CSV + Spatial)
+
+        /// <summary>
+        /// 전체 파이프라인: Unified CSV + Geometry + Spatial Adjacency 통합 출력
+        /// </summary>
+        private async System.Threading.Tasks.Task ExportFullPipelineAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("Navisworks 문서가 열려있지 않습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var folderDialog = new System.Windows.Forms.FolderBrowserDialog
+                {
+                    Description = "전체 Export 결과를 저장할 폴더를 선택하세요",
+                    ShowNewFolderButton = true
+                };
+
+                if (folderDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+                string outputDir = System.IO.Path.Combine(folderDialog.SelectedPath,
+                    string.Format("dxtnavis_export_{0:yyyyMMdd_HHmmss}", DateTime.Now));
+                System.IO.Directory.CreateDirectory(outputDir);
+
+                IsExporting = true;
+                ExportProgressPercentage = 0;
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                // ──── Stage 1/4: Unified CSV (Hierarchy + Properties + BBox) ────
+                ExportStatusMessage = "[1/4] Unified CSV 추출 중...";
+
+                var unifiedPath = System.IO.Path.Combine(outputDir, "unified.csv");
+                var exporter = new UnifiedCsvExporter();
+                exporter.ProgressChanged += (s, p) => ExportProgressPercentage = p / 4;
+                exporter.StatusChanged += (s, msg) => ExportStatusMessage = "[1/4] " + msg;
+
+                int unifiedCount = exporter.ExportFromDocument(unifiedPath);
+                ExportProgressPercentage = 25;
+
+                // ──── Stage 2/4: Geometry 추출 ────
+                ExportStatusMessage = "[2/4] Geometry 추출 중...";
+
+                var geoExtractor = new Services.Geometry.GeometryExtractor();
+                geoExtractor.ProgressChanged += (s, p) => ExportProgressPercentage = 25 + p / 4;
+                geoExtractor.StatusChanged += (s, msg) => ExportStatusMessage = "[2/4] " + msg;
+
+                var geometries = geoExtractor.ExtractFromDocument(doc);
+
+                // Geometry CSV + Manifest
+                var geoWriter = new Services.Geometry.GeometryFileWriter();
+                geoWriter.WriteCsv(geometries, System.IO.Path.Combine(outputDir, "geometry.csv"));
+                geoWriter.WriteManifest(geometries, outputDir);
+                ExportProgressPercentage = 50;
+
+                // ──── Stage 3/4: Adjacency 검출 ────
+                ExportStatusMessage = string.Format("[3/4] Adjacency 검출 중... ({0:N0}개 객체)", geometries.Count);
+
+                var detector = new Services.Spatial.AdjacencyDetector();
+                detector.ProgressChanged += (s, p) => ExportProgressPercentage = 50 + p / 4;
+                detector.StatusChanged += (s, msg) => ExportStatusMessage = "[3/4] " + msg;
+
+                var adjacencies = detector.Detect(geometries);
+
+                // Connected Components
+                var componentFinder = new Services.Spatial.ConnectedComponentFinder();
+                var groups = componentFinder.FindAndCompute(adjacencies, geometries);
+                ExportProgressPercentage = 75;
+
+                // ──── Stage 4/4: 파일 출력 ────
+                ExportStatusMessage = "[4/4] 파일 저장 중...";
+
+                var spatialWriter = new Services.Spatial.SpatialRelationshipWriter();
+                spatialWriter.StatusChanged += (s, msg) => ExportStatusMessage = "[4/4] " + msg;
+
+                spatialWriter.WriteAdjacencyCsv(adjacencies, outputDir);
+                spatialWriter.WriteGroupsCsv(groups, outputDir);
+                spatialWriter.WriteTtl(adjacencies, groups, outputDir);
+
+                sw.Stop();
+                spatialWriter.WriteSummary(adjacencies, groups, outputDir, sw.Elapsed.TotalSeconds);
+
+                ExportProgressPercentage = 100;
+                ExportStatusMessage = "Full Pipeline Export 완료!";
+
+                MessageBox.Show(
+                    string.Format("Full Pipeline Export 완료!\n\n"
+                        + "── Unified CSV ──\n"
+                        + "  객체 수: {0:N0}\n\n"
+                        + "── Geometry ──\n"
+                        + "  BBox 추출: {1:N0}개\n\n"
+                        + "── Spatial ──\n"
+                        + "  인접 관계: {2:N0}\n"
+                        + "  연결 그룹: {3:N0}\n\n"
+                        + "처리 시간: {4:F1}초\n"
+                        + "저장 위치: {5}",
+                        unifiedCount, geometries.Count, adjacencies.Count,
+                        groups.Count, sw.Elapsed.TotalSeconds, outputDir),
+                    "Full Pipeline Export",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = string.Format("오류: {0}", ex.Message);
+                MessageBox.Show(string.Format("Full Pipeline Export 오류:\n\n{0}", ex.Message), "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        #endregion
     }
 }
 

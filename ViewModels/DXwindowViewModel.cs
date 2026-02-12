@@ -588,6 +588,8 @@ namespace DXTnavis.ViewModels
         // Spatial Adjacency Export Commands (Phase 17)
         public ICommand ExportAdjacencyCommand { get; }            // All × Adjacency
         public ICommand ExportSelectionAdjacencyCommand { get; }   // Selection × Adjacency
+        // Full Pipeline Export Command (Unified + Geometry + Spatial)
+        public ICommand ExportFullPipelineCommand { get; }         // All-in-One Export
         public ICommand CreateSearchSetCommand { get; }
         public ICommand LoadHierarchyCommand { get; }
         public ICommand ApplyFilterCommand { get; }
@@ -769,6 +771,10 @@ namespace DXTnavis.ViewModels
             ExportSelectionAdjacencyCommand = new AsyncRelayCommand(
                 execute: async _ => await ExportSelectionAdjacencyAsync(),
                 canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
+
+            // Full Pipeline Export Command
+            ExportFullPipelineCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportFullPipelineAsync());
 
             CreateSearchSetCommand = new RelayCommand(
                 execute: _ => CreateSearchSetFromSelectedProperty(),
