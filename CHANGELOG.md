@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] - v1.5.0
+
+### Phase 16: Unified CSV Export System (2026-02-10)
+
+- **UnifiedObjectRecord.cs** - 통합 데이터 모델 (Hierarchy + Geometry + Manifest)
+- **UnifiedCsvExporter.cs** - 통합 CSV 내보내기 서비스
+- **22개 컬럼 스키마**: ObjectId, PropertiesJson, BBox, Centroid, MeshUri 등
+- **1 row = 1 object**: 속성은 JSON 배열로 집계
+- **UI**: Ontology Export 버튼 2개 (All Unified, Selection)
+
+### Phase 17: Spatial Connectivity & Adjacency Export (IN PROGRESS)
+
+**목표: BBox 기반 공간 인접성/연결성 검출 → bim-ontology 연동**
+
+#### New Models (`Models/Spatial/`)
+- **AdjacencyRecord.cs** - 인접 관계 레코드 (Source, Target, Distance, RelationType)
+- **ConnectedGroup.cs** - 연결 그룹 모델 (GroupId, Elements, Volume, BBox)
+
+#### New Services (`Services/Spatial/`)
+- **AdjacencyDetector.cs** - BBox 인접성 검출 (Brute Force + Spatial Hash Grid)
+- **ConnectedComponentFinder.cs** - Union-Find 연결 컴포넌트 탐색
+- **SpatialRelationshipWriter.cs** - adjacency.csv, connected_groups.csv, spatial_relationships.ttl
+
+#### BBox3D 확장
+- `DistanceTo(BBox3D)` - 두 BBox 간 최소 거리
+- `IsAdjacentTo(BBox3D, tolerance)` - tolerance 이내 근접 판정
+- `OverlapVolume(BBox3D)` - 겹침 체적 계산
+
+#### 출력 형식
+```
+export/
+├── adjacency.csv              # 요소 간 인접 관계
+├── connected_groups.csv       # 연결 그룹 통계
+└── spatial_relationships.ttl  # RDF 인접성 트리플
+```
+
+---
+
 ## [1.4.0] - 2026-02-06
 
 ### Geometry Export System (Phase 15)

@@ -1,8 +1,9 @@
 # DXTnavis Documentation Index
 
-> **Last Updated:** 2026-01-21
-> **Current Version:** v1.2.0 (Direct TimeLiner Execution Complete)
-> **Previous:** v1.1.0 (TimeLiner Enhancement Phase 1)
+> **Last Updated:** 2026-02-12
+> **Current Version:** v1.4.0 (Geometry Export System Complete)
+> **Next:** v1.5.0 (Phase 17: Spatial Connectivity & Adjacency) 🚧 In Progress
+> **Research Target:** EC3 2026 (Corfu), LDAC 2026 (Dubrovnik)
 
 ---
 
@@ -21,11 +22,12 @@
 
 ### Overall Progress
 ```
-v1.2.0: [====================] 100% (Released 2026-01-21) ✅ NEW!
+v1.5.0: [                    ]   0% (Phase 17: Spatial Connectivity) 🚧 CURRENT
+v1.4.0: [====================] 100% (Released 2026-02-06) ✅
+v1.3.0: [====================] 100% (Released 2026-02-05) ✅
+v1.2.0: [====================] 100% (Released 2026-01-21) ✅
 v1.1.0: [====================] 100% (Released 2026-01-21)
 v1.0.0: [====================] 100% (Released 2026-01-20)
-v0.9.0: [====================] 100% (Released 2026-01-20)
-v0.8.0: [====================] 100% (Released 2026-01-19)
 ```
 
 ### Phase Status
@@ -46,10 +48,35 @@ v0.8.0: [====================] 100% (Released 2026-01-19)
 | 12 | Grouped Data Structure | ✅ Complete | 100% | [phase-12](phases/phase-12-grouped-data-structure.md) |
 | **13** | **TimeLiner Enhancement** | ✅ Complete | 100% | [phase-13](phases/phase-13-timeliner-enhancement.md) |
 | **14** | **Direct TimeLiner Exec** | ✅ Complete | 100% | [sprint-v1.1.0](agile/SPRINT-v1.1.0.md) |
+| **15** | **Geometry Export System** | ✅ Complete | 100% | [phase-15](phases/phase-15-geometry-export.md) |
+| **16** | **Unified CSV Export** | ✅ Complete | 100% | - |
+| **17** | **Spatial Connectivity** | 🚧 In Progress | 0% | [phase-17](phases/phase-17-spatial-connectivity.md) |
 
 ---
 
-## v1.2.0 Completed: Direct TimeLiner Execution ✅ NEW!
+## v1.5.0 In Progress: Spatial Connectivity & Adjacency (Phase 17) 🚧 NEW!
+
+### 핵심 목표
+BBox 기반 공간 인접성/연결성 검출 → bim-ontology 연동
+
+### 구현 계획
+| 파일 | 설명 | 상태 |
+|------|------|------|
+| `Models/Spatial/AdjacencyRecord.cs` | 인접 관계 레코드 | 📋 TODO |
+| `Models/Spatial/ConnectedGroup.cs` | 연결 그룹 모델 | 📋 TODO |
+| `Services/Spatial/AdjacencyDetector.cs` | BBox 인접성 검출 | 📋 TODO |
+| `Services/Spatial/ConnectedComponentFinder.cs` | Union-Find 연결 컴포넌트 | 📋 TODO |
+| `Services/Spatial/SpatialRelationshipWriter.cs` | CSV/TTL 출력 | 📋 TODO |
+| `Models/Geometry/BBox3D.cs` | DistanceTo, IsAdjacentTo, OverlapVolume | 📋 TODO |
+
+### Key Documents
+- **Phase Doc**: [Phase 17: Spatial Connectivity](phases/phase-17-spatial-connectivity.md)
+- **Source Plan**: [bim-ontology/dxtnavis-phase18-plan](../../bim-ontology/docs/dxtnavis-phase18-plan.md)
+- **Mesh Analysis**: [mesh-data-storage-analysis](tech-specs/mesh-data-storage-analysis.md)
+
+---
+
+## v1.2.0 Completed: Direct TimeLiner Execution ✅
 
 ### Features Released (2026-01-21)
 - [x] **직접 TimeLiner 실행**: CSV 없이 1클릭으로 TimeLiner 연결
@@ -235,6 +262,10 @@ docs/
 
 | Version | Date | Key Features |
 |---------|------|--------------|
+| **v1.5.0** | 🚧 WIP | Phase 17: Spatial Connectivity & Adjacency Export |
+| **v1.4.0** | 2026-02-06 | Phase 15: Geometry Export (BBox + Mesh + RDF) |
+| **v1.3.0** | 2026-02-05 | Synthetic ID Generation for Hierarchy Preservation |
+| **v1.2.0** | 2026-01-21 | Direct TimeLiner Execution (1-click) |
 | **v1.1.0** | 2026-01-21 | TaskType 한글화, DateMode 옵션, 확장 ParentSet (7가지) |
 | **v1.0.0** | 2026-01-20 | Grouped Data Structure (445K→5K 최적화) |
 | v0.9.0 | 2026-01-20 | Object Grouping MVP, Expander UI |
