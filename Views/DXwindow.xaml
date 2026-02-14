@@ -640,7 +640,7 @@
                                     ToolTip="선택 객체의 Hierarchy + Geometry 통합 CSV"
                                     Width="100"/>
                         </StackPanel>
-                        <!-- Row 5: Full Pipeline Export (Unified + Geometry + Spatial) -->
+                        <!-- Row 5: Full Pipeline Export (Unified + Geometry + Mesh + Spatial) -->
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                             <TextBlock Text="Pipeline:" VerticalAlignment="Center" Width="60" FontWeight="SemiBold" FontSize="11"/>
                             <Button Content="📦 Export All"
@@ -648,8 +648,15 @@
                                     Background="#1565C0"
                                     Foreground="White"
                                     Command="{Binding ExportFullPipelineCommand}"
-                                    ToolTip="통합 출력: Unified CSV + Geometry + Adjacency + Groups + TTL"
-                                    Width="205" FontWeight="Bold"/>
+                                    ToolTip="통합 출력: Unified CSV + Geometry + Mesh GLB + Adjacency + Groups + TTL"
+                                    Width="130" FontWeight="Bold"/>
+                            <Button Content="🧊 Test Mesh"
+                                    Style="{StaticResource ActionButton}"
+                                    Background="#6A1B9A"
+                                    Foreground="White"
+                                    Command="{Binding ExportTestMeshCommand}"
+                                    ToolTip="선택 객체 Mesh GLB 추출 테스트 (GLB + OBJ)"
+                                    Width="70" Margin="5,0,0,0"/>
                         </StackPanel>
                         <!-- Row 6: Spatial Adjacency Export (Phase 17 - 개별) -->
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">

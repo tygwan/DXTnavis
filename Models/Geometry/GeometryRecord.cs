@@ -68,7 +68,7 @@ namespace DXTnavis.Models.Geometry
         {
             if (ObjectId != Guid.Empty)
             {
-                MeshUri = $"{meshFolderPath}/{ObjectId:N}.glb";
+                MeshUri = string.Format("{0}/{1}.glb", meshFolderPath, ObjectId.ToString("D"));
                 HasMesh = true;
             }
         }

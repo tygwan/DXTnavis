@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] - v1.6.0
+
+### Phase 18: 3D Mesh GLB Export (2026-02-14)
+
+- **GeometryExtractor** - `LastModelItemMap` 프로퍼티 추가 (ObjectId → ModelItem 매핑)
+- **MeshExtractor** - GLB min/max bounds 추가 (glTF 2.0 spec 준수)
+- **GeometryRecord** - MeshUri 하이픈 UUID 형식 통일
+- **Full Pipeline** - 5-stage 파이프라인 (Mesh GLB stage 추가)
+- **UI** - Test Mesh 버튼 (🧊, 선택 객체 GLB+OBJ 추출 검증)
+- **출력**: `mesh/{uuid}.glb` 개별 파일 + geometry.csv/manifest.json에 HasMesh/MeshUri 반영
+
+---
+
 ## [Unreleased] - v1.5.0
 
 ### Phase 16: Unified CSV Export System (2026-02-10)

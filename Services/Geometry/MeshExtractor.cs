@@ -326,22 +326,44 @@ namespace DXTnavis.Services.Geometry
             int vertexByteLength = meshData.Vertices.Count * sizeof(float);
             int indexByteLength = meshData.Indices.Count * sizeof(int);
 
-            return $@"{{
-  ""asset"": {{ ""version"": ""2.0"", ""generator"": ""DXTnavis"" }},
-  ""buffers"": [{{ ""byteLength"": {vertexByteLength + indexByteLength} }}],
+            // glTF spec: POSITION accessor MUST have min/max
+            float minX = float.MaxValue, minY = float.MaxValue, minZ = float.MaxValue;
+            float maxX = float.MinValue, maxY = float.MinValue, maxZ = float.MinValue;
+
+            for (int i = 0; i < meshData.Vertices.Count; i += 3)
+            {
+                float x = meshData.Vertices[i];
+                float y = meshData.Vertices[i + 1];
+                float z = meshData.Vertices[i + 2];
+                if (x < minX) minX = x; if (x > maxX) maxX = x;
+                if (y < minY) minY = y; if (y > maxY) maxY = y;
+                if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+            }
+
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture,
+@"{{
+  ""asset"": {{ ""version"": ""2.0"", ""generator"": ""DXTnavis Phase 18"" }},
+  ""buffers"": [{{ ""byteLength"": {0} }}],
   ""bufferViews"": [
-    {{ ""buffer"": 0, ""byteOffset"": 0, ""byteLength"": {vertexByteLength}, ""target"": 34962 }},
-    {{ ""buffer"": 0, ""byteOffset"": {vertexByteLength}, ""byteLength"": {indexByteLength}, ""target"": 34963 }}
+    {{ ""buffer"": 0, ""byteOffset"": 0, ""byteLength"": {1}, ""target"": 34962 }},
+    {{ ""buffer"": 0, ""byteOffset"": {1}, ""byteLength"": {2}, ""target"": 34963 }}
   ],
   ""accessors"": [
-    {{ ""bufferView"": 0, ""componentType"": 5126, ""count"": {meshData.VertexCount}, ""type"": ""VEC3"" }},
-    {{ ""bufferView"": 1, ""componentType"": 5125, ""count"": {meshData.Indices.Count}, ""type"": ""SCALAR"" }}
+    {{ ""bufferView"": 0, ""componentType"": 5126, ""count"": {3}, ""type"": ""VEC3"", ""min"": [{4}, {5}, {6}], ""max"": [{7}, {8}, {9}] }},
+    {{ ""bufferView"": 1, ""componentType"": 5125, ""count"": {10}, ""type"": ""SCALAR"" }}
   ],
   ""meshes"": [{{ ""primitives"": [{{ ""attributes"": {{ ""POSITION"": 0 }}, ""indices"": 1 }}] }}],
   ""nodes"": [{{ ""mesh"": 0 }}],
   ""scenes"": [{{ ""nodes"": [0] }}],
   ""scene"": 0
-}}";
+}}",
+                vertexByteLength + indexByteLength,
+                vertexByteLength,
+                indexByteLength,
+                meshData.VertexCount,
+                minX, minY, minZ,
+                maxX, maxY, maxZ,
+                meshData.Indices.Count);
         }
 
         /// <summary>

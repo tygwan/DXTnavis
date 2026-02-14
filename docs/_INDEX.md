@@ -1,8 +1,8 @@
 # DXTnavis Documentation Index
 
-> **Last Updated:** 2026-02-12
-> **Current Version:** v1.4.0 (Geometry Export System Complete)
-> **Next:** v1.5.0 (Phase 17: Spatial Connectivity & Adjacency) 🚧 In Progress
+> **Last Updated:** 2026-02-14
+> **Current Version:** v1.5.0 (Spatial Connectivity Complete)
+> **Next:** v1.6.0 (Phase 18: 3D Mesh GLB Export) 🚧 In Progress
 > **Research Target:** EC3 2026 (Corfu), LDAC 2026 (Dubrovnik)
 
 ---
@@ -22,7 +22,8 @@
 
 ### Overall Progress
 ```
-v1.5.0: [                    ]   0% (Phase 17: Spatial Connectivity) 🚧 CURRENT
+v1.6.0: [                    ]   0% (Phase 18: Mesh GLB Export) 🚧 CURRENT
+v1.5.0: [====================] 100% (Phase 17: Spatial Connectivity) ✅
 v1.4.0: [====================] 100% (Released 2026-02-06) ✅
 v1.3.0: [====================] 100% (Released 2026-02-05) ✅
 v1.2.0: [====================] 100% (Released 2026-01-21) ✅
@@ -50,29 +51,39 @@ v1.0.0: [====================] 100% (Released 2026-01-20)
 | **14** | **Direct TimeLiner Exec** | ✅ Complete | 100% | [sprint-v1.1.0](agile/SPRINT-v1.1.0.md) |
 | **15** | **Geometry Export System** | ✅ Complete | 100% | [phase-15](phases/phase-15-geometry-export.md) |
 | **16** | **Unified CSV Export** | ✅ Complete | 100% | - |
-| **17** | **Spatial Connectivity** | 🚧 In Progress | 0% | [phase-17](phases/phase-17-spatial-connectivity.md) |
+| **17** | **Spatial Connectivity** | ✅ Complete | 100% | [phase-17](phases/phase-17-spatial-connectivity.md) |
+| **18** | **3D Mesh GLB Export** | 🚧 In Progress | 60% | [phase-18](phases/phase-18-mesh-glb-export.md) |
 
 ---
 
-## v1.5.0 In Progress: Spatial Connectivity & Adjacency (Phase 17) 🚧 NEW!
+## v1.6.0 In Progress: 3D Mesh GLB Export (Phase 18) 🚧 NEW!
 
 ### 핵심 목표
-BBox 기반 공간 인접성/연결성 검출 → bim-ontology 연동
+NWD에서 개별 객체 3D Mesh → GLB 파일 추출 → bim-ontology Dashboard 3D 시각화
 
-### 구현 계획
+### 구현 상황
 | 파일 | 설명 | 상태 |
 |------|------|------|
-| `Models/Spatial/AdjacencyRecord.cs` | 인접 관계 레코드 | 📋 TODO |
-| `Models/Spatial/ConnectedGroup.cs` | 연결 그룹 모델 | 📋 TODO |
-| `Services/Spatial/AdjacencyDetector.cs` | BBox 인접성 검출 | 📋 TODO |
-| `Services/Spatial/ConnectedComponentFinder.cs` | Union-Find 연결 컴포넌트 | 📋 TODO |
-| `Services/Spatial/SpatialRelationshipWriter.cs` | CSV/TTL 출력 | 📋 TODO |
-| `Models/Geometry/BBox3D.cs` | DistanceTo, IsAdjacentTo, OverlapVolume | 📋 TODO |
+| `Services/Geometry/GeometryExtractor.cs` | LastModelItemMap 프로퍼티 | ✅ Done |
+| `Services/Geometry/MeshExtractor.cs` | GLB min/max bounds 추가 | ✅ Done |
+| `Models/Geometry/GeometryRecord.cs` | MeshUri 하이픈 UUID | ✅ Done |
+| `ViewModels/DXwindowViewModel.Export.cs` | 5-stage Pipeline + Test Mesh | ✅ Done |
+| `Views/DXwindow.xaml` | Test Mesh 버튼 | ✅ Done |
 
 ### Key Documents
-- **Phase Doc**: [Phase 17: Spatial Connectivity](phases/phase-17-spatial-connectivity.md)
-- **Source Plan**: [bim-ontology/dxtnavis-phase18-plan](../../bim-ontology/docs/dxtnavis-phase18-plan.md)
+- **Phase Doc**: [Phase 18: Mesh GLB Export](phases/phase-18-mesh-glb-export.md)
+- **Source Strategy**: [bim-ontology/dxtnavis-mesh-strategy](../../../bim-ontology/docs/dxtnavis-mesh-strategy.md)
 - **Mesh Analysis**: [mesh-data-storage-analysis](tech-specs/mesh-data-storage-analysis.md)
+
+---
+
+## v1.5.0 Complete: Spatial Connectivity & Adjacency (Phase 17) ✅
+
+### 핵심 성과
+- BBox 기반 인접성 검출 (Brute Force + Spatial Hash Grid)
+- Union-Find 연결 컴포넌트 탐색
+- adjacency.csv + connected_groups.csv + spatial_relationships.ttl 출력
+- inst:navis_ URI 패턴으로 bim-ontology 호환
 
 ---
 

@@ -32,6 +32,17 @@ namespace DXTnavis.Services.Geometry
 
         #endregion
 
+        #region Properties
+
+        /// <summary>
+        /// 마지막 추출 시 생성된 ObjectId → ModelItem 매핑
+        /// Mesh 추출 등에서 원본 ModelItem 접근이 필요할 때 사용
+        /// </summary>
+        public Dictionary<Guid, ModelItem> LastModelItemMap { get; private set; }
+            = new Dictionary<Guid, ModelItem>();
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
@@ -91,6 +102,7 @@ namespace DXTnavis.Services.Geometry
             CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<Guid, GeometryRecord>();
+            var modelItemMap = new Dictionary<Guid, ModelItem>();
             var itemList = new List<ModelItem>(items);
             int total = itemList.Count;
             int processed = 0;
@@ -116,6 +128,7 @@ namespace DXTnavis.Services.Geometry
                 if (record != null && record.ObjectId != Guid.Empty)
                 {
                     result[record.ObjectId] = record;
+                    modelItemMap[record.ObjectId] = item;
                     successful++;
                 }
 
@@ -134,6 +147,7 @@ namespace DXTnavis.Services.Geometry
             OnProgressChanged(100);
             OnStatusChanged($"추출 완료: {successful:N0}개 BoundingBox ({sw.Elapsed.TotalSeconds:F1}초)");
 
+            LastModelItemMap = modelItemMap;
             return result;
         }
 

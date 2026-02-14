@@ -932,10 +932,113 @@ namespace DXTnavis.ViewModels
 
         #endregion
 
-        #region Full Pipeline Export (Unified CSV + Spatial)
+        #region Test Mesh Export (Phase 18: 단일 객체 GLB 검증)
 
         /// <summary>
-        /// 전체 파이프라인: Unified CSV + Geometry + Spatial Adjacency 통합 출력
+        /// 선택된 단일 객체의 Mesh를 GLB로 추출하여 검증
+        /// </summary>
+        private async System.Threading.Tasks.Task ExportTestMeshAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("Navisworks 문서가 열려있지 않습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var selection = doc.CurrentSelection.SelectedItems;
+                if (selection.Count == 0)
+                {
+                    MessageBox.Show("Mesh를 추출할 객체를 선택하세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var folderDialog = new System.Windows.Forms.FolderBrowserDialog
+                {
+                    Description = "GLB 파일을 저장할 폴더를 선택하세요",
+                    ShowNewFolderButton = true
+                };
+                if (folderDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+                IsExporting = true;
+                ExportProgressPercentage = 0;
+                ExportStatusMessage = "Mesh 추출 준비 중...";
+
+                var geoExtractor = new Services.Geometry.GeometryExtractor();
+                var meshExtractor = new Services.Geometry.MeshExtractor();
+                meshExtractor.StatusChanged += (s, msg) => ExportStatusMessage = msg;
+
+                int total = selection.Count;
+                int meshSuccess = 0;
+                int processed = 0;
+                string outputDir = folderDialog.SelectedPath;
+
+                foreach (var item in selection)
+                {
+                    var record = geoExtractor.ExtractBoundingBox(item);
+                    if (record == null || record.ObjectId == System.Guid.Empty)
+                    {
+                        processed++;
+                        continue;
+                    }
+
+                    ExportStatusMessage = string.Format("Mesh 추출 중: {0} ({1}/{2})",
+                        item.DisplayName ?? "unknown", processed + 1, total);
+
+                    var meshData = meshExtractor.ExtractMesh(item, record.ObjectId);
+                    if (meshData != null && meshData.VertexCount > 0)
+                    {
+                        var glbPath = System.IO.Path.Combine(outputDir,
+                            string.Format("{0}.glb", record.ObjectId.ToString("D")));
+                        meshExtractor.SaveToGlb(meshData, glbPath);
+
+                        var objPath = System.IO.Path.Combine(outputDir,
+                            string.Format("{0}.obj", record.ObjectId.ToString("D")));
+                        meshExtractor.SaveToObj(meshData, objPath);
+
+                        meshSuccess++;
+                    }
+
+                    processed++;
+                    ExportProgressPercentage = (int)(100.0 * processed / total);
+                }
+
+                meshExtractor.Dispose();
+
+                ExportProgressPercentage = 100;
+                ExportStatusMessage = "Test Mesh Export 완료!";
+
+                MessageBox.Show(
+                    string.Format("Test Mesh Export 완료!\n\n"
+                        + "선택 객체: {0}개\n"
+                        + "Mesh 성공: {1}개\n"
+                        + "저장 위치: {2}\n\n"
+                        + "GLB 확인: https://gltf-viewer.donmccurdy.com/",
+                        total, meshSuccess, outputDir),
+                    "Test Mesh Export",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = string.Format("오류: {0}", ex.Message);
+                MessageBox.Show(string.Format("Test Mesh Export 오류:\n\n{0}", ex.Message), "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        #endregion
+
+        #region Full Pipeline Export (Unified CSV + Spatial + Mesh)
+
+        /// <summary>
+        /// 전체 파이프라인: Unified CSV + Geometry + Mesh GLB + Spatial Adjacency 통합 출력
+        /// Phase 18: Mesh GLB export 추가
         /// </summary>
         private async System.Threading.Tasks.Task ExportFullPipelineAsync()
         {
@@ -964,51 +1067,106 @@ namespace DXTnavis.ViewModels
                 ExportProgressPercentage = 0;
                 var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                // ──── Stage 1/4: Unified CSV (Hierarchy + Properties + BBox) ────
-                ExportStatusMessage = "[1/4] Unified CSV 추출 중...";
+                // ──── Stage 1/5: Unified CSV (Hierarchy + Properties + BBox) ────
+                ExportStatusMessage = "[1/5] Unified CSV 추출 중...";
 
                 var unifiedPath = System.IO.Path.Combine(outputDir, "unified.csv");
                 var exporter = new UnifiedCsvExporter();
-                exporter.ProgressChanged += (s, p) => ExportProgressPercentage = p / 4;
-                exporter.StatusChanged += (s, msg) => ExportStatusMessage = "[1/4] " + msg;
+                exporter.ProgressChanged += (s, p) => ExportProgressPercentage = p / 5;
+                exporter.StatusChanged += (s, msg) => ExportStatusMessage = "[1/5] " + msg;
 
                 int unifiedCount = exporter.ExportFromDocument(unifiedPath);
-                ExportProgressPercentage = 25;
+                ExportProgressPercentage = 20;
 
-                // ──── Stage 2/4: Geometry 추출 ────
-                ExportStatusMessage = "[2/4] Geometry 추출 중...";
+                // ──── Stage 2/5: Geometry 추출 ────
+                ExportStatusMessage = "[2/5] Geometry 추출 중...";
 
                 var geoExtractor = new Services.Geometry.GeometryExtractor();
-                geoExtractor.ProgressChanged += (s, p) => ExportProgressPercentage = 25 + p / 4;
-                geoExtractor.StatusChanged += (s, msg) => ExportStatusMessage = "[2/4] " + msg;
+                geoExtractor.ProgressChanged += (s, p) => ExportProgressPercentage = 20 + p / 5;
+                geoExtractor.StatusChanged += (s, msg) => ExportStatusMessage = "[2/5] " + msg;
 
                 var geometries = geoExtractor.ExtractFromDocument(doc);
 
-                // Geometry CSV + Manifest
+                // Geometry CSV (HasMesh/MeshUri는 mesh 추출 후 갱신)
+                ExportProgressPercentage = 40;
+
+                // ──── Stage 3/5: Mesh GLB 추출 ────
+                ExportStatusMessage = string.Format("[3/5] Mesh GLB 추출 중... ({0:N0}개 객체)", geometries.Count);
+
+                var meshDir = System.IO.Path.Combine(outputDir, "mesh");
+                System.IO.Directory.CreateDirectory(meshDir);
+
+                int meshCount = 0;
+                using (var meshExtractor = new Services.Geometry.MeshExtractor())
+                {
+                    meshExtractor.StatusChanged += (s, msg) => ExportStatusMessage = "[3/5] " + msg;
+
+                    var modelItemMap = geoExtractor.LastModelItemMap;
+                    int meshProcessed = 0;
+                    int meshTotal = modelItemMap.Count;
+
+                    foreach (var kvp in modelItemMap)
+                    {
+                        var objectId = kvp.Key;
+                        var item = kvp.Value;
+
+                        try
+                        {
+                            var meshData = meshExtractor.ExtractMesh(item, objectId);
+                            if (meshData != null && meshData.VertexCount > 0)
+                            {
+                                var glbPath = System.IO.Path.Combine(meshDir,
+                                    string.Format("{0}.glb", objectId.ToString("D")));
+                                meshExtractor.SaveToGlb(meshData, glbPath);
+
+                                // GeometryRecord 업데이트
+                                if (geometries.ContainsKey(objectId))
+                                {
+                                    geometries[objectId].HasMesh = true;
+                                    geometries[objectId].MeshUri = string.Format("mesh/{0}.glb", objectId.ToString("D"));
+                                }
+                                meshCount++;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine(
+                                string.Format("[FullPipeline] Mesh skip {0}: {1}", objectId, ex.Message));
+                        }
+
+                        meshProcessed++;
+                        if (meshProcessed % 50 == 0 || meshProcessed == meshTotal)
+                        {
+                            ExportProgressPercentage = 40 + (int)(20.0 * meshProcessed / meshTotal);
+                        }
+                    }
+                }
+                ExportProgressPercentage = 60;
+
+                // Geometry CSV + Manifest (mesh 정보 반영된 상태)
                 var geoWriter = new Services.Geometry.GeometryFileWriter();
                 geoWriter.WriteCsv(geometries, System.IO.Path.Combine(outputDir, "geometry.csv"));
                 geoWriter.WriteManifest(geometries, outputDir);
-                ExportProgressPercentage = 50;
 
-                // ──── Stage 3/4: Adjacency 검출 ────
-                ExportStatusMessage = string.Format("[3/4] Adjacency 검출 중... ({0:N0}개 객체)", geometries.Count);
+                // ──── Stage 4/5: Adjacency 검출 ────
+                ExportStatusMessage = string.Format("[4/5] Adjacency 검출 중... ({0:N0}개 객체)", geometries.Count);
 
                 var detector = new Services.Spatial.AdjacencyDetector();
-                detector.ProgressChanged += (s, p) => ExportProgressPercentage = 50 + p / 4;
-                detector.StatusChanged += (s, msg) => ExportStatusMessage = "[3/4] " + msg;
+                detector.ProgressChanged += (s, p) => ExportProgressPercentage = 60 + p / 5;
+                detector.StatusChanged += (s, msg) => ExportStatusMessage = "[4/5] " + msg;
 
                 var adjacencies = detector.Detect(geometries);
 
                 // Connected Components
                 var componentFinder = new Services.Spatial.ConnectedComponentFinder();
                 var groups = componentFinder.FindAndCompute(adjacencies, geometries);
-                ExportProgressPercentage = 75;
+                ExportProgressPercentage = 80;
 
-                // ──── Stage 4/4: 파일 출력 ────
-                ExportStatusMessage = "[4/4] 파일 저장 중...";
+                // ──── Stage 5/5: 파일 출력 ────
+                ExportStatusMessage = "[5/5] 파일 저장 중...";
 
                 var spatialWriter = new Services.Spatial.SpatialRelationshipWriter();
-                spatialWriter.StatusChanged += (s, msg) => ExportStatusMessage = "[4/4] " + msg;
+                spatialWriter.StatusChanged += (s, msg) => ExportStatusMessage = "[5/5] " + msg;
 
                 spatialWriter.WriteAdjacencyCsv(adjacencies, outputDir);
                 spatialWriter.WriteGroupsCsv(groups, outputDir);
@@ -1026,13 +1184,16 @@ namespace DXTnavis.ViewModels
                         + "  객체 수: {0:N0}\n\n"
                         + "── Geometry ──\n"
                         + "  BBox 추출: {1:N0}개\n\n"
+                        + "── Mesh GLB ──\n"
+                        + "  GLB 생성: {2:N0}개\n\n"
                         + "── Spatial ──\n"
-                        + "  인접 관계: {2:N0}\n"
-                        + "  연결 그룹: {3:N0}\n\n"
-                        + "처리 시간: {4:F1}초\n"
-                        + "저장 위치: {5}",
-                        unifiedCount, geometries.Count, adjacencies.Count,
-                        groups.Count, sw.Elapsed.TotalSeconds, outputDir),
+                        + "  인접 관계: {3:N0}\n"
+                        + "  연결 그룹: {4:N0}\n\n"
+                        + "처리 시간: {5:F1}초\n"
+                        + "저장 위치: {6}",
+                        unifiedCount, geometries.Count, meshCount,
+                        adjacencies.Count, groups.Count,
+                        sw.Elapsed.TotalSeconds, outputDir),
                     "Full Pipeline Export",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
