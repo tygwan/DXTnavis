@@ -486,26 +486,57 @@ namespace DXTnavis.Services.Geometry
 
         private void AddVertex(InwSimpleVertex v)
         {
-            // Position
-            var coord = (Array)v.coord;
-            _meshData.Vertices.Add(Convert.ToSingle(coord.GetValue(1)));
-            _meshData.Vertices.Add(Convert.ToSingle(coord.GetValue(2)));
-            _meshData.Vertices.Add(Convert.ToSingle(coord.GetValue(3)));
+            // Navisworks COM API: coord/normal return 1-based SAFEARRAY (Single[*])
+            // Direct cast to float[] fails with InvalidCastException
+            // Fix: use reflection late-binding to bypass PIA typed marshaling
+            var coord = GetComArray(v, "coord");
+            if (coord == null || coord.Length < 3) return;
+
+            _meshData.Vertices.Add(coord[0]);
+            _meshData.Vertices.Add(coord[1]);
+            _meshData.Vertices.Add(coord[2]);
 
             // Normal (if available)
+            var normal = GetComArray(v, "normal");
+            if (normal != null && normal.Length >= 3)
+            {
+                _meshData.Normals.Add(normal[0]);
+                _meshData.Normals.Add(normal[1]);
+                _meshData.Normals.Add(normal[2]);
+            }
+        }
+
+        /// <summary>
+        /// COM SAFEARRAY (Single[*]) → float[] 변환
+        /// PIA typed property가 Single[*]→Single[] 캐스트 실패하므로
+        /// InvokeMember로 late-bound 접근하여 Array 기반으로 읽음
+        /// </summary>
+        private static float[] GetComArray(object comObject, string propertyName)
+        {
             try
             {
-                var normal = (Array)v.normal;
-                if (normal != null && normal.Length >= 3)
+                var raw = comObject.GetType().InvokeMember(
+                    propertyName,
+                    System.Reflection.BindingFlags.GetProperty,
+                    null, comObject, null);
+
+                if (raw == null) return null;
+
+                var arr = raw as Array;
+                if (arr == null) return null;
+
+                int len = arr.Length;
+                var result = new float[len];
+                int lb = arr.GetLowerBound(0);
+                for (int i = 0; i < len; i++)
                 {
-                    _meshData.Normals.Add(Convert.ToSingle(normal.GetValue(1)));
-                    _meshData.Normals.Add(Convert.ToSingle(normal.GetValue(2)));
-                    _meshData.Normals.Add(Convert.ToSingle(normal.GetValue(3)));
+                    result[i] = Convert.ToSingle(arr.GetValue(lb + i));
                 }
+                return result;
             }
             catch
             {
-                // Normal이 없으면 무시
+                return null;
             }
         }
     }
