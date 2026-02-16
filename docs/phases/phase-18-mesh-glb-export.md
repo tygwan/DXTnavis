@@ -31,6 +31,7 @@ bim-ontology Dashboard에서 Three.js 3D 시각화를 지원.
 
 ### B. GLB Writer 수정
 - glTF spec 준수: POSITION accessor에 `min`/`max` bounds 추가
+- `G9` float format으로 ACCESSOR_MIN_MISMATCH 해결
 - generator 문자열 업데이트
 
 ### C. MeshUri 형식 통일
@@ -44,8 +45,13 @@ bim-ontology Dashboard에서 Three.js 3D 시각화를 지원.
 4. Adjacency 검출
 5. 파일 출력 (CSV + manifest, geometry CSV는 mesh 정보 반영)
 
-### E. Test Mesh 버튼
-- 선택 객체 → GLB + OBJ 동시 출력
+### E. Leaf Item 필터링
+- Parent/Group 노드 선택 시 하위 fragment 중복 방지
+- Full Pipeline: leaf 아이템만 mesh 추출 (Children이 없는 노드)
+- Test Mesh: 부모 선택 시 `item.Descendants`로 leaf 해체
+
+### F. Test Mesh 버튼
+- 선택 객체 → leaf 해체 → 개별 GLB + OBJ 출력
 - online viewer 검증용: https://gltf-viewer.donmccurdy.com/
 
 ## 출력 파일 구조
@@ -73,9 +79,13 @@ dxtnavis_export_YYYYMMDD_HHmmss/
 - [x] Full Pipeline: 5-stage 통합
 - [x] UI: Test Mesh 버튼
 - [x] Build 성공
-- [ ] 실제 Navisworks에서 단일 객체 테스트
-- [ ] GLB online viewer 확인
-- [ ] 배치 export (B01 Area)
+- [x] COM SAFEARRAY marshaling 해결 (Single[*] → float[])
+- [x] ACCESSOR_MIN_MISMATCH 해결 (G9 float precision)
+- [x] Leaf item 필터링 (parent node 중복 방지)
+- [x] 실제 Navisworks에서 단일 객체 테스트
+- [x] GLB online viewer 확인
+- [x] bim-ontology 출력 스펙 문서 작성
+- [ ] Full Pipeline 배치 export
 - [ ] bim-ontology Dashboard 연동 확인
 
 ## 좌표계 주의사항
