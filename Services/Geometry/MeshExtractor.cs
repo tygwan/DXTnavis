@@ -340,6 +340,14 @@ namespace DXTnavis.Services.Geometry
                 if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
             }
 
+            // G9 format: float round-trip precision to avoid ACCESSOR_MIN_MISMATCH
+            string sMinX = minX.ToString("G9", System.Globalization.CultureInfo.InvariantCulture);
+            string sMinY = minY.ToString("G9", System.Globalization.CultureInfo.InvariantCulture);
+            string sMinZ = minZ.ToString("G9", System.Globalization.CultureInfo.InvariantCulture);
+            string sMaxX = maxX.ToString("G9", System.Globalization.CultureInfo.InvariantCulture);
+            string sMaxY = maxY.ToString("G9", System.Globalization.CultureInfo.InvariantCulture);
+            string sMaxZ = maxZ.ToString("G9", System.Globalization.CultureInfo.InvariantCulture);
+
             return string.Format(System.Globalization.CultureInfo.InvariantCulture,
 @"{{
   ""asset"": {{ ""version"": ""2.0"", ""generator"": ""DXTnavis Phase 18"" }},
@@ -361,8 +369,8 @@ namespace DXTnavis.Services.Geometry
                 vertexByteLength,
                 indexByteLength,
                 meshData.VertexCount,
-                minX, minY, minZ,
-                maxX, maxY, maxZ,
+                sMinX, sMinY, sMinZ,
+                sMaxX, sMaxY, sMaxZ,
                 meshData.Indices.Count);
         }
 

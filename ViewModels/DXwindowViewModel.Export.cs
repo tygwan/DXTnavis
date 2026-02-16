@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Autodesk.Navisworks.Api;
 using DXTnavis.Models;
 using DXTnavis.Services;
 using DXTnavis.Services.Geometry;
@@ -970,12 +972,33 @@ namespace DXTnavis.ViewModels
                 var meshExtractor = new Services.Geometry.MeshExtractor();
                 meshExtractor.StatusChanged += (s, msg) => ExportStatusMessage = msg;
 
-                int total = selection.Count;
+                // Resolve to leaf items: parent/group nodes include all descendant geometry
+                var leafItems = new List<ModelItem>();
+                foreach (var item in selection)
+                {
+                    if (item.Children != null && item.Children.Any())
+                    {
+                        // Parent node → collect leaf descendants
+                        foreach (var desc in item.Descendants)
+                        {
+                            if (desc.Children == null || !desc.Children.Any())
+                                leafItems.Add(desc);
+                        }
+                    }
+                    else
+                    {
+                        leafItems.Add(item);
+                    }
+                }
+
+                int total = leafItems.Count;
                 int meshSuccess = 0;
                 int processed = 0;
                 string outputDir = folderDialog.SelectedPath;
 
-                foreach (var item in selection)
+                ExportStatusMessage = string.Format("Leaf 객체 {0}개 발견 (선택 {1}개에서)", total, selection.Count);
+
+                foreach (var item in leafItems)
                 {
                     var record = geoExtractor.ExtractBoundingBox(item);
                     if (record == null || record.ObjectId == System.Guid.Empty)
@@ -1101,11 +1124,22 @@ namespace DXTnavis.ViewModels
                 {
                     meshExtractor.StatusChanged += (s, msg) => ExportStatusMessage = "[3/5] " + msg;
 
+                    // Leaf items only: parent/group nodes aggregate all descendant fragments,
+                    // causing duplicated & inflated vertex counts
                     var modelItemMap = geoExtractor.LastModelItemMap;
-                    int meshProcessed = 0;
-                    int meshTotal = modelItemMap.Count;
-
+                    var leafItems = new List<KeyValuePair<Guid, ModelItem>>();
                     foreach (var kvp in modelItemMap)
+                    {
+                        if (kvp.Value.Children == null || !kvp.Value.Children.Any())
+                            leafItems.Add(kvp);
+                    }
+
+                    int meshProcessed = 0;
+                    int meshTotal = leafItems.Count;
+
+                    ExportStatusMessage = string.Format("[3/5] Mesh GLB 추출 중... ({0:N0}개 leaf 객체, 전체 {1:N0}개 중)", meshTotal, modelItemMap.Count);
+
+                    foreach (var kvp in leafItems)
                     {
                         var objectId = kvp.Key;
                         var item = kvp.Value;
