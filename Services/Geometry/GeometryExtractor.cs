@@ -201,11 +201,16 @@ namespace DXTnavis.Services.Geometry
 
         /// <summary>
         /// 모든 ModelItem을 재귀적으로 수집
+        /// Hidden 객체와 하위 노드는 스킵 (NavisworksDataExtractor.TraverseAndExtractProperties와 동일)
         /// </summary>
         private void CollectAllModelItems(ModelItemEnumerableCollection rootItems, List<ModelItem> result)
         {
             foreach (var item in rootItems)
             {
+                // Hidden 객체 스킵: NavisworksDataExtractor와 동일하게 처리
+                // Hidden 부모의 하위 노드도 자동으로 스킵됨
+                if (item.IsHidden) continue;
+
                 result.Add(item);
 
                 if (item.Children != null && item.Children.Any())
@@ -217,6 +222,7 @@ namespace DXTnavis.Services.Geometry
 
         /// <summary>
         /// 계층 경로 문자열 생성
+        /// NavisworksDataExtractor.TraverseAndExtractProperties()와 동일한 " > " 구분자 사용
         /// </summary>
         private string BuildHierarchyPath(ModelItem item)
         {
@@ -235,11 +241,12 @@ namespace DXTnavis.Services.Geometry
                 current = current.Parent;
             }
 
-            return string.Join("/", parts);
+            return string.Join(" > ", parts);
         }
 
         /// <summary>
         /// ModelItem의 표시 이름 가져오기
+        /// NavisworksDataExtractor.GetDisplayName()와 동일한 폴백 체인
         /// </summary>
         private string GetDisplayName(ModelItem item)
         {
@@ -247,15 +254,59 @@ namespace DXTnavis.Services.Geometry
 
             try
             {
-                // DisplayName 우선
-                if (!string.IsNullOrEmpty(item.DisplayName))
+                // 1. DisplayName 우선
+                if (!string.IsNullOrWhiteSpace(item.DisplayName))
                     return item.DisplayName;
 
-                // ClassDisplayName 대체
-                if (!string.IsNullOrEmpty(item.ClassDisplayName))
-                    return item.ClassDisplayName;
+                // 2. "Item" 카테고리의 "Name" 속성
+                foreach (var category in item.PropertyCategories)
+                {
+                    if (category == null) continue;
 
-                return string.Empty;
+                    if (category.DisplayName == "Item")
+                    {
+                        DataPropertyCollection properties = null;
+                        try { properties = category.Properties; }
+                        catch { continue; }
+
+                        if (properties == null) continue;
+
+                        foreach (DataProperty property in properties)
+                        {
+                            if (property == null) continue;
+                            try
+                            {
+                                if (property.DisplayName == "Name")
+                                {
+                                    var value = property.Value?.ToString();
+                                    if (!string.IsNullOrWhiteSpace(value))
+                                        return value;
+                                }
+                            }
+                            catch { continue; }
+                        }
+                    }
+                }
+
+                // 3. ClassDisplayName
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(item.ClassDisplayName))
+                        return item.ClassDisplayName;
+                }
+                catch { }
+
+                // 4. InstanceGuid
+                if (item.InstanceGuid != Guid.Empty)
+                    return item.InstanceGuid.ToString();
+
+                // 5. Authoring ID
+                var authoringId = GetAuthoringId(item);
+                if (!string.IsNullOrEmpty(authoringId))
+                    return authoringId;
+
+                // 6. 최종 폴백
+                return $"Unknown_{item.GetHashCode():X8}";
             }
             catch
             {
@@ -329,19 +380,29 @@ namespace DXTnavis.Services.Geometry
 
                     if (category.DisplayName == "Item" || category.Name == "LcOaNode")
                     {
-                        foreach (DataProperty property in category.Properties)
+                        DataPropertyCollection properties = null;
+                        try { properties = category.Properties; }
+                        catch { continue; }
+
+                        if (properties == null) continue;
+
+                        foreach (DataProperty property in properties)
                         {
                             if (property == null) continue;
 
-                            var propName = property.DisplayName ?? property.Name ?? string.Empty;
-                            if (propName == "GUID" || propName == "Guid" || propName == "guid")
+                            try
                             {
-                                var value = property.Value?.ToString();
-                                if (!string.IsNullOrEmpty(value) && Guid.TryParse(value, out var guid))
+                                var propName = property.DisplayName ?? property.Name ?? string.Empty;
+                                if (propName == "GUID" || propName == "Guid" || propName == "guid")
                                 {
-                                    return guid;
+                                    var value = property.Value?.ToString();
+                                    if (!string.IsNullOrEmpty(value) && Guid.TryParse(value, out var guid))
+                                    {
+                                        return guid;
+                                    }
                                 }
                             }
+                            catch { continue; }
                         }
                     }
                 }
@@ -353,31 +414,55 @@ namespace DXTnavis.Services.Geometry
 
         /// <summary>
         /// Authoring 도구의 고유 ID 추출 (Revit Element ID, AutoCAD Handle 등)
+        /// NavisworksDataExtractor.GetAuthoringId()와 동일한 prefix 로직 사용
         /// </summary>
         private string GetAuthoringId(ModelItem item)
         {
             try
             {
-                var targetProps = new[] { "Element ID", "Id", "ElementId", "Handle", "Object Handle", "GlobalId", "IfcGlobalId" };
-
                 foreach (var category in item.PropertyCategories)
                 {
                     if (category == null) continue;
 
-                    foreach (DataProperty property in category.Properties)
+                    DataPropertyCollection properties = null;
+                    try { properties = category.Properties; }
+                    catch { continue; }
+
+                    if (properties == null) continue;
+
+                    foreach (DataProperty property in properties)
                     {
                         if (property == null) continue;
 
-                        var propName = property.DisplayName ?? property.Name ?? string.Empty;
-                        foreach (var target in targetProps)
+                        try
                         {
-                            if (propName.Equals(target, StringComparison.OrdinalIgnoreCase))
+                            var propName = property.DisplayName ?? property.Name ?? string.Empty;
+
+                            // Revit Element ID
+                            if (propName == "Element ID" || propName == "Id" || propName == "ElementId")
                             {
                                 var value = property.Value?.ToString();
                                 if (!string.IsNullOrEmpty(value))
-                                    return value;
+                                    return $"Revit:{value}";
+                            }
+
+                            // AutoCAD Handle
+                            if (propName == "Handle" || propName == "Object Handle")
+                            {
+                                var value = property.Value?.ToString();
+                                if (!string.IsNullOrEmpty(value))
+                                    return $"AutoCAD:{value}";
+                            }
+
+                            // IFC GlobalId
+                            if (propName == "GlobalId" || propName == "IfcGlobalId")
+                            {
+                                var value = property.Value?.ToString();
+                                if (!string.IsNullOrEmpty(value))
+                                    return $"IFC:{value}";
                             }
                         }
+                        catch { continue; }
                     }
                 }
             }
@@ -388,15 +473,23 @@ namespace DXTnavis.Services.Geometry
 
         /// <summary>
         /// 모델 파일의 SourceGuid 가져오기
+        /// NavisworksDataExtractor.GetModelSourceGuid()와 동일한 ancestor fallback 포함
         /// </summary>
         private Guid GetModelSourceGuid(ModelItem item)
         {
             try
             {
-                var modelFile = item?.Model;
-                if (modelFile != null)
+                // item.Model이 있으면 SourceGuid 사용
+                if (item?.Model != null)
                 {
-                    return modelFile.SourceGuid;
+                    return item.Model.SourceGuid;
+                }
+
+                // 없으면 첫 번째 조상의 Model에서 가져오기
+                var ancestor = item?.Ancestors.FirstOrDefault();
+                if (ancestor?.Model != null)
+                {
+                    return ancestor.Model.SourceGuid;
                 }
             }
             catch { }

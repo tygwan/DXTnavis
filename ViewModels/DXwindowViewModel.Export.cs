@@ -1090,18 +1090,17 @@ namespace DXTnavis.ViewModels
                 ExportProgressPercentage = 0;
                 var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                // ──── Stage 1/5: Unified CSV (Hierarchy + Properties + BBox) ────
-                ExportStatusMessage = "[1/5] Unified CSV 추출 중...";
+                // ──── Stage 1/5: Hierarchy 데이터 추출 ────
+                ExportStatusMessage = "[1/5] Hierarchy 데이터 추출 중...";
 
                 var unifiedPath = System.IO.Path.Combine(outputDir, "unified.csv");
-                var exporter = new UnifiedCsvExporter();
-                exporter.ProgressChanged += (s, p) => ExportProgressPercentage = p / 5;
-                exporter.StatusChanged += (s, msg) => ExportStatusMessage = "[1/5] " + msg;
+                var hierarchyExtractor = new NavisworksDataExtractor();
+                var hierarchyRecords = hierarchyExtractor.ExtractAllHierarchicalRecords();
 
-                int unifiedCount = exporter.ExportFromDocument(unifiedPath);
+                ExportStatusMessage = string.Format("[1/5] Hierarchy 추출 완료: {0:N0}개 속성", hierarchyRecords.Count);
                 ExportProgressPercentage = 20;
 
-                // ──── Stage 2/5: Geometry 추출 ────
+                // ──── Stage 2/5: Geometry BBox 추출 ────
                 ExportStatusMessage = "[2/5] Geometry 추출 중...";
 
                 var geoExtractor = new Services.Geometry.GeometryExtractor();
@@ -1110,7 +1109,6 @@ namespace DXTnavis.ViewModels
 
                 var geometries = geoExtractor.ExtractFromDocument(doc);
 
-                // Geometry CSV (HasMesh/MeshUri는 mesh 추출 후 갱신)
                 ExportProgressPercentage = 40;
 
                 // ──── Stage 3/5: Mesh GLB 추출 ────
@@ -1176,6 +1174,10 @@ namespace DXTnavis.ViewModels
                     }
                 }
                 ExportProgressPercentage = 60;
+
+                // Unified CSV (Stage 3 mesh 정보 반영된 geometry로 병합 → HasMesh/MeshUri 정확)
+                var unifiedExporter = new UnifiedCsvExporter();
+                int unifiedCount = unifiedExporter.ExportFromData(hierarchyRecords, geometries, unifiedPath);
 
                 // Geometry CSV + Manifest (mesh 정보 반영된 상태)
                 var geoWriter = new Services.Geometry.GeometryFileWriter();
