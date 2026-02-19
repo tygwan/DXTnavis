@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Security;
+using System.Security.Cryptography;
+using System.Text;
 using Autodesk.Navisworks.Api;
 using DXTnavis.Models;
 using DXTnavis.ViewModels;
@@ -12,6 +14,7 @@ namespace DXTnavis.Services
     /// <summary>
     /// Navisworks 모델에서 계층 구조 데이터를 추출하는 서비스
     /// 재귀적 트리 순회를 통해 부모-자식 관계를 유지하며 데이터를 수집합니다.
+    /// v1.3.0: Synthetic ID 생성으로 계층 구조 보존 개선
     /// </summary>
     public class NavisworksDataExtractor
     {
@@ -19,6 +22,187 @@ namespace DXTnavis.Services
         /// DisplayString 파서 인스턴스 (v0.4.2)
         /// </summary>
         private readonly DisplayStringParser _displayStringParser = new DisplayStringParser();
+
+        #region Synthetic ID Generation (v1.3.0)
+
+        /// <summary>
+        /// ModelItem에 대한 안정적인 고유 ID를 생성합니다.
+        /// Fallback 순서: InstanceGuid → Item GUID Property → Authoring ID → Hierarchy Path Hash
+        /// </summary>
+        /// <param name="item">ModelItem</param>
+        /// <param name="hierarchyPath">현재 계층 경로</param>
+        /// <returns>안정적인 고유 GUID</returns>
+        private Guid GetStableObjectId(ModelItem item, string hierarchyPath)
+        {
+            if (item == null)
+                return Guid.Empty;
+
+            // 1. InstanceGuid가 유효하면 사용
+            if (item.InstanceGuid != Guid.Empty)
+                return item.InstanceGuid;
+
+            // 2. Item 카테고리의 GUID 속성 확인
+            var itemGuid = GetItemPropertyGuid(item);
+            if (itemGuid != Guid.Empty)
+                return itemGuid;
+
+            // 3. Authoring ID 확인 (Revit Element ID, AutoCAD Handle 등)
+            var authoringId = GetAuthoringId(item);
+            if (!string.IsNullOrEmpty(authoringId))
+            {
+                // ModelFile SourceGuid + AuthoringId 조합
+                var sourceGuid = GetModelSourceGuid(item);
+                return CreateDeterministicGuid(sourceGuid.ToString() + "|" + authoringId);
+            }
+
+            // 4. 계층 경로 기반 Synthetic ID (최종 폴백)
+            var sourceGuid2 = GetModelSourceGuid(item);
+            var pathKey = sourceGuid2.ToString() + "|" + hierarchyPath;
+            return CreateDeterministicGuid(pathKey);
+        }
+
+        /// <summary>
+        /// Item 카테고리에서 GUID 속성을 추출합니다.
+        /// </summary>
+        private Guid GetItemPropertyGuid(ModelItem item)
+        {
+            try
+            {
+                foreach (var category in item.PropertyCategories)
+                {
+                    if (category == null) continue;
+
+                    // "Item" 카테고리에서 "GUID" 속성 찾기
+                    if (category.DisplayName == "Item" || category.Name == "LcOaNode")
+                    {
+                        DataPropertyCollection properties = null;
+                        try { properties = category.Properties; }
+                        catch { continue; }
+
+                        if (properties == null) continue;
+
+                        foreach (DataProperty property in properties)
+                        {
+                            if (property == null) continue;
+
+                            try
+                            {
+                                var propName = property.DisplayName ?? property.Name ?? string.Empty;
+                                if (propName == "GUID" || propName == "Guid" || propName == "guid")
+                                {
+                                    var value = property.Value?.ToString();
+                                    if (!string.IsNullOrEmpty(value) && Guid.TryParse(value, out var guid))
+                                    {
+                                        return guid;
+                                    }
+                                }
+                            }
+                            catch { continue; }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return Guid.Empty;
+        }
+
+        /// <summary>
+        /// Authoring 도구의 고유 ID를 추출합니다 (Revit Element ID, AutoCAD Handle 등).
+        /// </summary>
+        private string GetAuthoringId(ModelItem item)
+        {
+            try
+            {
+                foreach (var category in item.PropertyCategories)
+                {
+                    if (category == null) continue;
+
+                    DataPropertyCollection properties = null;
+                    try { properties = category.Properties; }
+                    catch { continue; }
+
+                    if (properties == null) continue;
+
+                    foreach (DataProperty property in properties)
+                    {
+                        if (property == null) continue;
+
+                        try
+                        {
+                            var propName = property.DisplayName ?? property.Name ?? string.Empty;
+
+                            // Revit Element ID
+                            if (propName == "Element ID" || propName == "Id" || propName == "ElementId")
+                            {
+                                var value = property.Value?.ToString();
+                                if (!string.IsNullOrEmpty(value))
+                                    return $"Revit:{value}";
+                            }
+
+                            // AutoCAD Handle
+                            if (propName == "Handle" || propName == "Object Handle")
+                            {
+                                var value = property.Value?.ToString();
+                                if (!string.IsNullOrEmpty(value))
+                                    return $"AutoCAD:{value}";
+                            }
+
+                            // IFC GlobalId
+                            if (propName == "GlobalId" || propName == "IfcGlobalId")
+                            {
+                                var value = property.Value?.ToString();
+                                if (!string.IsNullOrEmpty(value))
+                                    return $"IFC:{value}";
+                            }
+                        }
+                        catch { continue; }
+                    }
+                }
+            }
+            catch { }
+
+            return null;
+        }
+
+        /// <summary>
+        /// ModelItem이 속한 Model의 SourceGuid를 가져옵니다.
+        /// </summary>
+        private Guid GetModelSourceGuid(ModelItem item)
+        {
+            try
+            {
+                // item.Model이 있으면 SourceGuid 사용
+                if (item.Model != null)
+                {
+                    return item.Model.SourceGuid;
+                }
+
+                // 없으면 첫 번째 조상의 Model에서 가져오기
+                var ancestor = item.Ancestors.FirstOrDefault();
+                if (ancestor?.Model != null)
+                {
+                    return ancestor.Model.SourceGuid;
+                }
+            }
+            catch { }
+
+            return Guid.Empty;
+        }
+
+        /// <summary>
+        /// 문자열 입력으로부터 결정적 GUID를 생성합니다 (MD5 해시 기반).
+        /// </summary>
+        private Guid CreateDeterministicGuid(string input)
+        {
+            using (var md5 = MD5.Create())
+            {
+                var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+                return new Guid(hash);
+            }
+        }
+
+        #endregion
         /// <summary>
         /// 선택된 객체부터 시작하여 모든 하위 계층을 재귀적으로 탐색하고 속성을 추출합니다.
         /// </summary>
@@ -64,19 +248,24 @@ namespace DXTnavis.Services
 
             if (!currentItem.HasGeometry && !hasProperties)
             {
-                // 하지만 자식은 계속 탐색 (컨테이너 역할만 하는 객체일 수 있음)
+                // v1.3.0: 컨테이너 노드도 Synthetic ID를 생성하여 계층 유지
+                Guid containerId = GetStableObjectId(currentItem, currentPath);
+
+                // 자식 탐색 시 컨테이너 ID를 부모로 전달
                 foreach (ModelItem child in currentItem.Children)
                 {
-                    TraverseAndExtractProperties(child, parentId, level + 1, results, currentPath);
+                    TraverseAndExtractProperties(child, containerId, level + 1, results, currentPath);
                 }
                 return;
             }
 
-            // 4. 현재 객체의 고유 ID 가져오기
-            Guid currentId = currentItem.InstanceGuid;
+            // 4. v1.3.0: Synthetic ID 생성 - InstanceGuid가 Empty여도 안정적인 ID 보장
+            Guid currentId = GetStableObjectId(currentItem, currentPath);
 
-            // PRD v8 Step 2: InstanceGuid 유효성 진단 로깅
-            System.Diagnostics.Debug.WriteLine($"[ID 검증] Level={level}, ParentId={parentId}, CurrentId={currentId}, IsEmpty={currentId == Guid.Empty}");
+            // v1.3.0: ID 생성 방식 진단 로깅
+            bool usedInstanceGuid = (currentItem.InstanceGuid != Guid.Empty && currentItem.InstanceGuid == currentId);
+            System.Diagnostics.Debug.WriteLine($"[ID 검증] Level={level}, ParentId={parentId}, CurrentId={currentId}, " +
+                $"UsedInstanceGuid={usedInstanceGuid}, OriginalInstanceGuid={currentItem.InstanceGuid}");
 
             // 3. 현재 객체의 모든 속성 추출 및 리스트에 추가
             foreach (var category in currentItem.PropertyCategories)
@@ -214,27 +403,27 @@ namespace DXTnavis.Services
             }
 
             // 5. 재귀 호출: 현재 객체의 모든 자식에 대해 이 메서드를 다시 호출
-            // PRD v8 수정: currentId가 비어있으면 parentId를 전달 (계층 유지)
-            Guid childParentId = (currentId == Guid.Empty) ? parentId : currentId;
-
+            // v1.3.0: Synthetic ID 사용으로 currentId는 항상 유효함 (Empty가 아님)
+            // 따라서 항상 currentId를 자식의 parentId로 전달
             foreach (ModelItem child in currentItem.Children)
             {
-                TraverseAndExtractProperties(child, childParentId, level + 1, results, currentPath);
+                TraverseAndExtractProperties(child, currentId, level + 1, results, currentPath);
             }
         }
 
         /// <summary>
         /// ModelItem으로부터 표시 이름을 추출하는 헬퍼 메서드
+        /// v1.3.0: 더 나은 폴백 - ClassDisplayName 및 Type 정보 활용
         /// </summary>
         private string GetDisplayName(ModelItem item)
         {
             try
             {
-                // 먼저 DisplayName 속성 시도
+                // 1. 먼저 DisplayName 속성 시도
                 if (!string.IsNullOrWhiteSpace(item.DisplayName))
                     return item.DisplayName;
 
-                // "Item" 카테고리의 "Name" 속성 찾기
+                // 2. "Item" 카테고리의 "Name" 속성 찾기
                 foreach (var category in item.PropertyCategories)
                 {
                     if (category == null) continue;
@@ -266,7 +455,9 @@ namespace DXTnavis.Services
                             {
                                 if (property.DisplayName == "Name")
                                 {
-                                    return property.Value?.ToString() ?? item.InstanceGuid.ToString();
+                                    var value = property.Value?.ToString();
+                                    if (!string.IsNullOrWhiteSpace(value))
+                                        return value;
                                 }
                             }
                             catch
@@ -277,8 +468,25 @@ namespace DXTnavis.Services
                     }
                 }
 
-                // 이름을 찾지 못하면 GUID 사용
-                return item.InstanceGuid.ToString();
+                // 3. v1.3.0: ClassDisplayName 사용 (예: "Wall", "Floor", "Beam" 등)
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(item.ClassDisplayName))
+                        return item.ClassDisplayName;
+                }
+                catch { }
+
+                // 4. v1.3.0: InstanceGuid가 유효하면 사용
+                if (item.InstanceGuid != Guid.Empty)
+                    return item.InstanceGuid.ToString();
+
+                // 5. v1.3.0: Authoring ID 사용
+                var authoringId = GetAuthoringId(item);
+                if (!string.IsNullOrEmpty(authoringId))
+                    return authoringId;
+
+                // 6. 최종 폴백: "Unknown_Level_Index" 형식
+                return $"Unknown_{item.GetHashCode():X8}";
             }
             catch
             {
@@ -348,16 +556,25 @@ namespace DXTnavis.Services
 
         /// <summary>
         /// ModelItem을 HierarchyNodeViewModel으로 재귀적으로 변환하는 헬퍼 메서드
+        /// v1.3.0: Synthetic ID 사용
         /// </summary>
-        private HierarchyNodeViewModel ConvertToHierarchyNode(ModelItem item, int level)
+        private HierarchyNodeViewModel ConvertToHierarchyNode(ModelItem item, int level, string parentPath = "")
         {
             if (item == null || item.IsHidden)
                 return null;
 
+            string displayName = GetDisplayName(item);
+            string currentPath = string.IsNullOrEmpty(parentPath)
+                ? displayName
+                : $"{parentPath} > {displayName}";
+
+            // v1.3.0: Synthetic ID 사용
+            Guid objectId = GetStableObjectId(item, currentPath);
+
             var node = new HierarchyNodeViewModel
             {
-                ObjectId = item.InstanceGuid,
-                DisplayName = GetDisplayName(item),
+                ObjectId = objectId,
+                DisplayName = displayName,
                 Level = level,
                 HasGeometry = item.HasGeometry
             };
@@ -365,7 +582,7 @@ namespace DXTnavis.Services
             // 자식 노드 재귀적 변환
             foreach (ModelItem child in item.Children)
             {
-                var childNode = ConvertToHierarchyNode(child, level + 1);
+                var childNode = ConvertToHierarchyNode(child, level + 1, currentPath);
                 if (childNode != null)
                 {
                     node.Children.Add(childNode);
@@ -687,15 +904,18 @@ namespace DXTnavis.Services
             // 형상도 없고 속성도 없으면 자식만 탐색
             if (!currentItem.HasGeometry && !hasProperties)
             {
+                // v1.3.0: 컨테이너 노드도 Synthetic ID를 생성하여 계층 유지
+                Guid containerId = GetStableObjectId(currentItem, currentPath);
+
                 foreach (ModelItem child in currentItem.Children)
                 {
-                    TraverseAndExtractGroups(child, parentId, level + 1, results, currentPath);
+                    TraverseAndExtractGroups(child, containerId, level + 1, results, currentPath);
                 }
                 return;
             }
 
-            // 현재 객체의 고유 ID
-            Guid currentId = currentItem.InstanceGuid;
+            // v1.3.0: Synthetic ID 생성 - InstanceGuid가 Empty여도 안정적인 ID 보장
+            Guid currentId = GetStableObjectId(currentItem, currentPath);
 
             // ObjectGroupModel 생성
             var group = new ObjectGroupModel(currentId, displayName, level, currentPath, parentId);
@@ -794,11 +1014,10 @@ namespace DXTnavis.Services
                 results.Add(group);
             }
 
-            // 자식 순회
-            Guid childParentId = (currentId == Guid.Empty) ? parentId : currentId;
+            // 자식 순회 - v1.3.0: Synthetic ID로 currentId는 항상 유효
             foreach (ModelItem child in currentItem.Children)
             {
-                TraverseAndExtractGroups(child, childParentId, level + 1, results, currentPath);
+                TraverseAndExtractGroups(child, currentId, level + 1, results, currentPath);
             }
         }
 

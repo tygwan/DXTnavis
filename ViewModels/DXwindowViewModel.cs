@@ -592,6 +592,8 @@ namespace DXTnavis.ViewModels
         public ICommand ExportFullPipelineCommand { get; }         // All-in-One Export
         // Phase 18: Test Mesh Export
         public ICommand ExportTestMeshCommand { get; }             // Test Mesh GLB
+        // Phase 19: Mesh Diagnostic
+        public ICommand ExportMeshDiagnosticCommand { get; }       // Mesh Diagnostic CSV
         public ICommand CreateSearchSetCommand { get; }
         public ICommand LoadHierarchyCommand { get; }
         public ICommand ApplyFilterCommand { get; }
@@ -781,6 +783,11 @@ namespace DXTnavis.ViewModels
             // Phase 18: Test Mesh Export Command
             ExportTestMeshCommand = new AsyncRelayCommand(
                 execute: async _ => await ExportTestMeshAsync(),
+                canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
+
+            // Phase 19: Mesh Diagnostic Command
+            ExportMeshDiagnosticCommand = new AsyncRelayCommand(
+                execute: async _ => await ExportMeshDiagnosticAsync(),
                 canExecute: _ => Autodesk.Navisworks.Api.Application.ActiveDocument?.CurrentSelection?.SelectedItems?.Count > 0);
 
             CreateSearchSetCommand = new RelayCommand(

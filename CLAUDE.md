@@ -1,8 +1,9 @@
 # DXTnavis - Navisworks 2025 Property Viewer Plugin
 
 > **Context:** Standalone Navisworks plugin for property viewing and 3D control
-> **Version:** 1.0.0 (Grouped Data Structure)
+> **Version:** 1.1.0 (TimeLiner Enhancement) → 1.2.0 Planning
 > **Docs Index:** [docs/_INDEX.md](docs/_INDEX.md)
+> **Research Target:** EC3 2026 (Corfu), LDAC 2026 (Dubrovnik)
 
 ---
 
@@ -58,6 +59,7 @@ foreach (var item in items) collection.Add(item);  // 445K iterations = UI freez
 | 11 | Object Grouping MVP | ✅ 100% |
 | 12 | Grouped Data Structure | ✅ 100% |
 | **13** | **TimeLiner Enhancement** | 🚧 20% |
+| **14** | **BIM-Schedule Ontology Matcher** | 📋 Planning |
 
 **→ Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
@@ -83,6 +85,47 @@ foreach (var item in items) collection.Add(item);  // 445K iterations = UI freez
 ### Key Documents
 - [Phase 13 Document](docs/phases/phase-13-timeliner-enhancement.md)
 - [Sprint v1.1.0](docs/agile/SPRINT-v1.1.0.md)
+
+---
+
+## v1.2.0 BIM-Schedule Ontology Matcher (Phase 14) 📋
+
+### 🎯 목표: BIM-Schedule 자동 매칭 및 CWP 생성
+
+**Dual-Scenario Framework:**
+| Scenario | 상황 | 방법 | 목표 |
+|----------|------|------|------|
+| **A** | Schedule 존재 | Fellegi-Sunter + Hungarian | F1 ≥ 0.95 |
+| **B** | Schedule 미존재 | OR-Tools CP-SAT | Constraint ≥ 95% |
+
+### Features (Planned)
+- **확률적 매칭 엔진** - SyncID 실패 시 Fallback
+- **한국어 텍스트 처리** - 건설 용어 정규화 사전
+- **Blocking 서비스** - 445K→5K 후보 필터링
+- **CWP 자동 생성** - RCPSP 제약 프로그래밍
+
+### New Services (Planned)
+| Service | Description |
+|---------|-------------|
+| OntologyMatcherService | 메인 매칭 오케스트레이터 |
+| FellegiSunterMatcher | 확률적 매칭 (m/u 가중치) |
+| HungarianSolver | 최적 일대일 할당 O(n³) |
+| KoreanTextMatcher | 한국어 유사도 (FuzzySharp) |
+| BlockingService | Level/Category Blocking |
+| CWPGeneratorService | OR-Tools CP-SAT 솔버 |
+
+### NuGet Packages (Planned)
+| Package | Version | Purpose |
+|---------|---------|---------|
+| FuzzySharp | 2.0.2 | 문자열 유사도 |
+| HungarianAlgorithm | 2.0.0 | 최적 할당 |
+| Google.OrTools | 9.10.4067 | CP-SAT 솔버 |
+| dotNetRdf | 3.4.1 | RDF/SPARQL (선택) |
+
+### Key Documents
+- [Phase 14 Document](docs/phases/phase-14-ontology-matcher.md)
+- [Sprint v1.2.0](docs/agile/SPRINT-v1.2.0.md)
+- [Knowledge Base](../docs/knowledge/_INDEX.md)
 
 ---
 
@@ -207,9 +250,15 @@ dxtnavis/
 │   ├── SelectionSetService.cs        # Selection Set 생성 (v0.6.0)
 │   ├── TimeLinerService.cs           # TimeLiner Task 생성 (v0.6.0)
 │   ├── AWP4DAutomationService.cs     # 통합 파이프라인 (v0.6.0)
-│   ├── ObjectMatcher.cs              # SyncID 매칭 (v0.6.0)
+│   ├── ObjectMatcher.cs              # SyncID 매칭 (v0.6.0) ← 확장 예정
 │   ├── AWP4DValidator.cs             # 검증 (v0.6.0)
-│   └── ScheduleCsvParser.cs          # 스케줄 CSV 파싱 (v0.6.0)
+│   ├── ScheduleCsvParser.cs          # 스케줄 CSV 파싱 (v0.6.0)
+│   ├── OntologyMatcherService.cs     # 온톨로지 매칭 (v1.2.0) 📋
+│   ├── FellegiSunterMatcher.cs       # 확률적 매칭 (v1.2.0) 📋
+│   ├── HungarianSolver.cs            # 최적 할당 (v1.2.0) 📋
+│   ├── KoreanTextMatcher.cs          # 한국어 처리 (v1.2.0) 📋
+│   ├── BlockingService.cs            # 후보 필터링 (v1.2.0) 📋
+│   └── CWPGeneratorService.cs        # CWP 생성 (v1.2.0) 📋
 ├── ViewModels/            # MVVM ViewModels (Partial Class 패턴)
 │   ├── DXwindowViewModel.cs          # Core
 │   ├── DXwindowViewModel.Filter.cs   # 필터 기능
@@ -232,7 +281,11 @@ dxtnavis/
 │   ├── ScheduleData.cs               # 스케줄 데이터 (v0.6.0)
 │   ├── AWP4DOptions.cs               # 자동화 옵션 (v0.6.0)
 │   ├── AutomationResult.cs           # 실행 결과 (v0.6.0)
-│   └── ValidationResult.cs           # 검증 결과 (v0.6.0)
+│   ├── ValidationResult.cs           # 검증 결과 (v0.6.0)
+│   ├── MatchCandidate.cs             # 매칭 후보 (v1.2.0) 📋
+│   ├── MatchResult.cs                # 매칭 결과 (v1.2.0) 📋
+│   ├── FieldWeight.cs                # 필드 가중치 (v1.2.0) 📋
+│   └── CWPTask.cs                    # CWP 작업 (v1.2.0) 📋
 └── docs/
     ├── phases/
     │   └── phase-8-awp-4d-automation.md

@@ -1011,6 +1011,18 @@ namespace DXTnavis.ViewModels
                         item.DisplayName ?? "unknown", processed + 1, total);
 
                     var meshData = meshExtractor.ExtractMesh(item, record.ObjectId);
+
+                    // Phase 19: BBox fallback when tessellation fails
+                    if ((meshData == null || meshData.VertexCount == 0) && record.BBox != null && record.BBox.IsValid && !record.BBox.IsEmpty)
+                    {
+                        meshData = Services.Geometry.MeshExtractor.GenerateBoxMesh(record.BBox, record.ObjectId);
+                        if (meshData != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine(
+                                string.Format("[TestMesh] BBox fallback: {0}", item.DisplayName));
+                        }
+                    }
+
                     if (meshData != null && meshData.VertexCount > 0)
                     {
                         var glbPath = System.IO.Path.Combine(outputDir,
@@ -1026,6 +1038,9 @@ namespace DXTnavis.ViewModels
 
                     processed++;
                     ExportProgressPercentage = (int)(100.0 * processed / total);
+
+                    // COM STA message pump — ContextSwitchDeadlock 방지
+                    System.Windows.Forms.Application.DoEvents();
                 }
 
                 meshExtractor.Dispose();
@@ -1052,6 +1067,141 @@ namespace DXTnavis.ViewModels
             finally
             {
                 IsExporting = false;
+            }
+        }
+
+        #endregion
+
+        #region Mesh Diagnostic Export (Phase 19: 계층별 mesh 진단)
+
+        /// <summary>
+        /// Phase 19: 선택된 객체의 전체 계층을 순회하며 mesh 진단 CSV 생성
+        /// 각 노드별로 fragment 수, tessellation 성공/실패, transform 유무 등을 기록
+        /// </summary>
+        private async System.Threading.Tasks.Task ExportMeshDiagnosticAsync()
+        {
+            try
+            {
+                var doc = Autodesk.Navisworks.Api.Application.ActiveDocument;
+                if (doc == null)
+                {
+                    MessageBox.Show("Navisworks 문서가 열려있지 않습니다.", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var selection = doc.CurrentSelection.SelectedItems;
+                if (selection.Count == 0)
+                {
+                    MessageBox.Show("진단할 객체를 선택하세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var saveDialog = new SaveFileDialog
+                {
+                    Filter = "CSV 파일|*.csv",
+                    DefaultExt = "csv",
+                    FileName = string.Format("MeshDiag_{0:yyyyMMdd_HHmmss}", DateTime.Now)
+                };
+                if (saveDialog.ShowDialog() != true) return;
+
+                IsExporting = true;
+                ExportProgressPercentage = 0;
+                ExportStatusMessage = "Mesh 진단 시작...";
+
+                // 선택된 항목 + 모든 하위 항목 수집
+                var allNodes = new List<(ModelItem item, int depth, string path)>();
+                foreach (var item in selection)
+                {
+                    CollectHierarchyForDiag(item, 0, item.DisplayName ?? "Root", allNodes);
+                }
+
+                int total = allNodes.Count;
+                ExportStatusMessage = string.Format("Mesh 진단: {0}개 노드 분석 중...", total);
+
+                var lines = new List<string>();
+                lines.Add(Services.Geometry.MeshDiagnosticInfo.CsvHeader);
+
+                int processed = 0;
+                int okCount = 0, emptyTessCount = 0, noFragCount = 0, comFailCount = 0;
+
+                using (var meshExtractor = new Services.Geometry.MeshExtractor())
+                {
+                    foreach (var (item, depth, path) in allNodes)
+                    {
+                        var info = meshExtractor.DiagnoseMesh(item);
+                        lines.Add(info.ToCsvLine(depth, path));
+
+                        switch (info.Status)
+                        {
+                            case "OK": okCount++; break;
+                            case "EMPTY_TESS":
+                            case "TESS_FAIL": emptyTessCount++; break;
+                            case "NO_FRAGMENTS": noFragCount++; break;
+                            case "COM_FAIL": comFailCount++; break;
+                        }
+
+                        processed++;
+                        if (processed % 20 == 0 || processed == total)
+                        {
+                            ExportProgressPercentage = (int)(100.0 * processed / total);
+                            ExportStatusMessage = string.Format("Mesh 진단: {0}/{1} (OK:{2}, Empty:{3}, NoFrag:{4})",
+                                processed, total, okCount, emptyTessCount, noFragCount);
+                        }
+                    }
+                }
+
+                // 파일 저장
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    System.IO.File.WriteAllLines(saveDialog.FileName, lines, System.Text.Encoding.UTF8);
+                });
+
+                ExportProgressPercentage = 100;
+                ExportStatusMessage = "Mesh 진단 완료!";
+
+                MessageBox.Show(
+                    string.Format("Mesh Diagnostic 완료!\n\n"
+                        + "분석 노드: {0}개\n"
+                        + "── 결과 ──\n"
+                        + "  OK (mesh 추출 가능): {1}개\n"
+                        + "  EMPTY_TESS (tessellation 실패): {2}개\n"
+                        + "  NO_FRAGMENTS (fragment 없음): {3}개\n"
+                        + "  COM_FAIL (COM 변환 실패): {4}개\n\n"
+                        + "파일: {5}",
+                        total, okCount, emptyTessCount, noFragCount, comFailCount,
+                        System.IO.Path.GetFileName(saveDialog.FileName)),
+                    "Mesh Diagnostic",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ExportStatusMessage = string.Format("오류: {0}", ex.Message);
+                MessageBox.Show(string.Format("Mesh Diagnostic 오류:\n\n{0}", ex.Message), "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsExporting = false;
+            }
+        }
+
+        /// <summary>
+        /// 재귀적으로 계층 구조 수집 (진단용)
+        /// </summary>
+        private void CollectHierarchyForDiag(ModelItem item, int depth, string parentPath, List<(ModelItem, int, string)> result)
+        {
+            if (item == null) return;
+
+            string currentPath = parentPath;
+            result.Add((item, depth, currentPath));
+
+            if (item.Children != null)
+            {
+                foreach (var child in item.Children)
+                {
+                    string childPath = string.Format("{0} > {1}", currentPath, child.DisplayName ?? "?");
+                    CollectHierarchyForDiag(child, depth + 1, childPath, result);
+                }
             }
         }
 
@@ -1171,8 +1321,41 @@ namespace DXTnavis.ViewModels
                         {
                             ExportProgressPercentage = 40 + (int)(20.0 * meshProcessed / meshTotal);
                         }
+
+                        // COM STA message pump — ContextSwitchDeadlock 방지 (매 10회)
+                        if (meshProcessed % 10 == 0)
+                            System.Windows.Forms.Application.DoEvents();
                     }
                 }
+
+                // Phase 19: BBox Fallback — tessellation 실패 객체에 box mesh 생성
+                int fallbackCount = 0;
+                foreach (var kvp in geometries)
+                {
+                    if (!kvp.Value.HasMesh && kvp.Value.BBox != null && kvp.Value.BBox.IsValid && !kvp.Value.BBox.IsEmpty)
+                    {
+                        var boxMesh = Services.Geometry.MeshExtractor.GenerateBoxMesh(kvp.Value.BBox, kvp.Key);
+                        if (boxMesh != null)
+                        {
+                            var glbPath = System.IO.Path.Combine(meshDir,
+                                string.Format("{0}.glb", kvp.Key.ToString("D")));
+                            using (var fallbackWriter = new Services.Geometry.MeshExtractor())
+                            {
+                                fallbackWriter.SaveToGlb(boxMesh, glbPath);
+                            }
+                            kvp.Value.HasMesh = true;
+                            kvp.Value.MeshUri = string.Format("mesh/{0}.glb", kvp.Key.ToString("D"));
+                            fallbackCount++;
+                        }
+                    }
+                }
+                if (fallbackCount > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        string.Format("[FullPipeline] BBox fallback: {0} objects", fallbackCount));
+                    meshCount += fallbackCount;
+                }
+
                 ExportProgressPercentage = 60;
 
                 // Unified CSV (Stage 3 mesh 정보 반영된 geometry로 병합 → HasMesh/MeshUri 정확)
