@@ -6,19 +6,28 @@ const techItems = [
   { name: 'Navisworks API',   category: '.NET API',    color: 'from-orange-500 to-orange-400' },
   { name: 'ComAPI',           category: 'COM Interop', color: 'from-amber-500 to-amber-400' },
   { name: 'MVVM',             category: 'Pattern',     color: 'from-emerald-500 to-emerald-400' },
-  { name: 'Visual Studio',    category: 'IDE',         color: 'from-rose-500 to-rose-400' },
+  { name: 'glTF 2.0',         category: '3D Format',   color: 'from-rose-500 to-rose-400' },
+  { name: 'RDF / Turtle',     category: 'Ontology',    color: 'from-purple-500 to-purple-400' },
+  { name: 'Visual Studio',    category: 'IDE',         color: 'from-pink-500 to-pink-400' },
   { name: 'Navisworks 2025',  category: 'Host App',    color: 'from-cyan-500 to-cyan-400' },
 ];
 
 const versionHistory = [
-  { version: 'v0.9.0', date: '2026-01-20', feature: 'Object Grouping MVP' },
-  { version: 'v0.8.0', date: '2026-01-19', feature: 'Schedule Builder, Select All' },
-  { version: 'v0.6.0', date: '2026-01-11', feature: 'AWP 4D Automation Pipeline' },
-  { version: 'v0.5.0', date: '2026-01-09', feature: 'ViewModel Refactoring, CSV Viewer' },
-  { version: 'v0.4.0', date: '2026-01-08', feature: 'Object Search, 4-type CSV Export' },
-  { version: 'v0.3.0', date: '2026-01-06', feature: 'Tree Expand/Collapse, Level Badges' },
-  { version: 'v0.2.0', date: '2026-01-05', feature: '3D Selection, Visibility, Zoom' },
-  { version: 'v0.1.0', date: '2026-01-03', feature: 'Level Filter, SysPath Filter, TreeView' },
+  { version: 'v1.6.0', date: '2026-02-14', feature: '3D Mesh GLB Export (glTF 2.0)', highlight: true },
+  { version: 'v1.5.0', date: '2026-02-10', feature: 'Unified CSV + Spatial Connectivity', highlight: false },
+  { version: 'v1.4.0', date: '2026-02-06', feature: 'Geometry Export (BBox/Centroid/RDF)', highlight: false },
+  { version: 'v1.3.0', date: '2026-02-05', feature: 'Synthetic ID Generation', highlight: false },
+  { version: 'v1.2.0', date: '2026-01-21', feature: 'Direct TimeLiner Execution', highlight: false },
+  { version: 'v1.1.0', date: '2026-01-21', feature: 'TimeLiner Enhancement', highlight: false },
+  { version: 'v1.0.0', date: '2026-01-20', feature: 'Grouped Data Structure (445K→5K)', highlight: false },
+  { version: 'v0.9.0', date: '2026-01-20', feature: 'Object Grouping MVP', highlight: false },
+  { version: 'v0.8.0', date: '2026-01-19', feature: 'Schedule Builder, Select All', highlight: false },
+  { version: 'v0.6.0', date: '2026-01-11', feature: 'AWP 4D Automation Pipeline', highlight: false },
+  { version: 'v0.5.0', date: '2026-01-09', feature: 'ViewModel Refactoring, CSV Viewer', highlight: false },
+  { version: 'v0.4.0', date: '2026-01-08', feature: 'Object Search, 4-type CSV Export', highlight: false },
+  { version: 'v0.3.0', date: '2026-01-06', feature: 'Tree Expand/Collapse, Level Badges', highlight: false },
+  { version: 'v0.2.0', date: '2026-01-05', feature: '3D Selection, Visibility, Zoom', highlight: false },
+  { version: 'v0.1.0', date: '2026-01-03', feature: 'Level Filter, SysPath Filter, TreeView', highlight: false },
 ];
 
 const requirements = [
@@ -27,14 +36,24 @@ const requirements = [
   { label: 'Navisworks', value: 'Manage 2025' },
   { label: 'Platform', value: 'x64' },
 ];
+
+const outputFormats = [
+  { format: 'hierarchy.csv', desc: 'Model hierarchy', consumer: 'Excel, Python' },
+  { format: 'geometry.csv', desc: 'BBox + Centroid', consumer: 'GIS, 3D Viewer' },
+  { format: 'manifest.json', desc: 'Three.js compatible', consumer: 'Web 3D' },
+  { format: 'unified.csv', desc: '22-col schema', consumer: 'Knowledge Graph' },
+  { format: 'mesh/{uuid}.glb', desc: 'glTF 2.0 Binary', consumer: 'Three.js, Blender' },
+  { format: 'adjacency.csv', desc: 'Spatial relations', consumer: 'Network Analysis' },
+  { format: '*.ttl', desc: 'RDF Triples', consumer: 'SPARQL, Neo4j' },
+];
 ---
 
 <section id="techstack" class="py-24">
   <div class="mx-auto max-w-7xl px-6">
 
-    <h2 class="section-heading">Tech Stack</h2>
+    <h2 class="section-heading">Tech Stack & History</h2>
     <p class="section-sub">
-      기술 스택, 버전 히스토리, 시스템 요구사항
+      기술 스택, 15개 릴리스 히스토리, 출력 포맷, 시스템 요구사항
     </p>
 
     <!-- ========== Tech Stack Badges ========== -->
@@ -50,26 +69,47 @@ const requirements = [
       ))}
     </div>
 
-    <!-- ========== Version History ========== -->
-    <div class="mt-12 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/40">
-      <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">Version History</h3>
-      <div class="space-y-3">
-        {versionHistory.map((v, i) => (
-          <div class={`flex items-center gap-4 ${i === 0 ? '' : 'opacity-80'}`}>
-            <span class={`shrink-0 rounded-lg px-3 py-1 text-xs font-bold font-mono ${i === 0 ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' : 'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/40'}`}>
-              {v.version}
-            </span>
-            <div class="flex-1 flex items-center justify-between gap-2">
-              <span class="text-sm text-slate-700 dark:text-slate-300">{v.feature}</span>
-              <span class="text-xs text-slate-500 font-mono shrink-0">{v.date}</span>
+    <div class="mt-12 grid gap-6 lg:grid-cols-2">
+
+      <!-- ========== Version History ========== -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/40">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">Version History</h3>
+        <div class="space-y-2 max-h-[480px] overflow-y-auto pr-2">
+          {versionHistory.map((v) => (
+            <div class={`flex items-center gap-3 ${v.highlight ? '' : 'opacity-80'}`}>
+              <span class={`shrink-0 rounded-lg px-2.5 py-0.5 text-xs font-bold font-mono ${v.highlight ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' : 'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/40'}`}>
+                {v.version}
+              </span>
+              <div class="flex-1 flex items-center justify-between gap-2 min-w-0">
+                <span class="text-sm text-slate-700 dark:text-slate-300 truncate">{v.feature}</span>
+                <span class="text-[10px] text-slate-500 font-mono shrink-0">{v.date}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+
+      <!-- ========== Output Formats ========== -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/40">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">Output Formats</h3>
+        <div class="space-y-3">
+          {outputFormats.map((o) => (
+            <div class="flex items-center gap-3">
+              <span class="shrink-0 rounded px-2 py-0.5 text-xs font-mono bg-blue-500/15 text-blue-400 border border-blue-500/20 min-w-[120px] text-center">
+                {o.format}
+              </span>
+              <div class="flex-1">
+                <div class="text-sm text-slate-700 dark:text-slate-300">{o.desc}</div>
+                <div class="text-xs text-slate-500">{o.consumer}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
 
     <!-- ========== Requirements ========== -->
-    <div class="mt-12 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/40">
+    <div class="mt-8 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/40">
       <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">System Requirements</h3>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {requirements.map((r) => (

@@ -8,6 +8,22 @@ const pipelineSteps = [
   { label: 'TimeLiner Task',     color: 'blue',    desc: '.NET API', icon: '6' },
 ];
 
+const meshPipeline = [
+  { label: 'ModelItem',          color: 'sky',     desc: 'Navisworks Object', icon: '1' },
+  { label: 'COM Fragment',       color: 'violet',  desc: 'Late-binding', icon: '2' },
+  { label: 'Primitives',         color: 'orange',  desc: 'Vertex/Triangle', icon: '3' },
+  { label: 'LCS→WCS',            color: 'rose',    desc: '4x4 Matrix', icon: '4' },
+  { label: 'GLB File',           color: 'emerald', desc: 'glTF 2.0', icon: '5' },
+];
+
+const fullPipeline = [
+  { label: 'Hierarchy',  color: 'sky',     desc: 'CSV' },
+  { label: 'Geometry',   color: 'violet',  desc: 'BBox+CSV' },
+  { label: 'Mesh',       color: 'rose',    desc: 'GLB files' },
+  { label: 'Spatial',    color: 'orange',  desc: 'Adjacency+TTL' },
+  { label: 'Unified',    color: 'emerald', desc: '22-col CSV' },
+];
+
 const colorMap: Record<string, string> = {
   sky:     'bg-sky-500/10 border-sky-500/20 text-sky-400',
   violet:  'bg-violet-500/10 border-violet-500/20 text-violet-400',
@@ -18,19 +34,50 @@ const colorMap: Record<string, string> = {
 };
 
 const apiStrategy = [
-  { feature: 'Property Write', api: 'ComAPI', reason: '.NET API는 Read-Only' },
-  { feature: 'Selection Set', api: '.NET API', reason: 'AddCopy/InsertCopy 메서드' },
-  { feature: 'TimeLiner Task', api: '.NET API', reason: 'TasksCopyFrom 메서드' },
-  { feature: 'Property Read', api: '.NET API', reason: '표준 데이터 접근' },
-  { feature: '3D Viewport', api: '.NET API', reason: 'Selection, Visibility' },
+  { feature: 'Property Read',  api: '.NET API', reason: '표준 데이터 접근' },
+  { feature: 'Property Write',  api: 'ComAPI',  reason: '.NET API는 Read-Only' },
+  { feature: 'Selection Set',   api: '.NET API', reason: 'AddCopy/InsertCopy 메서드' },
+  { feature: 'TimeLiner Task',  api: '.NET API', reason: 'TasksCopyFrom 메서드' },
+  { feature: 'Mesh Extract',    api: 'ComAPI',  reason: 'GenerateSimplePrimitives()' },
+  { feature: '3D Viewport',     api: '.NET API', reason: 'Selection, Visibility' },
+  { feature: 'ViewPoint Save',  api: 'ComAPI',  reason: '.NET API 미지원' },
 ];
 
 const mvvmLayers = [
-  { layer: 'View', desc: 'DXwindow.xaml (WPF XAML)', detail: 'TabControl, TreeView, DataGrid, Buttons', icon: 'V' },
-  { layer: 'ViewModel', desc: 'Partial Class Pattern', detail: '5+ partial classes for separation of concerns', icon: 'VM' },
-  { layer: 'Model', desc: 'Data Models', detail: 'TreeNodeModel, PropertyInfo, ScheduleData', icon: 'M' },
-  { layer: 'Services', desc: 'Business Logic', detail: 'Extractor, Matcher, Writer, Validator', icon: 'S' },
+  { layer: 'View', desc: 'DXwindow.xaml (WPF XAML)', detail: 'TabControl, TreeView, DataGrid, 5 Tabs', icon: 'V' },
+  { layer: 'ViewModel', desc: 'Partial Class Pattern', detail: '7+ partial classes (Core, Filter, Search, Export...)', icon: 'VM' },
+  { layer: 'Model', desc: 'Data Models', detail: 'ObjectGroup, GeometryRecord, BBox3D, ScheduleData', icon: 'M' },
+  { layer: 'Services', desc: 'Business Logic', detail: 'Extractor, Matcher, MeshExtractor, Writer, Validator', icon: 'S' },
 ];
+
+const techDecisions = [
+  {
+    title: 'ComAPI Reverse Engineering',
+    desc: '.NET API의 Read-Only 제한을 ComAPI SetUserDefined()로 극복. Property Write와 Mesh Extract에 활용.',
+    accent: 'amber',
+  },
+  {
+    title: 'COM Late-Binding',
+    desc: 'GetLocalToWorldMatrix() COM 객체를 InvokeMember() 리플렉션으로 접근. 모든 fragment의 좌표 변환 가능.',
+    accent: 'rose',
+  },
+  {
+    title: 'Synthetic ID System',
+    desc: 'InstanceGuid가 Empty인 경우 MD5 해시 기반 결정적 GUID 생성. CATIA/PDMS 등 다양한 CAD 포맷 지원.',
+    accent: 'violet',
+  },
+];
+
+const tdAccents: Record<string, string> = {
+  amber: 'border-amber-500/20 bg-amber-500/5',
+  rose: 'border-rose-500/20 bg-rose-500/5',
+  violet: 'border-violet-500/20 bg-violet-500/5',
+};
+const tdTextColors: Record<string, string> = {
+  amber: 'text-amber-400',
+  rose: 'text-rose-400',
+  violet: 'text-violet-400',
+};
 ---
 
 <section id="architecture" class="py-24">
@@ -38,23 +85,26 @@ const mvvmLayers = [
 
     <h2 class="section-heading">Architecture</h2>
     <p class="section-sub">
-      MVVM 패턴, 하이브리드 API 전략, 6단계 자동화 파이프라인
+      MVVM 패턴, 하이브리드 API 전략, 5-Stage Full Pipeline, 3D Mesh Pipeline
     </p>
 
-    <!-- ========== AWP 4D Pipeline ========== -->
-    <div class="mt-12 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/40">
-      <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">AWP 4D Automation Pipeline</h3>
+    <!-- ========== Full Pipeline ========== -->
+    <div class="mt-12 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 sm:p-8">
+      <h3 class="text-lg font-semibold text-emerald-500 dark:text-emerald-400 mb-6 flex items-center gap-2">
+        <span class="flex h-6 w-6 items-center justify-center rounded bg-emerald-500/20 text-xs font-mono">F</span>
+        Full Pipeline Export (5 Stages)
+      </h3>
       <div class="flex flex-col items-center gap-2 sm:flex-row sm:gap-0 sm:justify-between">
-        {pipelineSteps.map((step, i) => (
+        {fullPipeline.map((step, i) => (
           <>
-            <div class={`rounded-lg border px-4 py-2.5 text-center ${colorMap[step.color]} w-full sm:w-auto`}>
-              <div class="text-xs font-mono opacity-60 mb-0.5">Step {step.icon}</div>
+            <div class={`rounded-lg border px-4 py-3 text-center ${colorMap[step.color]} w-full sm:w-auto sm:flex-1`}>
+              <div class="text-xs font-mono opacity-60 mb-0.5">Stage {i + 1}</div>
               <div class="text-sm font-medium">{step.label}</div>
               <div class="text-[10px] opacity-70 mt-0.5">{step.desc}</div>
             </div>
-            {i < pipelineSteps.length - 1 && (
+            {i < fullPipeline.length - 1 && (
               <>
-                <div class="hidden sm:block text-slate-400 dark:text-slate-600 px-2 text-lg">&rarr;</div>
+                <div class="hidden sm:block text-slate-400 dark:text-slate-600 px-1 text-lg shrink-0">&rarr;</div>
                 <div class="sm:hidden text-slate-400 dark:text-slate-600 text-lg">&darr;</div>
               </>
             )}
@@ -63,8 +113,56 @@ const mvvmLayers = [
       </div>
     </div>
 
-    <!-- ========== MVVM Architecture ========== -->
-    <div class="mt-12 grid gap-6 lg:grid-cols-2">
+    <!-- ========== AWP 4D + Mesh Pipeline ========== -->
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+
+      <!-- AWP 4D Pipeline -->
+      <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6">
+        <h3 class="text-lg font-semibold text-amber-500 dark:text-amber-400 mb-4 flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded bg-amber-500/20 text-xs font-mono">4D</span>
+          AWP 4D Pipeline
+        </h3>
+        <div class="space-y-2">
+          {pipelineSteps.map((step, i) => (
+            <div class="flex items-center gap-2">
+              <span class={`shrink-0 flex h-6 w-6 items-center justify-center rounded text-[10px] font-mono ${colorMap[step.color]}`}>{step.icon}</span>
+              <div class="flex-1 flex items-center justify-between">
+                <span class="text-sm text-slate-700 dark:text-slate-300">{step.label}</span>
+                <span class="text-[10px] text-slate-500">{step.desc}</span>
+              </div>
+              {i < pipelineSteps.length - 1 && (
+                <span class="text-slate-400 dark:text-slate-600 text-xs">→</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- 3D Mesh Pipeline -->
+      <div class="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6">
+        <h3 class="text-lg font-semibold text-rose-500 dark:text-rose-400 mb-4 flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded bg-rose-500/20 text-xs font-mono">3D</span>
+          3D Mesh Pipeline
+        </h3>
+        <div class="space-y-2">
+          {meshPipeline.map((step, i) => (
+            <div class="flex items-center gap-2">
+              <span class={`shrink-0 flex h-6 w-6 items-center justify-center rounded text-[10px] font-mono ${colorMap[step.color]}`}>{step.icon}</span>
+              <div class="flex-1 flex items-center justify-between">
+                <span class="text-sm text-slate-700 dark:text-slate-300">{step.label}</span>
+                <span class="text-[10px] text-slate-500">{step.desc}</span>
+              </div>
+              {i < meshPipeline.length - 1 && (
+                <span class="text-slate-400 dark:text-slate-600 text-xs">→</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== MVVM + API Strategy ========== -->
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
 
       <!-- MVVM Layers -->
       <div class="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-6">
@@ -87,15 +185,15 @@ const mvvmLayers = [
       </div>
 
       <!-- API Strategy -->
-      <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
-        <h3 class="text-lg font-semibold text-emerald-500 dark:text-emerald-400 mb-4 flex items-center gap-2">
-          <span class="flex h-6 w-6 items-center justify-center rounded bg-emerald-500/20 text-xs font-mono">A</span>
+      <div class="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-6">
+        <h3 class="text-lg font-semibold text-sky-500 dark:text-sky-400 mb-4 flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded bg-sky-500/20 text-xs font-mono">A</span>
           Hybrid API Strategy
         </h3>
-        <div class="space-y-3">
+        <div class="space-y-2">
           {apiStrategy.map((a) => (
             <div class="flex items-center gap-3">
-              <span class={`shrink-0 rounded px-2 py-0.5 text-xs font-mono ${a.api === 'ComAPI' ? 'bg-amber-500/15 text-amber-400' : 'bg-sky-500/15 text-sky-400'}`}>
+              <span class={`shrink-0 rounded px-2 py-0.5 text-xs font-mono ${a.api === 'ComAPI' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20' : 'bg-sky-500/15 text-sky-400 border border-sky-500/20'}`}>
                 {a.api}
               </span>
               <div class="flex-1">
@@ -108,13 +206,14 @@ const mvvmLayers = [
       </div>
     </div>
 
-    <!-- Key insight -->
-    <div class="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800/60 dark:bg-slate-900/40">
-      <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-        <span class="text-slate-800 dark:text-slate-200 font-medium">Key Insight:</span> Navisworks .NET API는 Property Read-Only 제한이 있습니다.
-        DXTnavis는 ComAPI를 통해 이 제한을 우회하여 Custom Property를 기입합니다.
-        Selection Set과 TimeLiner Task는 .NET API가 더 안정적이므로, 두 API를 용도에 맞게 조합하는 하이브리드 전략을 사용합니다.
-      </p>
+    <!-- ========== Technical Decisions ========== -->
+    <div class="mt-8 grid gap-4 md:grid-cols-3">
+      {techDecisions.map((td) => (
+          <div class={`rounded-xl border p-5 ${tdAccents[td.accent]}`}>
+            <h4 class={`text-sm font-semibold ${tdTextColors[td.accent]} mb-2`}>{td.title}</h4>
+            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{td.desc}</p>
+          </div>
+      ))}
     </div>
 
   </div>

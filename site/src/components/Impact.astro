@@ -1,0 +1,112 @@
+---
+const impactCards = [
+  {
+    label: 'Property Export',
+    before: { time: '4+ hours', desc: '수동 검색/복사/붙여넣기' },
+    after: { time: '5 min', desc: '원클릭 CSV Export' },
+    reduction: '98%',
+    accent: 'blue',
+  },
+  {
+    label: '4D Simulation Setup',
+    before: { time: '2+ days', desc: 'SyncID 매핑, Set/Task 수동 생성' },
+    after: { time: '10 min', desc: '6-Step 자동 파이프라인' },
+    reduction: '99%',
+    accent: 'amber',
+  },
+  {
+    label: '3D Geometry Export',
+    before: { time: 'N/A', desc: 'NWD에서 추출 도구 없음' },
+    after: { time: '15 min', desc: 'GLB 메시 + BBox + RDF' },
+    reduction: 'NEW',
+    accent: 'emerald',
+  },
+  {
+    label: 'Select All (445K)',
+    before: { time: '445K iter', desc: '개별 레코드 순회' },
+    after: { time: '~5K iter', desc: '그룹 단위 처리' },
+    reduction: '99%',
+    accent: 'rose',
+  },
+];
+
+const accentMap: Record<string, { border: string; bg: string; text: string; bar: string }> = {
+  blue:    { border: 'border-blue-500/20',    bg: 'bg-blue-500/8',    text: 'text-blue-400',    bar: 'from-blue-500 to-blue-400' },
+  amber:   { border: 'border-amber-500/20',   bg: 'bg-amber-500/8',   text: 'text-amber-400',   bar: 'from-amber-500 to-amber-400' },
+  emerald: { border: 'border-emerald-500/20', bg: 'bg-emerald-500/8', text: 'text-emerald-400', bar: 'from-emerald-500 to-emerald-400' },
+  rose:    { border: 'border-rose-500/20',    bg: 'bg-rose-500/8',    text: 'text-rose-400',    bar: 'from-rose-500 to-rose-400' },
+};
+---
+
+<section id="impact" class="py-24">
+  <div class="mx-auto max-w-7xl px-6">
+
+    <h2 class="section-heading">Impact</h2>
+    <p class="section-sub">
+      Before vs After: 수작업을 자동화로 전환한 시간 절감 효과
+    </p>
+
+    <div class="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {impactCards.map((card) => {
+        const a = accentMap[card.accent];
+        return (
+          <div class={`rounded-xl border ${a.border} ${a.bg} p-5 transition-all duration-300 hover:bg-opacity-20 card-glow`}>
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-semibold text-slate-900 dark:text-white">{card.label}</span>
+              <span class={`text-xs font-bold font-mono ${a.text} ${a.bg} border ${a.border} rounded-full px-2 py-0.5`}>
+                {card.reduction === 'NEW' ? 'NEW' : `${card.reduction} ↓`}
+              </span>
+            </div>
+
+            <!-- Before -->
+            <div class="mb-3">
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Before</div>
+              <div class="flex items-baseline gap-2">
+                <span class="text-lg font-bold font-mono text-slate-400 line-through">{card.before.time}</span>
+              </div>
+              <div class="text-xs text-slate-500 mt-0.5">{card.before.desc}</div>
+            </div>
+
+            <!-- After -->
+            <div>
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">After</div>
+              <div class="flex items-baseline gap-2">
+                <span class={`text-lg font-bold font-mono ${a.text}`}>{card.after.time}</span>
+              </div>
+              <div class="text-xs text-slate-500 mt-0.5">{card.after.desc}</div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="mt-4 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+              <div class={`h-full rounded-full bg-gradient-to-r ${a.bar}`} style="width: 100%"></div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- Summary stat -->
+    <div class="mt-8 rounded-xl border border-blue-500/20 bg-blue-500/5 p-5">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+        <div>
+          <div class="text-2xl font-bold font-mono text-blue-400">18</div>
+          <div class="text-xs text-slate-500 mt-1">Development Phases</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold font-mono text-emerald-400">48</div>
+          <div class="text-xs text-slate-500 mt-1">Days to Build</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold font-mono text-amber-400">12+</div>
+          <div class="text-xs text-slate-500 mt-1">Major Features</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold font-mono text-rose-400">50+</div>
+          <div class="text-xs text-slate-500 mt-1">Source Files</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>

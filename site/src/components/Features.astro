@@ -1,60 +1,33 @@
 ---
-const features = [
+const scenarios = [
   {
-    icon: 'H',
-    title: 'Hierarchy Navigation',
-    description: '모델 전체 계층 구조 TreeView 시각화. Level-based Expand/Collapse (L0~L10), 색상 배지, 노드 아이콘, 하위 개수 표시.',
-    accent: 'blue',
-    version: 'v0.1.0',
+    title: 'BIM Data Management',
+    subtitle: '445K+ 속성의 대규모 BIM 모델에서 데이터를 효율적으로 관리',
+    features: [
+      { icon: 'H', title: 'Hierarchy Navigation', description: '모델 전체 계층 구조 TreeView 시각화. Level-based Expand/Collapse (L0~L10), 색상 배지, 노드 아이콘.', accent: 'blue', version: 'v0.1.0' },
+      { icon: 'P', title: 'Property Viewer', description: '실시간 속성 표시 (Category → Property → Value). Level Filter, SysPath Filter, 445K+ 속성 처리 최적화.', accent: 'sky', version: 'v0.1.0' },
+      { icon: 'G', title: 'Object Grouping', description: '445K → ~5K 그룹 최적화. 체크박스 필터 UI, Expander 그룹화, 그룹 단위 Select All.', accent: 'violet', version: 'v1.0.0' },
+      { icon: 'C', title: 'CSV Import & Export', description: 'Raw + Refined CSV 동시 저장. 외부 CSV 로드, 컬럼별 필터링, UTF-8/EUC-KR 자동 감지.', accent: 'cyan', version: 'v0.4.0' },
+    ],
   },
   {
-    icon: 'P',
-    title: 'Property Viewer',
-    description: '실시간 속성 표시 (Category → Property → Value). Level Filter, SysPath Filter, 445K+ 속성 처리 최적화.',
-    accent: 'sky',
-    version: 'v0.1.0',
+    title: '4D Construction Simulation',
+    subtitle: '스케줄 CSV에서 Navisworks TimeLiner까지 원클릭 자동화',
+    features: [
+      { icon: '4D', title: 'AWP 4D Automation', description: 'CSV → Property Write → Selection Set → TimeLiner Task. SyncID 기반 자동 매칭, Dry Run 검증 모드.', accent: 'amber', version: 'v0.6.0' },
+      { icon: 'S', title: 'Schedule Builder', description: '선택된 객체에서 Schedule CSV 자동 생성. Task 설정, ParentSet 전략, 미리보기. 직접 TimeLiner 실행.', accent: 'emerald', version: 'v0.8.0' },
+      { icon: 'TL', title: 'TimeLiner Enhancement', description: 'TaskType 한글화 (구성/철거/임시), DateMode 옵션, 확장 ParentSet 전략 (6종). 7단계→3단계 워크플로우.', accent: 'orange', version: 'v1.2.0' },
+    ],
   },
   {
-    icon: 'C',
-    title: 'CSV Import & Export',
-    description: 'Raw + Refined CSV 동시 저장. 외부 CSV 로드, 컬럼별 필터링, 인코딩 자동 감지 (UTF-8, EUC-KR).',
-    accent: 'violet',
-    version: 'v0.4.0',
-  },
-  {
-    icon: '4D',
-    title: 'AWP 4D Automation',
-    description: 'CSV → Property Write → Selection Set → TimeLiner Task. SyncID 기반 자동 매칭, Dry Run 검증 모드.',
-    accent: 'amber',
-    version: 'v0.6.0',
-  },
-  {
-    icon: 'S',
-    title: 'Schedule Builder',
-    description: '선택된 객체에서 Schedule CSV 자동 생성. Task 설정, ParentSet 전략 (ByLevel, ByProperty, Custom), 미리보기.',
-    accent: 'emerald',
-    version: 'v0.8.0',
-  },
-  {
-    icon: 'G',
-    title: 'Object Grouping',
-    description: '객체별 속성 그룹화 (Expander UI). Flat/Grouped Mode 토글, 10K 미만 필터링 시 활성화, 그룹 선택 연동.',
-    accent: 'rose',
-    version: 'v0.9.0',
-  },
-  {
-    icon: '3D',
-    title: '3D Object Control',
-    description: 'Select in 3D, Show Only, Show All, Zoom, Reset Home. 필터링된 객체를 Navisworks 뷰포트에서 직접 제어.',
-    accent: 'cyan',
-    version: 'v0.2.0',
-  },
-  {
-    icon: 'Q',
-    title: 'Object Search',
-    description: '객체 이름, 속성값, SysPath 검색. 검색 결과 자동 3D 선택 연동 및 Zoom 기능.',
-    accent: 'orange',
-    version: 'v0.4.0',
+    title: '3D Geometry & Mesh Export',
+    subtitle: 'NWD에서 glTF 2.0 GLB 메시를 추출하여 웹 3D 뷰어와 연동',
+    features: [
+      { icon: '3D', title: '3D Mesh Export', description: 'COM API GenerateSimplePrimitives()로 GLB 추출. LCS→WCS 좌표 변환, Normal 정규화, BBox Fallback.', accent: 'rose', version: 'v1.6.0' },
+      { icon: 'BB', title: 'BBox Geometry', description: 'World 좌표계 AABB 추출. Centroid 자동 계산, manifest.json (Three.js/CesiumJS 호환), RDF/TTL 출력.', accent: 'blue', version: 'v1.4.0' },
+      { icon: 'SP', title: 'Spatial Analysis', description: 'BBox 인접성 검출 (Spatial Hash Grid), Union-Find 연결 컴포넌트, adjacency.csv + TTL 트리플.', accent: 'violet', version: 'v1.5.0' },
+      { icon: 'UC', title: 'Unified CSV', description: '22-column 통합 스키마 (1 row = 1 object). PropertiesJson, BBox, Centroid, MeshUri 포함.', accent: 'emerald', version: 'v1.5.0' },
+    ],
   },
 ];
 
@@ -68,6 +41,18 @@ const accentMap: Record<string, { border: string; bg: string; text: string; icon
   cyan:    { border: 'border-cyan-500/20',    bg: 'bg-cyan-500/8',    text: 'text-cyan-400',    iconBg: 'bg-cyan-500/15 text-cyan-400' },
   orange:  { border: 'border-orange-500/20',  bg: 'bg-orange-500/8',  text: 'text-orange-400',  iconBg: 'bg-orange-500/15 text-orange-400' },
 };
+
+const scenarioAccents = ['blue', 'amber', 'emerald'];
+const scenarioBorders: Record<string, string> = {
+  blue: 'border-blue-500/30',
+  amber: 'border-amber-500/30',
+  emerald: 'border-emerald-500/30',
+};
+const scenarioTextColors: Record<string, string> = {
+  blue: 'text-blue-400',
+  amber: 'text-amber-400',
+  emerald: 'text-emerald-400',
+};
 ---
 
 <section id="features" class="py-24">
@@ -75,27 +60,58 @@ const accentMap: Record<string, { border: string; bg: string; text: string; icon
 
     <h2 class="section-heading">Features</h2>
     <p class="section-sub">
-      BIM 속성 관리부터 4D 자동화까지, 11개 개발 단계를 거쳐 완성된 기능들
+      18개 개발 단계를 거쳐 완성된 기능들을 시나리오별로 그룹화
     </p>
 
-    <div class="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {features.map((f) => {
-        const a = accentMap[f.accent];
-        return (
-          <div class={`group rounded-xl border ${a.border} ${a.bg} p-5 transition-all duration-300 hover:bg-opacity-20 card-glow`}>
-            <div class="flex items-center justify-between mb-3">
-              <span class={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold font-mono ${a.iconBg}`}>
-                {f.icon}
-              </span>
-              <span class={`text-[10px] font-mono ${a.text} ${a.bg} border ${a.border} rounded-full px-2 py-0.5`}>
-                {f.version}
-              </span>
-            </div>
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-2">{f.title}</h3>
-            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{f.description}</p>
+    {scenarios.map((scenario, si) => {
+      const sAccent = scenarioAccents[si];
+      return (
+        <div class="mt-12">
+          <!-- Scenario header -->
+          <div class={`flex items-center gap-3 mb-2`}>
+            <span class={`flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold font-mono bg-${sAccent}-500/15 ${scenarioTextColors[sAccent]}`}>
+              {si + 1}
+            </span>
+            <h3 class={`text-lg font-semibold ${scenarioTextColors[sAccent]}`}>{scenario.title}</h3>
           </div>
-        );
-      })}
+          <p class="text-sm text-slate-500 mb-4 ml-10">{scenario.subtitle}</p>
+
+          <div class={`grid gap-4 sm:grid-cols-2 xl:grid-cols-${scenario.features.length}`}>
+            {scenario.features.map((f) => {
+              const a = accentMap[f.accent];
+              return (
+                <div class={`group rounded-xl border ${a.border} ${a.bg} p-5 transition-all duration-300 hover:bg-opacity-20 card-glow`}>
+                  <div class="flex items-center justify-between mb-3">
+                    <span class={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold font-mono ${a.iconBg}`}>
+                      {f.icon}
+                    </span>
+                    <span class={`text-[10px] font-mono ${a.text} ${a.bg} border ${a.border} rounded-full px-2 py-0.5`}>
+                      {f.version}
+                    </span>
+                  </div>
+                  <h4 class="text-sm font-semibold text-slate-900 dark:text-white mb-2">{f.title}</h4>
+                  <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{f.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    })}
+
+    <!-- Extra features row -->
+    <div class="mt-12">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold font-mono bg-cyan-500/15 text-cyan-400">+</span>
+        <h3 class="text-lg font-semibold text-cyan-400">3D Viewport & Utilities</h3>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
+        {['Select in 3D', 'Show Only', 'Show All', 'Zoom', 'Reset Home'].map((label) => (
+          <div class="rounded-lg border border-cyan-500/20 bg-cyan-500/8 p-3 text-center">
+            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+          </div>
+        ))}
+      </div>
     </div>
 
   </div>

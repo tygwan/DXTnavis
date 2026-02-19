@@ -13,6 +13,12 @@ const problems = [
     accent: 'amber',
   },
   {
+    icon: '3D',
+    title: '3D 형상 추출의 불가능',
+    description: 'NWD 파일에서 3D 메시를 추출하는 공식 도구가 없습니다. COM API의 미문서화된 GenerateSimplePrimitives()와 LCS→WCS 좌표 변환을 직접 구현해야 합니다.',
+    accent: 'rose',
+  },
+  {
     icon: 'A',
     title: 'AWP 자동화 필요성',
     description: 'Advanced Work Packaging 기반 4D 시뮬레이션은 BIM 데이터와 스케줄의 정확한 연동이 필수입니다. 수동 매핑은 오류가 잦고 대규모 프로젝트에서 비현실적입니다.',
@@ -24,12 +30,14 @@ const accentMap: Record<string, string> = {
   blue: 'border-blue-500/20 bg-blue-500/8 text-blue-400',
   amber: 'border-amber-500/20 bg-amber-500/8 text-amber-400',
   emerald: 'border-emerald-500/20 bg-emerald-500/8 text-emerald-400',
+  rose: 'border-rose-500/20 bg-rose-500/8 text-rose-400',
 };
 
 const iconBgMap: Record<string, string> = {
   blue: 'bg-blue-500/15 text-blue-400',
   amber: 'bg-amber-500/15 text-amber-400',
   emerald: 'bg-emerald-500/15 text-emerald-400',
+  rose: 'bg-rose-500/15 text-rose-400',
 };
 ---
 
@@ -38,10 +46,10 @@ const iconBgMap: Record<string, string> = {
 
     <h2 class="section-heading">Why DXTnavis?</h2>
     <p class="section-sub">
-      BIM 프로젝트 관리에서 반복되는 수작업을 자동화하기 위해 만들었습니다
+      BIM 프로젝트 관리에서 반복되는 수작업과 기술적 한계를 자동화로 극복합니다
     </p>
 
-    <div class="mt-12 grid gap-6 md:grid-cols-3">
+    <div class="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
       {problems.map((p) => (
         <div class={`rounded-xl border p-6 transition hover:bg-opacity-20 card-glow ${accentMap[p.accent]}`}>
           <div class="flex items-center gap-3 mb-4">
@@ -59,7 +67,7 @@ const iconBgMap: Record<string, string> = {
     <div class="mt-8 rounded-xl border border-blue-500/20 bg-blue-500/5 p-5">
       <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
         <span class="text-slate-800 dark:text-slate-200 font-medium">Solution:</span> DXTnavis는 Navisworks 2025 네이티브 플러그인으로,
-        계층 탐색 + 속성 필터링 + 3D 제어 + CSV 관리 + AWP 4D 자동화를 하나의 통합 인터페이스에서 제공합니다.
+        계층 탐색 + 속성 필터링 + 3D 제어 + CSV 관리 + AWP 4D 자동화 + <span class="text-slate-800 dark:text-slate-200 font-medium">3D GLB 메시 추출</span>을 하나의 통합 인터페이스에서 제공합니다.
         .NET API와 ComAPI를 결합한 하이브리드 아키텍처로 Navisworks의 기본 제한을 극복합니다.
       </p>
     </div>
