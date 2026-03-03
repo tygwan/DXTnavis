@@ -40,6 +40,20 @@ namespace DXTnavis.Services.Geometry
 
         #endregion
 
+        #region Phase 25: Failure Tracking
+
+        /// <summary>
+        /// 마지막 ExtractMesh() 호출의 실패 이유 (성공 시 None)
+        /// </summary>
+        public TessFailureReason LastFailureReason { get; private set; }
+
+        /// <summary>
+        /// 마지막 실패 시 추가 진단 정보 (fragment 수, error message 등)
+        /// </summary>
+        public string LastFailureDetail { get; private set; }
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
@@ -50,16 +64,50 @@ namespace DXTnavis.Services.Geometry
         /// <returns>MeshData (실패 시 null)</returns>
         public MeshData ExtractMesh(ModelItem item, Guid objectId)
         {
+            // Phase 25: Reset failure tracking
+            LastFailureReason = TessFailureReason.None;
+            LastFailureDetail = null;
+
             if (item == null || objectId == Guid.Empty)
                 return null;
 
             try
             {
+                // ──── Phase 21: 진단 로깅 ────
+                string displayName = item.DisplayName ?? "(unnamed)";
+                string classDisplay = item.ClassDisplayName ?? "(no class)";
+                bool isLeaf = item.Children == null || !item.Children.Any();
+                bool hasGeom = item.HasGeometry;
+                bool isHidden = item.IsHidden;
+
+                Debug.WriteLine($"[TESS_ATTEMPT] ObjectId={objectId:D}, Name={displayName}, Class={classDisplay}, IsLeaf={isLeaf}");
+                Debug.WriteLine($"[TESS_INFO] HasGeometry={hasGeom}, IsHidden={isHidden}, ClassDisplay={classDisplay}");
+
+                // Phase 25: HasGeometry=false → 가시적 geometry가 없는 객체
+                if (!hasGeom)
+                {
+                    LastFailureReason = TessFailureReason.NoGeometry;
+                    LastFailureDetail = string.Format("Name={0}, Class={1}", displayName, classDisplay);
+                    Debug.WriteLine($"[TESS_SKIP] ObjectId={objectId:D} → HasGeometry=false: {displayName}");
+                    return null;
+                }
+
+                // Phase 25: Hidden 객체 → Navisworks 뷰어에서 안 보이는 객체
+                if (isHidden)
+                {
+                    LastFailureReason = TessFailureReason.Hidden;
+                    LastFailureDetail = string.Format("Name={0}, Class={1}", displayName, classDisplay);
+                    Debug.WriteLine($"[TESS_SKIP] ObjectId={objectId:D} → IsHidden=true: {displayName}");
+                    return null;
+                }
+
                 // COM API 상태 가져오기
                 var comState = ComApiBridge.State;
                 if (comState == null)
                 {
-                    Debug.WriteLine("[MeshExtractor] COM API State is null");
+                    LastFailureReason = TessFailureReason.ComStateNull;
+                    LastFailureDetail = displayName;
+                    Debug.WriteLine($"[TESS_FALLBACK] ObjectId={objectId:D} → COM State null");
                     return null;
                 }
 
@@ -67,7 +115,9 @@ namespace DXTnavis.Services.Geometry
                 var comPath = ComApiBridge.ToInwOaPath(item);
                 if (comPath == null)
                 {
-                    Debug.WriteLine($"[MeshExtractor] Failed to convert to COM path: {item.DisplayName}");
+                    LastFailureReason = TessFailureReason.ComPathFailed;
+                    LastFailureDetail = displayName;
+                    Debug.WriteLine($"[TESS_FALLBACK] ObjectId={objectId:D} → COM path conversion failed for: {displayName}");
                     return null;
                 }
 
@@ -83,9 +133,10 @@ namespace DXTnavis.Services.Geometry
                 // Fragment Callback을 통해 Mesh 추출
                 var callback = new MeshCallbackSink(meshData);
 
-                // Phase 19: Diagnostic counters
+                // Phase 19+21: Diagnostic counters
                 int fragmentCount = 0;
                 int emptyFragmentCount = 0;
+                int retrySuccessCount = 0;
 
                 foreach (InwOaFragment3 fragment in comPath.Fragments())
                 {
@@ -100,7 +151,7 @@ namespace DXTnavis.Services.Geometry
                         // 진단: 첫 fragment의 transform 행렬 출력
                         if (fragmentCount == 1 && transform != null)
                         {
-                            Debug.WriteLine($"[MeshExtractor] {item.DisplayName} frag0 transform: " +
+                            Debug.WriteLine($"[MeshExtractor] {displayName} frag0 transform: " +
                                 $"[{transform[0]:F4},{transform[1]:F4},{transform[2]:F4},{transform[3]:F4}] " +
                                 $"[{transform[4]:F4},{transform[5]:F4},{transform[6]:F4},{transform[7]:F4}] " +
                                 $"[{transform[8]:F4},{transform[9]:F4},{transform[10]:F4},{transform[11]:F4}] " +
@@ -110,21 +161,83 @@ namespace DXTnavis.Services.Geometry
                         int vertexCountBefore = meshData.Vertices.Count;
                         int indexCountBefore = meshData.Indices.Count;
 
-                        // GenerateSimplePrimitives로 삼각형 데이터 추출
-                        fragment.GenerateSimplePrimitives(
-                            nwEVertexProperty.eNORMAL,  // 노말 포함
-                            callback);
+                        // ──── Phase 21: Multi-strategy tessellation retry chain ────
+                        // Strategy 1: eNORMAL (standard with normals)
+                        fragment.GenerateSimplePrimitives(nwEVertexProperty.eNORMAL, callback);
 
-                        // Phase 20: 빈 fragment → nwEVertexProperty 변경하여 재시도
-                        // 일부 파라메트릭 프리미티브(dome, dish head 등)는 eNORMAL로 tessellation 실패
+                        // Strategy 2: No vertex properties (parametric primitives fallback)
                         if (meshData.Indices.Count == indexCountBefore)
                         {
                             fragment.GenerateSimplePrimitives((nwEVertexProperty)0, callback);
                         }
 
-                        // Diagnostic: 재시도 후에도 빈 fragment 감지
+                        // Strategy 3: eCOLOR — some fragments respond to color property request
                         if (meshData.Indices.Count == indexCountBefore)
+                        {
+                            try
+                            {
+                                fragment.GenerateSimplePrimitives(nwEVertexProperty.eCOLOR, callback);
+                                if (meshData.Indices.Count > indexCountBefore)
+                                    retrySuccessCount++;
+                            }
+                            catch { /* eCOLOR not supported for this fragment type */ }
+                        }
+
+                        // Strategy 4: eTEX_COORD (0x4) — texture coordinate request triggers tessellation
+                        if (meshData.Indices.Count == indexCountBefore)
+                        {
+                            try
+                            {
+                                fragment.GenerateSimplePrimitives((nwEVertexProperty)4, callback);
+                                if (meshData.Indices.Count > indexCountBefore)
+                                    retrySuccessCount++;
+                            }
+                            catch { /* eTEX_COORD not supported for this fragment type */ }
+                        }
+
+                        // Strategy 5: Combined properties (eNORMAL | eCOLOR)
+                        if (meshData.Indices.Count == indexCountBefore)
+                        {
+                            try
+                            {
+                                fragment.GenerateSimplePrimitives(
+                                    nwEVertexProperty.eNORMAL | nwEVertexProperty.eCOLOR, callback);
+                                if (meshData.Indices.Count > indexCountBefore)
+                                    retrySuccessCount++;
+                            }
+                            catch { /* Combined properties not supported */ }
+                        }
+
+                        // Strategy 6: eNORMAL | eTEX_COORD (0x5)
+                        if (meshData.Indices.Count == indexCountBefore)
+                        {
+                            try
+                            {
+                                fragment.GenerateSimplePrimitives((nwEVertexProperty)5, callback);
+                                if (meshData.Indices.Count > indexCountBefore)
+                                    retrySuccessCount++;
+                            }
+                            catch { /* eNORMAL|eTEX_COORD not supported */ }
+                        }
+
+                        // Strategy 7: All flags combined (0x7 = eNORMAL | eCOLOR | eTEX_COORD)
+                        if (meshData.Indices.Count == indexCountBefore)
+                        {
+                            try
+                            {
+                                fragment.GenerateSimplePrimitives((nwEVertexProperty)7, callback);
+                                if (meshData.Indices.Count > indexCountBefore)
+                                    retrySuccessCount++;
+                            }
+                            catch { /* All flags combined not supported */ }
+                        }
+
+                        // Diagnostic: 모든 재시도 후에도 빈 fragment 감지
+                        if (meshData.Indices.Count == indexCountBefore)
+                        {
                             emptyFragmentCount++;
+                            Debug.WriteLine($"[TESS_EMPTY_FRAG] ObjectId={objectId:D}, Fragment#{fragmentCount}, Name={displayName}, Class={classDisplay}");
+                        }
 
                         // Phase 19: LCS→WCS 변환 적용
                         int newVertexCount = (meshData.Vertices.Count - vertexCountBefore) / 3;
@@ -140,7 +253,7 @@ namespace DXTnavis.Services.Geometry
                                     if (vz < bMinZ) bMinZ = vz;
                                     if (vz > bMaxZ) bMaxZ = vz;
                                 }
-                                Debug.WriteLine($"[MeshExtractor] {item.DisplayName} frag0 BEFORE transform Z-range: [{bMinZ:F4}..{bMaxZ:F4}]");
+                                Debug.WriteLine($"[MeshExtractor] {displayName} frag0 BEFORE transform Z-range: [{bMinZ:F4}..{bMaxZ:F4}]");
                             }
 
                             TransformVertices(meshData.Vertices, vertexCountBefore, newVertexCount, transform);
@@ -155,21 +268,32 @@ namespace DXTnavis.Services.Geometry
                                     if (vz < aMinZ) aMinZ = vz;
                                     if (vz > aMaxZ) aMaxZ = vz;
                                 }
-                                Debug.WriteLine($"[MeshExtractor] {item.DisplayName} frag0 AFTER  transform Z-range: [{aMinZ:F4}..{aMaxZ:F4}]");
+                                Debug.WriteLine($"[MeshExtractor] {displayName} frag0 AFTER  transform Z-range: [{aMinZ:F4}..{aMaxZ:F4}]");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"[MeshExtractor] Fragment error: {ex.Message}");
+                        Debug.WriteLine($"[MeshExtractor] Fragment error for {displayName}: {ex.Message}");
                     }
                 }
 
-                // Diagnostic summary
-                Debug.WriteLine($"[MeshExtractor] {item.DisplayName}: {fragmentCount} fragments, {emptyFragmentCount} empty, {meshData.Indices.Count / 3} triangles");
+                // ──── Phase 21: Comprehensive diagnostic summary ────
+                int triangleCount = meshData.Indices.Count / 3;
+                Debug.WriteLine($"[TESS_RESULT] ObjectId={objectId:D}, Name={displayName}, " +
+                    $"Fragments={fragmentCount}, Empty={emptyFragmentCount}, RetrySuccess={retrySuccessCount}, " +
+                    $"Vertices={meshData.Vertices.Count / 3}, Triangles={triangleCount}, Lines={callback.LineCount}");
+
+                // ──── Phase 25: Line→Tube 변환 ────
+                // Triangle이 전혀 없고 Line만 있는 경우 → Line을 tube mesh로 변환
+                // Triangle이 있는 객체의 Line은 무시 (실제 mesh와 보조 wireframe이므로 중복 방지)
+                if (callback.LineCount > 0 && meshData.Indices.Count == 0)
+                {
+                    callback.ConvertLinesToMesh(0.005f);
+                    Debug.WriteLine($"[MeshExtractor] {displayName}: Line→Tube conversion: {callback.LineCount} lines → {meshData.Indices.Count / 3} triangles");
+                }
 
                 // Phase 20: Gap mesh — tessellation 실패 fragment의 누락 영역을 item BBox로 보충
-                // 부분 성공(일부 fragment OK, 일부 empty)인 경우: vertex AABB vs item BBox 비교하여 미커버 영역 채움
                 if (emptyFragmentCount > 0 && meshData.Vertices.Count >= 9)
                 {
                     try
@@ -182,20 +306,32 @@ namespace DXTnavis.Services.Geometry
                             int gapTris = (meshData.Indices.Count - gapTrisBefore) / 3;
                             if (gapTris > 0)
                             {
-                                Debug.WriteLine($"[MeshExtractor] {item.DisplayName}: Gap mesh +{gapTris} triangles for {emptyFragmentCount} empty fragments");
+                                Debug.WriteLine($"[MeshExtractor] {displayName}: Gap mesh +{gapTris} triangles for {emptyFragmentCount} empty fragments");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"[MeshExtractor] Gap mesh error for {item.DisplayName}: {ex.Message}");
+                        Debug.WriteLine($"[MeshExtractor] Gap mesh error for {displayName}: {ex.Message}");
                     }
                 }
 
                 // 최소 삼각형이 있는지 확인
                 if (meshData.Vertices.Count < 9 || meshData.Indices.Count < 3)
                 {
-                    Debug.WriteLine($"[MeshExtractor] No valid mesh data for: {item.DisplayName}");
+                    // Phase 25: 실패 이유 분류
+                    if (fragmentCount == 0)
+                    {
+                        LastFailureReason = TessFailureReason.NoFragments;
+                        LastFailureDetail = string.Format("Name={0}, Class={1}", displayName, classDisplay);
+                    }
+                    else
+                    {
+                        LastFailureReason = TessFailureReason.AllStrategiesFail;
+                        LastFailureDetail = string.Format("Name={0}, Class={1}, Fragments={2}, Empty={3}, Lines={4}",
+                            displayName, classDisplay, fragmentCount, emptyFragmentCount, callback.LineCount);
+                    }
+                    Debug.WriteLine($"[TESS_FALLBACK] ObjectId={objectId:D}, Name={displayName} → No valid mesh. Fragments={fragmentCount}, Empty={emptyFragmentCount}, Lines={callback.LineCount}. Reason: {LastFailureReason}");
                     return null;
                 }
 
@@ -204,6 +340,18 @@ namespace DXTnavis.Services.Geometry
 
                 meshData.VertexCount = meshData.Vertices.Count / 3;
                 meshData.TriangleCount = meshData.Indices.Count / 3;
+
+                // ──── Phase 21+25: MeshQuality 메타데이터 설정 ────
+                // Phase 25: Line-only fragment → tube mesh 변환된 경우
+                if (callback.LineCount > 0 && emptyFragmentCount == fragmentCount
+                    && meshData.Indices.Count > 0)
+                    meshData.Quality = "line_mesh";
+                else if (emptyFragmentCount > 0 && retrySuccessCount > 0)
+                    meshData.Quality = "partial_retry_success";
+                else if (emptyFragmentCount > 0)
+                    meshData.Quality = "gap_supplemented";
+                else
+                    meshData.Quality = "full_mesh";
 
                 // 진단: vertex 범위 출력 (납작한 판 문제 디버깅)
                 {
@@ -216,19 +364,23 @@ namespace DXTnavis.Services.Geometry
                         if (y < yMin) yMin = y; if (y > yMax) yMax = y;
                         if (z < zMin) zMin = z; if (z > zMax) zMax = z;
                     }
-                    Debug.WriteLine($"[MeshExtractor] {item.DisplayName}: bounds X[{xMin:F4}..{xMax:F4}] Y[{yMin:F4}..{yMax:F4}] Z[{zMin:F4}..{zMax:F4}] range=({xMax - xMin:F4}, {yMax - yMin:F4}, {zMax - zMin:F4})");
+                    Debug.WriteLine($"[MeshExtractor] {displayName}: bounds X[{xMin:F4}..{xMax:F4}] Y[{yMin:F4}..{yMax:F4}] Z[{zMin:F4}..{zMax:F4}] range=({xMax - xMin:F4}, {yMax - yMin:F4}, {zMax - zMin:F4})");
                 }
 
                 return meshData;
             }
             catch (COMException comEx)
             {
-                Debug.WriteLine($"[MeshExtractor] COM Error: {comEx.Message}");
+                LastFailureReason = TessFailureReason.Exception;
+                LastFailureDetail = string.Format("COM: {0}", comEx.Message);
+                Debug.WriteLine($"[TESS_FALLBACK] ObjectId={objectId:D} → COM Error: {comEx.Message}");
                 return null;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[MeshExtractor] Error extracting mesh: {ex.Message}");
+                LastFailureReason = TessFailureReason.Exception;
+                LastFailureDetail = ex.Message;
+                Debug.WriteLine($"[TESS_FALLBACK] ObjectId={objectId:D} → Error: {ex.Message}");
                 return null;
             }
         }
@@ -332,6 +484,183 @@ namespace DXTnavis.Services.Geometry
                 {
                     info.ComPathFailed = true;
                 }
+            }
+            catch (Exception ex)
+            {
+                info.LastError = ex.Message;
+            }
+
+            return info;
+        }
+
+        /// <summary>
+        /// Phase 22: Deep Diagnostic — 5개 전략을 개별 테스트하고 Line/Point/SnapPoint도 캡처
+        /// 실패 원인을 정확히 식별하기 위한 상세 진단
+        /// </summary>
+        public MeshDiagnosticInfo DeepDiagnoseMesh(ModelItem item)
+        {
+            var info = new MeshDiagnosticInfo
+            {
+                DisplayName = item?.DisplayName ?? "(null)",
+                IsLeaf = item?.Children == null || !item.Children.Any(),
+                HasGeometry = item?.HasGeometry ?? false,
+                ChildCount = 0
+            };
+
+            if (item == null) return info;
+
+            try { info.ChildCount = item.Children?.Count() ?? 0; } catch { }
+            try { info.ClassDisplayName = item.ClassDisplayName ?? ""; } catch { }
+            try { info.IsHidden = item.IsHidden; } catch { }
+
+            // 소스 모델 파일 이름
+            try
+            {
+                if (item.Model != null)
+                    info.SourceFile = item.Model.FileName ?? "";
+            }
+            catch { }
+
+            // 속성 카테고리 목록
+            try
+            {
+                var cats = new List<string>();
+                foreach (var cat in item.PropertyCategories)
+                {
+                    if (cat != null && !string.IsNullOrEmpty(cat.DisplayName))
+                        cats.Add(cat.DisplayName);
+                }
+                info.PropertyCategories = string.Join("|", cats);
+            }
+            catch { }
+
+            // BBox 정보
+            try
+            {
+                var bbox = item.BoundingBox();
+                info.HasBBox = bbox != null && !bbox.IsEmpty;
+                if (info.HasBBox)
+                {
+                    info.BBoxVolume = (bbox.Max.X - bbox.Min.X) *
+                                     (bbox.Max.Y - bbox.Min.Y) *
+                                     (bbox.Max.Z - bbox.Min.Z);
+                }
+            }
+            catch { }
+
+            // COM API Deep Fragment 분석
+            try
+            {
+                var comPath = ComApiBridge.ToInwOaPath(item);
+                if (comPath == null)
+                {
+                    info.ComPathFailed = true;
+                    return info;
+                }
+
+                // Parent 노드: fragment 수만 세기
+                if (!info.IsLeaf)
+                {
+                    foreach (InwOaFragment3 fragment in comPath.Fragments())
+                    {
+                        if (fragment == null) continue;
+                        info.FragmentCount++;
+                        if (info.FragmentCount >= 100)
+                        {
+                            info.LastError = "fragment count capped at 100+ (parent node)";
+                            break;
+                        }
+                    }
+                    return info;
+                }
+
+                // ──── Leaf 노드: 5개 전략 개별 테스트 ────
+                var diagCallback = new DiagnosticCallbackSink();
+                var strategyTriangles = new int[5];
+                var strategyLines = new int[5];
+
+                // nwEVertexProperty 전략 배열
+                var strategies = new[]
+                {
+                    nwEVertexProperty.eNORMAL,                                    // S1: eNORMAL
+                    (nwEVertexProperty)0,                                          // S2: None
+                    nwEVertexProperty.eCOLOR,                                      // S3: eCOLOR
+                    (nwEVertexProperty)2,                                           // S4: flag 2
+                    nwEVertexProperty.eNORMAL | nwEVertexProperty.eCOLOR           // S5: combined
+                };
+
+                foreach (InwOaFragment3 fragment in comPath.Fragments())
+                {
+                    if (fragment == null) continue;
+                    info.FragmentCount++;
+
+                    // Fragment COM 타입명 캡처 (첫 fragment만)
+                    if (info.FragmentCount == 1)
+                    {
+                        try { info.FragmentTypeName = fragment.GetType().FullName ?? fragment.GetType().Name; }
+                        catch { info.FragmentTypeName = "unknown"; }
+                    }
+
+                    // Transform 확인
+                    try
+                    {
+                        var transform = GetFragmentTransform(fragment);
+                        if (transform != null)
+                            info.HasNonIdentityTransform = true;
+                    }
+                    catch { }
+
+                    // 5개 전략 개별 테스트
+                    bool anyTriangles = false;
+                    for (int si = 0; si < strategies.Length; si++)
+                    {
+                        diagCallback.Reset();
+                        try
+                        {
+                            fragment.GenerateSimplePrimitives(strategies[si], diagCallback);
+                            strategyTriangles[si] += diagCallback.TriangleCount;
+                            strategyLines[si] += diagCallback.LineCount;
+                            info.PointCount += diagCallback.PointCount;
+                            info.SnapPointCount += diagCallback.SnapPointCount;
+
+                            if (diagCallback.TriangleCount > 0)
+                                anyTriangles = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            info.FragmentErrors++;
+                            info.LastError = string.Format("S{0}:{1}", si + 1, ex.Message);
+                        }
+                    }
+
+                    if (!anyTriangles)
+                        info.EmptyFragmentCount++;
+                }
+
+                // 최대 삼각형/라인 수 집계 (가장 좋은 전략 기준)
+                for (int si = 0; si < 5; si++)
+                {
+                    if (strategyTriangles[si] > info.TriangleCount)
+                    {
+                        info.TriangleCount = strategyTriangles[si];
+                        info.VertexCount = strategyTriangles[si] * 3;
+                    }
+                    info.LineCount += strategyLines[si];
+                }
+                // Line은 전략별 합산 대신 최대값으로 (같은 line이 반복될 수 있음)
+                int maxLines = 0;
+                for (int si = 0; si < 5; si++)
+                {
+                    if (strategyLines[si] > maxLines) maxLines = strategyLines[si];
+                }
+                info.LineCount = maxLines;
+
+                info.StrategyResults = string.Format("[{0},{1},{2},{3},{4}]",
+                    strategyTriangles[0], strategyTriangles[1], strategyTriangles[2],
+                    strategyTriangles[3], strategyTriangles[4]);
+                info.StrategyLineResults = string.Format("[{0},{1},{2},{3},{4}]",
+                    strategyLines[0], strategyLines[1], strategyLines[2],
+                    strategyLines[3], strategyLines[4]);
             }
             catch (Exception ex)
             {
@@ -1023,6 +1352,27 @@ namespace DXTnavis.Services.Geometry
         public List<int> Indices { get; set; }
         public int VertexCount { get; set; }
         public int TriangleCount { get; set; }
+
+        /// <summary>
+        /// Phase 21: Mesh 품질 상태
+        /// "full_mesh", "box_placeholder", "gap_supplemented", "partial_retry_success", "skipped_container"
+        /// </summary>
+        public string Quality { get; set; }
+    }
+
+    /// <summary>
+    /// Phase 25: Tessellation 실패 이유 코드
+    /// </summary>
+    public enum TessFailureReason
+    {
+        None,               // 성공 (실패 아님)
+        NoGeometry,         // HasGeometry=false (geometry 데이터 없음)
+        Hidden,             // IsHidden=true (Navisworks에서 숨김 상태)
+        ComStateNull,       // COM State null
+        ComPathFailed,      // COM Path 변환 실패
+        NoFragments,        // Fragment 0개 (tessellation 대상 없음)
+        AllStrategiesFail,  // 5개 전략 모두 Triangle/Line 0 (EMPTY_TESS)
+        Exception           // 예외 발생
     }
 
     /// <summary>
@@ -1046,12 +1396,33 @@ namespace DXTnavis.Services.Geometry
         public bool HasNonIdentityTransform { get; set; }
         public string LastError { get; set; }
 
+        // ──── Phase 22: Deep Diagnostic 확장 필드 ────
+        /// <summary>Line 프리미티브 콜백 횟수 (파이프/센터라인)</summary>
+        public int LineCount { get; set; }
+        /// <summary>Point 프리미티브 콜백 횟수</summary>
+        public int PointCount { get; set; }
+        /// <summary>SnapPoint 프리미티브 콜백 횟수</summary>
+        public int SnapPointCount { get; set; }
+        /// <summary>객체 숨김 여부</summary>
+        public bool IsHidden { get; set; }
+        /// <summary>소스 모델 파일명</summary>
+        public string SourceFile { get; set; }
+        /// <summary>속성 카테고리 목록 (쉼표 구분)</summary>
+        public string PropertyCategories { get; set; }
+        /// <summary>5개 전략별 삼각형 수 [S1,S2,S3,S4,S5]</summary>
+        public string StrategyResults { get; set; }
+        /// <summary>5개 전략별 라인 수 [S1,S2,S3,S4,S5]</summary>
+        public string StrategyLineResults { get; set; }
+        /// <summary>Fragment COM 타입명 (첫 fragment)</summary>
+        public string FragmentTypeName { get; set; }
+
         /// <summary>mesh 추출 가능 여부 판정</summary>
         public string Status
         {
             get
             {
                 if (ComPathFailed) return "COM_FAIL";
+                if (IsHidden) return "HIDDEN";
                 if (!IsLeaf)
                 {
                     // Parent 노드: tessellation 안 하므로 fragment 존재 여부만 판정
@@ -1059,6 +1430,7 @@ namespace DXTnavis.Services.Geometry
                     return "PARENT_HAS_FRAG";
                 }
                 if (FragmentCount == 0) return "NO_FRAGMENTS";
+                if (TriangleCount == 0 && LineCount > 0) return "LINE_ONLY";
                 if (TriangleCount == 0 && EmptyFragmentCount == FragmentCount) return "EMPTY_TESS";
                 if (TriangleCount == 0) return "TESS_FAIL";
                 if (TriangleCount > 0) return "OK";
@@ -1068,7 +1440,7 @@ namespace DXTnavis.Services.Geometry
 
         public string ToCsvLine(int depth, string hierarchyPath)
         {
-            return string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15}",
+            return string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22}",
                 depth,
                 EscapeCsv(hierarchyPath),
                 EscapeCsv(DisplayName),
@@ -1083,12 +1455,22 @@ namespace DXTnavis.Services.Geometry
                 FragmentErrors,
                 VertexCount,
                 TriangleCount,
+                LineCount,
+                PointCount,
+                SnapPointCount,
                 HasNonIdentityTransform,
+                IsHidden,
+                EscapeCsv(SourceFile ?? ""),
+                EscapeCsv(StrategyResults ?? ""),
+                EscapeCsv(StrategyLineResults ?? ""),
                 Status);
         }
 
         public static string CsvHeader =>
-            "Depth,HierarchyPath,DisplayName,ClassDisplayName,NodeType,ChildCount,HasGeometry,HasBBox,BBoxVolume,FragmentCount,EmptyFragments,FragmentErrors,VertexCount,TriangleCount,HasTransform,Status";
+            "Depth,HierarchyPath,DisplayName,ClassDisplayName,NodeType,ChildCount,HasGeometry,HasBBox,BBoxVolume," +
+            "FragmentCount,EmptyFragments,FragmentErrors,VertexCount,TriangleCount," +
+            "LineCount,PointCount,SnapPointCount,HasTransform,IsHidden,SourceFile," +
+            "StrategyTriangles,StrategyLines,Status";
 
         private static string EscapeCsv(string s)
         {
@@ -1096,6 +1478,48 @@ namespace DXTnavis.Services.Geometry
             if (s.Contains(",") || s.Contains("\"") || s.Contains("\n"))
                 return "\"" + s.Replace("\"", "\"\"") + "\"";
             return s;
+        }
+
+        /// <summary>Public accessor for CSV escaping (used by ViewModel diagnostic export)</summary>
+        public static string EscapeCsvPublic(string s) => EscapeCsv(s);
+    }
+
+    /// <summary>
+    /// Phase 22: 진단용 콜백 — Triangle/Line/Point/SnapPoint 모두 카운트
+    /// </summary>
+    internal class DiagnosticCallbackSink : InwSimplePrimitivesCB
+    {
+        public int TriangleCount { get; private set; }
+        public int LineCount { get; private set; }
+        public int PointCount { get; private set; }
+        public int SnapPointCount { get; private set; }
+
+        public void Triangle(InwSimpleVertex v1, InwSimpleVertex v2, InwSimpleVertex v3)
+        {
+            TriangleCount++;
+        }
+
+        public void Line(InwSimpleVertex v1, InwSimpleVertex v2)
+        {
+            LineCount++;
+        }
+
+        public void Point(InwSimpleVertex v1)
+        {
+            PointCount++;
+        }
+
+        public void SnapPoint(InwSimpleVertex v1)
+        {
+            SnapPointCount++;
+        }
+
+        public void Reset()
+        {
+            TriangleCount = 0;
+            LineCount = 0;
+            PointCount = 0;
+            SnapPointCount = 0;
         }
     }
 
@@ -1108,6 +1532,10 @@ namespace DXTnavis.Services.Geometry
         private readonly MeshData _meshData;
         private int _currentVertexIndex = 0;
 
+        // Phase 25: Line 프리미티브 수집 (추후 tube mesh로 변환)
+        private readonly List<float[]> _lineSegments = new List<float[]>();
+        public int LineCount { get; private set; }
+
         public MeshCallbackSink(MeshData meshData)
         {
             _meshData = meshData;
@@ -1115,17 +1543,129 @@ namespace DXTnavis.Services.Geometry
 
         public void Line(InwSimpleVertex v1, InwSimpleVertex v2)
         {
-            // 라인은 무시 (삼각형만 처리)
+            // Phase 25: Line vertex 쌍 수집 (LCS 좌표)
+            var c1 = GetComArray(v1, "coord");
+            var c2 = GetComArray(v2, "coord");
+            if (c1 != null && c1.Length >= 3 && c2 != null && c2.Length >= 3)
+            {
+                _lineSegments.Add(new float[] { c1[0], c1[1], c1[2], c2[0], c2[1], c2[2] });
+                LineCount++;
+            }
         }
 
         public void Point(InwSimpleVertex v1)
         {
-            // 포인트는 무시
+            // 포인트는 무시 (mesh 변환 불가)
         }
 
         public void SnapPoint(InwSimpleVertex v1)
         {
             // 스냅 포인트는 무시
+        }
+
+        /// <summary>
+        /// Phase 25: 수집된 Line segment를 thin tube mesh로 변환하여 MeshData에 추가
+        /// Triangle이 전혀 없는 fragment(Line-only)에서만 호출
+        /// </summary>
+        /// <param name="tubeRadius">Tube 반지름 (기본 5mm)</param>
+        public void ConvertLinesToMesh(float tubeRadius = 0.005f)
+        {
+            if (_lineSegments.Count == 0) return;
+
+            foreach (var seg in _lineSegments)
+            {
+                AppendTubeMesh(_meshData, seg[0], seg[1], seg[2], seg[3], seg[4], seg[5],
+                    tubeRadius, 6, ref _currentVertexIndex);
+            }
+        }
+
+        /// <summary>
+        /// Phase 25: 두 끝점 사이에 thin tube mesh 추가 (6-sided, 12 triangles per segment)
+        /// </summary>
+        private static void AppendTubeMesh(MeshData mesh,
+            float x1, float y1, float z1,
+            float x2, float y2, float z2,
+            float radius, int segments, ref int vertexIndex)
+        {
+            // Direction vector
+            float ddx = x2 - x1, ddy = y2 - y1, ddz = z2 - z1;
+            float len = (float)Math.Sqrt(ddx * ddx + ddy * ddy + ddz * ddz);
+            if (len < 1e-9f) return; // degenerate line
+
+            // Normalize direction
+            float dx = ddx / len, dy = ddy / len, dz = ddz / len;
+
+            // Find perpendicular vector U via cross with least-aligned axis
+            float ux, uy, uz;
+            if (Math.Abs(dx) <= Math.Abs(dy) && Math.Abs(dx) <= Math.Abs(dz))
+            {
+                // X-axis least aligned → cross with X
+                ux = 0; uy = -dz; uz = dy;
+            }
+            else if (Math.Abs(dy) <= Math.Abs(dz))
+            {
+                // Y-axis least aligned → cross with Y
+                ux = dz; uy = 0; uz = -dx;
+            }
+            else
+            {
+                // Z-axis least aligned → cross with Z
+                ux = -dy; uy = dx; uz = 0;
+            }
+            float uLen = (float)Math.Sqrt(ux * ux + uy * uy + uz * uz);
+            if (uLen < 1e-9f) return;
+            ux /= uLen; uy /= uLen; uz /= uLen;
+
+            // V = D × U (cross product)
+            float vx = dy * uz - dz * uy;
+            float vy = dz * ux - dx * uz;
+            float vz = dx * uy - dy * ux;
+
+            // Generate ring vertices at P1 (end=0) and P2 (end=1)
+            int baseIdx = vertexIndex;
+            for (int end = 0; end < 2; end++)
+            {
+                float px = (end == 0) ? x1 : x2;
+                float py = (end == 0) ? y1 : y2;
+                float pz = (end == 0) ? z1 : z2;
+
+                for (int i = 0; i < segments; i++)
+                {
+                    float angle = 2f * (float)Math.PI * i / segments;
+                    float cosA = (float)Math.Cos(angle);
+                    float sinA = (float)Math.Sin(angle);
+
+                    float nx = cosA * ux + sinA * vx;
+                    float ny = cosA * uy + sinA * vy;
+                    float nz = cosA * uz + sinA * vz;
+
+                    mesh.Vertices.Add(px + radius * nx);
+                    mesh.Vertices.Add(py + radius * ny);
+                    mesh.Vertices.Add(pz + radius * nz);
+                    mesh.Normals.Add(nx);
+                    mesh.Normals.Add(ny);
+                    mesh.Normals.Add(nz);
+                    vertexIndex++;
+                }
+            }
+
+            // Side wall triangles (2 per quad segment)
+            for (int i = 0; i < segments; i++)
+            {
+                int next = (i + 1) % segments;
+                int topA = baseIdx + i;
+                int topB = baseIdx + next;
+                int botA = baseIdx + segments + i;
+                int botB = baseIdx + segments + next;
+
+                mesh.Indices.Add(topA);
+                mesh.Indices.Add(botA);
+                mesh.Indices.Add(topB);
+
+                mesh.Indices.Add(topB);
+                mesh.Indices.Add(botA);
+                mesh.Indices.Add(botB);
+            }
         }
 
         public void Triangle(InwSimpleVertex v1, InwSimpleVertex v2, InwSimpleVertex v3)

@@ -25,6 +25,18 @@ namespace DXTnavis.Models.Geometry
         /// <summary>Mesh 파일 상대 경로 (예: "mesh/xxx.glb")</summary>
         public string MeshUri { get; set; }
 
+        /// <summary>
+        /// Mesh 품질 상태: "full_mesh", "gap_supplemented", "partial_retry_success",
+        /// "line_mesh", "box_placeholder", "skipped_container"
+        /// </summary>
+        public string MeshQuality { get; set; }
+
+        /// <summary>Mesh vertex count (0 if no mesh)</summary>
+        public int VertexCount { get; set; }
+
+        /// <summary>Mesh triangle count (0 if no mesh)</summary>
+        public int TriangleCount { get; set; }
+
         /// <summary>객체 이름 (선택적)</summary>
         public string DisplayName { get; set; }
 
@@ -163,6 +175,25 @@ namespace DXTnavis.Models.Geometry
                 sb.Insert(sb.Length - 1, ",\n");
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                     "  \"displayName\": \"{0}\"", EscapeJsonString(DisplayName)));
+            }
+
+            // MeshQuality (선택적)
+            if (!string.IsNullOrEmpty(MeshQuality))
+            {
+                sb.Insert(sb.Length - 1, ",\n");
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "  \"meshQuality\": \"{0}\"", EscapeJsonString(MeshQuality)));
+            }
+
+            // Phase 25: VertexCount & TriangleCount
+            if (HasMesh && VertexCount > 0)
+            {
+                sb.Insert(sb.Length - 1, ",\n");
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "  \"vertexCount\": {0}", VertexCount));
+                sb.Insert(sb.Length - 1, ",\n");
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "  \"triangleCount\": {0}", TriangleCount));
             }
 
             sb.Append("}");

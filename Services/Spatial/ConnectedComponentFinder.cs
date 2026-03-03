@@ -142,6 +142,7 @@ namespace DXTnavis.Services.Spatial
                 }
             }
 
+            int groupsProcessed = 0;
             foreach (var kv in groups)
             {
                 var group = new ConnectedGroup
@@ -179,6 +180,11 @@ namespace DXTnavis.Services.Spatial
                     group.ComputeStatistics(geometries);
 
                 result.Add(group);
+
+                // 100그룹마다 COM 메시지 펌핑 (ContextSwitchDeadlock 방지)
+                groupsProcessed++;
+                if (groupsProcessed % 100 == 0)
+                    System.Windows.Forms.Application.DoEvents();
             }
 
             Debug.WriteLine(string.Format("[ConnectedComponentFinder] {0}개 그룹 통계 계산 완료", result.Count));

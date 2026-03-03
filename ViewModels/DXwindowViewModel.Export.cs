@@ -1012,14 +1012,25 @@ namespace DXTnavis.ViewModels
 
                     var meshData = meshExtractor.ExtractMesh(item, record.ObjectId);
 
-                    // Phase 19: BBox fallback when tessellation fails
+                    // Phase 21: BBox fallback when tessellation fails (with parent container detection)
+                    bool isParent = item.Children != null && item.Children.Any();
                     if ((meshData == null || meshData.VertexCount == 0) && record.BBox != null && record.BBox.IsValid && !record.BBox.IsEmpty)
                     {
-                        meshData = Services.Geometry.MeshExtractor.GenerateBoxMesh(record.BBox, record.ObjectId);
-                        if (meshData != null)
+                        if (isParent)
                         {
                             System.Diagnostics.Debug.WriteLine(
-                                string.Format("[TestMesh] BBox fallback: {0}", item.DisplayName));
+                                string.Format("[TestMesh] Skipped container: {0} (has children)", item.DisplayName));
+                        }
+                        else
+                        {
+                            meshData = Services.Geometry.MeshExtractor.GenerateBoxMesh(record.BBox, record.ObjectId);
+                            if (meshData != null)
+                            {
+                                meshData.Quality = "box_placeholder";
+                                System.Diagnostics.Debug.WriteLine(
+                                    string.Format("[TESS_FALLBACK] ObjectId={0} → Box placeholder. Name={1}",
+                                        record.ObjectId.ToString("D"), item.DisplayName));
+                            }
                         }
                     }
 
@@ -1089,65 +1100,146 @@ namespace DXTnavis.ViewModels
                     return;
                 }
 
+                // Phase 22: 선택 없으면 전체 문서 진단 (leaf 노드만)
                 var selection = doc.CurrentSelection.SelectedItems;
-                if (selection.Count == 0)
+                bool isFullDocument = selection.Count == 0;
+
+                if (isFullDocument)
                 {
-                    MessageBox.Show("진단할 객체를 선택하세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
+                    var confirm = MessageBox.Show(
+                        "선택된 객체가 없습니다.\n\n전체 문서의 leaf 노드를 진단하시겠습니까?\n(시간이 걸릴 수 있습니다)",
+                        "Deep Mesh Diagnostic",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+                    if (confirm != MessageBoxResult.Yes) return;
                 }
 
                 var saveDialog = new SaveFileDialog
                 {
                     Filter = "CSV 파일|*.csv",
                     DefaultExt = "csv",
-                    FileName = string.Format("MeshDiag_{0:yyyyMMdd_HHmmss}", DateTime.Now)
+                    FileName = string.Format("MeshDiag_{0}_{1:yyyyMMdd_HHmmss}",
+                        isFullDocument ? "FULL" : "SEL", DateTime.Now)
                 };
                 if (saveDialog.ShowDialog() != true) return;
 
                 IsExporting = true;
                 ExportProgressPercentage = 0;
-                ExportStatusMessage = "Mesh 진단 시작...";
+                ExportStatusMessage = isFullDocument
+                    ? "전체 문서 Deep Mesh 진단 시작..."
+                    : "Deep Mesh 진단 시작...";
 
-                // 선택된 항목 + 모든 하위 항목 수집
-                var allNodes = new List<(ModelItem item, int depth, string path)>();
-                foreach (var item in selection)
+                // Phase 22: leaf 노드 수집 — 선택이 없으면 전체 문서에서 수집
+                var leafNodes = new List<(ModelItem item, string path)>();
+                int parentSkipped = 0;
+
+                if (isFullDocument)
                 {
-                    CollectHierarchyForDiag(item, 0, item.DisplayName ?? "Root", allNodes);
+                    // 전체 문서: RootItems에서 재귀 수집 (leaf만)
+                    CollectLeafNodesForDiag(doc.Models.RootItems, "", leafNodes, ref parentSkipped);
+                }
+                else
+                {
+                    // 선택된 항목에서 재귀 수집 (leaf만)
+                    foreach (var item in selection)
+                    {
+                        CollectLeafNodesForDiag(item, item.DisplayName ?? "Root", leafNodes, ref parentSkipped);
+                    }
                 }
 
-                int total = allNodes.Count;
-                ExportStatusMessage = string.Format("Mesh 진단: {0}개 노드 분석 중...", total);
+                int total = leafNodes.Count;
+                ExportStatusMessage = string.Format("Deep 진단: leaf {0:N0}개 분석 중... (parent {1:N0}개 skip)",
+                    total, parentSkipped);
 
                 var lines = new List<string>();
                 lines.Add(Services.Geometry.MeshDiagnosticInfo.CsvHeader);
 
                 int processed = 0;
                 int okCount = 0, emptyTessCount = 0, noFragCount = 0, comFailCount = 0;
+                int lineOnlyCount = 0, hiddenCount = 0;
+
+                // Phase 22: 클래스별 통계 수집
+                var classSummary = new Dictionary<string, int[]>();
+                // [0]=total, [1]=OK, [2]=LINE_ONLY, [3]=EMPTY_TESS, [4]=NO_FRAG, [5]=totalLines, [6]=totalTriangles
 
                 using (var meshExtractor = new Services.Geometry.MeshExtractor())
                 {
-                    foreach (var (item, depth, path) in allNodes)
+                    foreach (var (item, path) in leafNodes)
                     {
-                        var info = meshExtractor.DiagnoseMesh(item);
-                        lines.Add(info.ToCsvLine(depth, path));
+                        // Phase 22: DeepDiagnoseMesh 사용 (전략별 Line/Point 카운트 포함)
+                        var info = meshExtractor.DeepDiagnoseMesh(item);
+                        lines.Add(info.ToCsvLine(0, path));
+
+                        // 클래스별 통계 집계
+                        string cls = info.ClassDisplayName ?? "(none)";
+                        if (!classSummary.ContainsKey(cls))
+                            classSummary[cls] = new int[7];
+                        classSummary[cls][0]++;
 
                         switch (info.Status)
                         {
-                            case "OK": okCount++; break;
+                            case "OK":
+                                okCount++;
+                                classSummary[cls][1]++;
+                                break;
+                            case "LINE_ONLY":
+                                lineOnlyCount++;
+                                classSummary[cls][2]++;
+                                break;
                             case "EMPTY_TESS":
-                            case "TESS_FAIL": emptyTessCount++; break;
-                            case "NO_FRAGMENTS": noFragCount++; break;
-                            case "COM_FAIL": comFailCount++; break;
+                            case "TESS_FAIL":
+                                emptyTessCount++;
+                                classSummary[cls][3]++;
+                                break;
+                            case "NO_FRAGMENTS":
+                                noFragCount++;
+                                classSummary[cls][4]++;
+                                break;
+                            case "COM_FAIL":
+                                comFailCount++;
+                                break;
+                            case "HIDDEN":
+                                hiddenCount++;
+                                break;
                         }
+                        classSummary[cls][5] += info.LineCount;
+                        classSummary[cls][6] += info.TriangleCount;
 
                         processed++;
                         if (processed % 20 == 0 || processed == total)
                         {
                             ExportProgressPercentage = (int)(100.0 * processed / total);
-                            ExportStatusMessage = string.Format("Mesh 진단: {0}/{1} (OK:{2}, Empty:{3}, NoFrag:{4})",
-                                processed, total, okCount, emptyTessCount, noFragCount);
+                            ExportStatusMessage = string.Format(
+                                "Deep 진단: {0:N0}/{1:N0} (OK:{2}, LineOnly:{3}, Empty:{4})",
+                                processed, total, okCount, lineOnlyCount, emptyTessCount);
+
+                            // COM STA pump — UI freeze 방지
+                            if (processed % 10 == 0)
+                                System.Windows.Forms.Application.DoEvents();
                         }
                     }
+                }
+
+                // Phase 22: 클래스별 요약 CSV 추가
+                lines.Add("");
+                lines.Add("=== CLASS SUMMARY (leaf nodes only) ===");
+                lines.Add("ClassName,Total,OK,LINE_ONLY,EMPTY_TESS,NO_FRAG,TotalLines,TotalTriangles,FailRate%");
+                // FailRate 기준 내림차순 정렬
+                var sortedClasses = new List<KeyValuePair<string, int[]>>(classSummary);
+                sortedClasses.Sort((a, b) =>
+                {
+                    int failA = a.Value[2] + a.Value[3] + a.Value[4]; // LINE_ONLY + EMPTY_TESS + NO_FRAG
+                    int failB = b.Value[2] + b.Value[3] + b.Value[4];
+                    return failB.CompareTo(failA); // 실패 많은 순
+                });
+                foreach (var kvp in sortedClasses)
+                {
+                    var v = kvp.Value;
+                    int failCount = v[2] + v[3] + v[4];
+                    double failRate = v[0] > 0 ? 100.0 * failCount / v[0] : 0;
+                    lines.Add(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8:F1}",
+                        Services.Geometry.MeshDiagnosticInfo.EscapeCsvPublic(kvp.Key),
+                        v[0], v[1], v[2], v[3], v[4], v[5], v[6], failRate));
                 }
 
                 // 파일 저장
@@ -1157,20 +1249,41 @@ namespace DXTnavis.ViewModels
                 });
 
                 ExportProgressPercentage = 100;
-                ExportStatusMessage = "Mesh 진단 완료!";
+                ExportStatusMessage = "Deep Mesh 진단 완료!";
+
+                // 실패율이 높은 상위 3개 클래스 표시
+                string topFailClasses = "";
+                int topCount = 0;
+                foreach (var kvp in sortedClasses)
+                {
+                    int failCount = kvp.Value[2] + kvp.Value[3] + kvp.Value[4];
+                    if (failCount == 0) continue;
+                    double failRate = 100.0 * failCount / kvp.Value[0];
+                    topFailClasses += string.Format("\n    {0}: {1}개 실패 ({2:F0}%) [Line:{3}]",
+                        kvp.Key, failCount, failRate, kvp.Value[5]);
+                    topCount++;
+                    if (topCount >= 5) break;
+                }
 
                 MessageBox.Show(
-                    string.Format("Mesh Diagnostic 완료!\n\n"
-                        + "분석 노드: {0}개\n"
+                    string.Format("Deep Mesh Diagnostic 완료!\n\n"
+                        + "범위: {0}\n"
+                        + "분석 leaf 노드: {1:N0}개 (parent {2:N0}개 skip)\n"
                         + "── 결과 ──\n"
-                        + "  OK (mesh 추출 가능): {1}개\n"
-                        + "  EMPTY_TESS (tessellation 실패): {2}개\n"
-                        + "  NO_FRAGMENTS (fragment 없음): {3}개\n"
-                        + "  COM_FAIL (COM 변환 실패): {4}개\n\n"
-                        + "파일: {5}",
-                        total, okCount, emptyTessCount, noFragCount, comFailCount,
+                        + "  OK (mesh 추출 가능): {3}개\n"
+                        + "  LINE_ONLY (삼각형 없음, 선만): {4}개\n"
+                        + "  EMPTY_TESS (tessellation 실패): {5}개\n"
+                        + "  NO_FRAGMENTS (fragment 없음): {6}개\n"
+                        + "  COM_FAIL (COM 변환 실패): {7}개\n"
+                        + "  HIDDEN (숨김 객체): {8}개\n"
+                        + "\n── 실패율 상위 클래스 ──{9}\n\n"
+                        + "파일: {10}",
+                        isFullDocument ? "전체 문서" : "선택 객체",
+                        total, parentSkipped,
+                        okCount, lineOnlyCount, emptyTessCount, noFragCount, comFailCount, hiddenCount,
+                        string.IsNullOrEmpty(topFailClasses) ? "\n    (없음)" : topFailClasses,
                         System.IO.Path.GetFileName(saveDialog.FileName)),
-                    "Mesh Diagnostic",
+                    "Deep Mesh Diagnostic",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
@@ -1186,7 +1299,58 @@ namespace DXTnavis.ViewModels
         }
 
         /// <summary>
-        /// 재귀적으로 계층 구조 수집 (진단용)
+        /// Phase 22: 전체 문서에서 leaf 노드만 재귀 수집 (RootItems 버전)
+        /// </summary>
+        private void CollectLeafNodesForDiag(
+            ModelItemEnumerableCollection items, string parentPath,
+            List<(ModelItem, string)> result, ref int parentSkipped)
+        {
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                string currentPath = string.IsNullOrEmpty(parentPath)
+                    ? (item.DisplayName ?? "?")
+                    : string.Format("{0} > {1}", parentPath, item.DisplayName ?? "?");
+
+                if (item.Children != null && item.Children.Any())
+                {
+                    parentSkipped++;
+                    CollectLeafNodesForDiag(item.Children, currentPath, result, ref parentSkipped);
+                }
+                else
+                {
+                    result.Add((item, currentPath));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Phase 22: 단일 항목에서 leaf 노드만 재귀 수집 (선택 버전)
+        /// </summary>
+        private void CollectLeafNodesForDiag(
+            ModelItem item, string parentPath,
+            List<(ModelItem, string)> result, ref int parentSkipped)
+        {
+            if (item == null) return;
+            string currentPath = parentPath;
+
+            if (item.Children != null && item.Children.Any())
+            {
+                parentSkipped++;
+                foreach (var child in item.Children)
+                {
+                    string childPath = string.Format("{0} > {1}", currentPath, child.DisplayName ?? "?");
+                    CollectLeafNodesForDiag(child, childPath, result, ref parentSkipped);
+                }
+            }
+            else
+            {
+                result.Add((item, currentPath));
+            }
+        }
+
+        /// <summary>
+        /// 재귀적으로 계층 구조 수집 (진단용 - 레거시)
         /// </summary>
         private void CollectHierarchyForDiag(ModelItem item, int depth, string parentPath, List<(ModelItem, int, string)> result)
         {
@@ -1268,46 +1432,171 @@ namespace DXTnavis.ViewModels
                 System.IO.Directory.CreateDirectory(meshDir);
 
                 int meshCount = 0;
+                // Phase 21: modelItemMap을 using 블록 밖에서도 접근 가능하도록 선언
+                var modelItemMap = geoExtractor.LastModelItemMap;
+
+                // Phase 24+27: container 감지 — BBox 커버리지 기반 정교한 판별
+                // 자식이 부모 BBox의 대부분을 커버하면 skip (진짜 container)
+                // 자식이 일부만 커버하면 부모 자체 형상이 있으므로 추출 대상 유지
+                var parentChildMap = geoExtractor.LastParentChildMap;
+                var containerIds = new HashSet<Guid>();
+                var partialContainerIds = new HashSet<Guid>();
+                int partialContainerCount = 0;
+                foreach (var kvp in parentChildMap)
+                {
+                    var parentId = kvp.Key;
+                    var childIds = kvp.Value;
+
+                    // 자식 중 geometry에 등록된 것이 있는지 확인
+                    bool hasExportedChild = false;
+                    foreach (var childId in childIds)
+                    {
+                        if (geometries.ContainsKey(childId))
+                        {
+                            hasExportedChild = true;
+                            break;
+                        }
+                    }
+                    if (!hasExportedChild) continue;
+
+                    // 부모 BBox와 자식 BBox 커버리지 비교
+                    if (!geometries.ContainsKey(parentId) || geometries[parentId].BBox == null)
+                    {
+                        containerIds.Add(parentId);
+                        continue;
+                    }
+
+                    var parentBBox = geometries[parentId].BBox;
+                    double parentVol = parentBBox.GetVolume();
+                    if (parentVol < 1e-9)
+                    {
+                        containerIds.Add(parentId);
+                        continue;
+                    }
+
+                    // 자식 BBox들의 합산 부피 계산
+                    double childrenVolSum = 0;
+                    foreach (var childId in childIds)
+                    {
+                        if (geometries.ContainsKey(childId) && geometries[childId].BBox != null)
+                            childrenVolSum += geometries[childId].BBox.GetVolume();
+                    }
+
+                    double coverageRatio = childrenVolSum / parentVol;
+
+                    // 커버리지 50% 이상이면 진짜 container → skip
+                    // 50% 미만이면 부모 자체에 고유 형상 존재 → 추출 대상
+                    if (coverageRatio >= 0.5)
+                    {
+                        containerIds.Add(parentId);
+                    }
+                    else
+                    {
+                        partialContainerCount++;
+                        partialContainerIds.Add(parentId);
+                        System.Diagnostics.Debug.WriteLine(
+                            string.Format("[FullPipeline] Phase 27: Partial container kept: {0} ({1}) coverage={2:P1}",
+                                parentId, geometries[parentId].DisplayName ?? "?", coverageRatio));
+                    }
+                }
+                System.Diagnostics.Debug.WriteLine(
+                    string.Format("[FullPipeline] Phase 24: {0} containers skip, {1} partial containers kept for mesh extraction",
+                        containerIds.Count, partialContainerCount));
+
+                // Phase 25: Tessellation 실패 진단 수집
+                var tessFailures = new List<string>();
+                tessFailures.Add("ObjectId,DisplayName,ClassDisplayName,FailureReason,Detail");
+                int noGeometryCount = 0;
+                int hiddenCount = 0;
+                int noFragmentCount = 0;
+                int allStratFailCount = 0;
+
                 using (var meshExtractor = new Services.Geometry.MeshExtractor())
                 {
                     meshExtractor.StatusChanged += (s, msg) => ExportStatusMessage = "[3/5] " + msg;
 
-                    // Leaf items only: parent/group nodes aggregate all descendant fragments,
-                    // causing duplicated & inflated vertex counts
-                    var modelItemMap = geoExtractor.LastModelItemMap;
-                    var leafItems = new List<KeyValuePair<Guid, ModelItem>>();
-                    foreach (var kvp in modelItemMap)
-                    {
-                        if (kvp.Value.Children == null || !kvp.Value.Children.Any())
-                            leafItems.Add(kvp);
-                    }
+                    // Phase 25: leaf 아이템만 mesh 추출 (container는 Fragments()가 하위 포함 → 중복 방지)
+                    var allItems = new List<KeyValuePair<Guid, ModelItem>>(modelItemMap);
 
                     int meshProcessed = 0;
-                    int meshTotal = leafItems.Count;
+                    int meshTotal = allItems.Count;
 
-                    ExportStatusMessage = string.Format("[3/5] Mesh GLB 추출 중... ({0:N0}개 leaf 객체, 전체 {1:N0}개 중)", meshTotal, modelItemMap.Count);
+                    ExportStatusMessage = string.Format("[3/5] Mesh GLB 추출 중... ({0:N0}개 객체)", meshTotal);
 
-                    foreach (var kvp in leafItems)
+                    foreach (var kvp in allItems)
                     {
                         var objectId = kvp.Key;
                         var item = kvp.Value;
 
                         try
                         {
+                            // Phase 25: Container skip — Fragments()가 하위 fragment를 집계하므로 중복 방지
+                            if (containerIds.Contains(objectId))
+                            {
+                                if (geometries.ContainsKey(objectId))
+                                    geometries[objectId].MeshQuality = "skipped_container";
+                                meshProcessed++;
+                                if (meshProcessed % 50 == 0 || meshProcessed == meshTotal)
+                                    ExportProgressPercentage = 40 + (int)(20.0 * meshProcessed / meshTotal);
+                                if (meshProcessed % 10 == 0)
+                                    System.Windows.Forms.Application.DoEvents();
+                                continue;
+                            }
+
                             var meshData = meshExtractor.ExtractMesh(item, objectId);
+
                             if (meshData != null && meshData.VertexCount > 0)
                             {
                                 var glbPath = System.IO.Path.Combine(meshDir,
                                     string.Format("{0}.glb", objectId.ToString("D")));
                                 meshExtractor.SaveToGlb(meshData, glbPath);
 
-                                // GeometryRecord 업데이트
+                                // GeometryRecord 업데이트 + Phase 25: MeshQuality + VertexCount/TriangleCount
                                 if (geometries.ContainsKey(objectId))
                                 {
                                     geometries[objectId].HasMesh = true;
                                     geometries[objectId].MeshUri = string.Format("mesh/{0}.glb", objectId.ToString("D"));
+                                    geometries[objectId].MeshQuality = meshData.Quality ?? "full_mesh";
+                                    geometries[objectId].VertexCount = meshData.VertexCount;
+                                    geometries[objectId].TriangleCount = meshData.TriangleCount;
                                 }
                                 meshCount++;
+                            }
+                            else
+                            {
+                                // Phase 25: 실패 이유 수집
+                                var reason = meshExtractor.LastFailureReason;
+                                var detail = meshExtractor.LastFailureDetail ?? "";
+                                string displayName = item.DisplayName ?? "(unnamed)";
+                                string classDisp = item.ClassDisplayName ?? "";
+
+                                tessFailures.Add(string.Format("{0},{1},{2},{3},{4}",
+                                    objectId,
+                                    displayName.Replace(",", ";"),
+                                    classDisp.Replace(",", ";"),
+                                    reason,
+                                    detail.Replace(",", ";")));
+
+                                // 실패 카테고리별 카운트
+                                switch (reason)
+                                {
+                                    case Services.Geometry.TessFailureReason.NoGeometry:
+                                        noGeometryCount++;
+                                        if (geometries.ContainsKey(objectId))
+                                            geometries[objectId].MeshQuality = "no_geometry";
+                                        break;
+                                    case Services.Geometry.TessFailureReason.Hidden:
+                                        hiddenCount++;
+                                        if (geometries.ContainsKey(objectId))
+                                            geometries[objectId].MeshQuality = "hidden";
+                                        break;
+                                    case Services.Geometry.TessFailureReason.NoFragments:
+                                        noFragmentCount++;
+                                        break;
+                                    case Services.Geometry.TessFailureReason.AllStrategiesFail:
+                                        allStratFailCount++;
+                                        break;
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -1328,12 +1617,106 @@ namespace DXTnavis.ViewModels
                     }
                 }
 
-                // Phase 19: BBox Fallback — tessellation 실패 객체에 box mesh 생성
+                // Phase 25: tessellation_failures.csv 출력
+                if (tessFailures.Count > 1) // 헤더 외에 실패 데이터가 있을 때만
+                {
+                    var failureCsvPath = System.IO.Path.Combine(outputDir, "tessellation_failures.csv");
+                    System.IO.File.WriteAllLines(failureCsvPath, tessFailures, System.Text.Encoding.UTF8);
+                    System.Diagnostics.Debug.WriteLine(
+                        string.Format("[FullPipeline] Phase 25 Tess Failures: NoGeometry={0}, Hidden={1}, NoFragments={2}, AllStratFail={3}, Total={4}",
+                            noGeometryCount, hiddenCount, noFragmentCount, allStratFailCount, tessFailures.Count - 1));
+                }
+
+                // ──── Phase 26+27: FBX Fallback — gap_supplemented + no_geometry(partial container) 실제 geometry 추출 ────
+                int fbxFallbackCount = 0;
+                bool fbxAvailable = Services.Geometry.FbxExportService.IsAvailable();
+
+                System.Diagnostics.Debug.WriteLine(
+                    string.Format("[FullPipeline] Phase 26: FBX plugin available = {0}", fbxAvailable));
+
+                if (fbxAvailable)
+                {
+                    // gap_supplemented + no_geometry(partial container) → FBX로 실제 형상 추출
+                    var fbxTargetItems = new List<ModelItem>();
+                    var fbxTargetIds = new List<Guid>();
+                    int gapCount = 0;
+                    int partialNoGeoCount = 0;
+
+                    foreach (var kvp in geometries)
+                    {
+                        if (!modelItemMap.ContainsKey(kvp.Key)) continue;
+
+                        if (kvp.Value.MeshQuality == "gap_supplemented")
+                        {
+                            fbxTargetItems.Add(modelItemMap[kvp.Key]);
+                            fbxTargetIds.Add(kvp.Key);
+                            gapCount++;
+                        }
+                        else if (kvp.Value.MeshQuality == "no_geometry" && partialContainerIds.Contains(kvp.Key))
+                        {
+                            // Phase 27: partial container — COM API tessellation 실패했지만
+                            // 부모 노드에 고유 형상이 있으므로 FBX 내부 tessellator로 추출 시도
+                            fbxTargetItems.Add(modelItemMap[kvp.Key]);
+                            fbxTargetIds.Add(kvp.Key);
+                            partialNoGeoCount++;
+                        }
+                    }
+
+                    System.Diagnostics.Debug.WriteLine(
+                        string.Format("[FullPipeline] Phase 26+27: FBX targets = {0} (gap={1}, partial_container_no_geo={2})",
+                            fbxTargetItems.Count, gapCount, partialNoGeoCount));
+
+                    if (fbxTargetItems.Count > 0)
+                    {
+                        ExportStatusMessage = string.Format("[3/5] FBX fallback: {0}개 객체 export 중 (gap={1}, partial={2})...",
+                            fbxTargetItems.Count, gapCount, partialNoGeoCount);
+
+                        var fbxService = new Services.Geometry.FbxExportService();
+                        fbxService.StatusChanged += (s, msg) => ExportStatusMessage = "[3/5] FBX: " + msg;
+
+                        var fbxPath = System.IO.Path.Combine(outputDir, "gap_fallback.fbx");
+                        bool fbxSuccess = fbxService.ExportTargetItemsAsFbx(fbxTargetItems, fbxPath);
+
+                        if (fbxSuccess && System.IO.File.Exists(fbxPath))
+                        {
+                            fbxFallbackCount = fbxTargetItems.Count;
+                            foreach (var objectId in fbxTargetIds)
+                            {
+                                if (geometries.ContainsKey(objectId))
+                                    geometries[objectId].MeshQuality = "fbx_supplemented";
+                            }
+                            System.Diagnostics.Debug.WriteLine(
+                                string.Format("[FullPipeline] Phase 26+27: FBX fallback exported {0} objects → {1}",
+                                    fbxFallbackCount, fbxPath));
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("[FullPipeline] Phase 26+27: FBX fallback failed or not available");
+                        }
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[FullPipeline] Phase 26: FBX plugin not available, skipping FBX fallback");
+                }
+
+                // Phase 25: BBox Fallback — 진짜 tessellation 실패 객체만 box_placeholder
+                // no_geometry, hidden, skipped_container는 box 생성 불필요
                 int fallbackCount = 0;
                 foreach (var kvp in geometries)
                 {
                     if (!kvp.Value.HasMesh && kvp.Value.BBox != null && kvp.Value.BBox.IsValid && !kvp.Value.BBox.IsEmpty)
                     {
+                        // Container는 이미 mesh 루프에서 skipped_container 처리됨
+                        if (containerIds.Contains(kvp.Key))
+                            continue;
+
+                        // Phase 25: no_geometry / hidden 객체는 Navisworks에서도 안 보임 → box 불필요
+                        string quality = kvp.Value.MeshQuality;
+                        if (quality == "no_geometry" || quality == "hidden")
+                            continue;
+
+                        // 진짜 tessellation 실패: box fallback 생성
                         var boxMesh = Services.Geometry.MeshExtractor.GenerateBoxMesh(kvp.Value.BBox, kvp.Key);
                         if (boxMesh != null)
                         {
@@ -1345,16 +1728,22 @@ namespace DXTnavis.ViewModels
                             }
                             kvp.Value.HasMesh = true;
                             kvp.Value.MeshUri = string.Format("mesh/{0}.glb", kvp.Key.ToString("D"));
+                            kvp.Value.MeshQuality = "box_placeholder";
+                            kvp.Value.VertexCount = boxMesh.VertexCount;
+                            kvp.Value.TriangleCount = boxMesh.TriangleCount;
                             fallbackCount++;
                         }
                     }
+                    else if (kvp.Value.HasMesh && string.IsNullOrEmpty(kvp.Value.MeshQuality))
+                    {
+                        kvp.Value.MeshQuality = "full_mesh";
+                    }
                 }
+                System.Diagnostics.Debug.WriteLine(
+                    string.Format("[FullPipeline] Phase 26+27: containers skipped={0}, partial containers={1}, fbx fallback={2}, box fallback={3}, total mesh={4}",
+                        containerIds.Count, partialContainerCount, fbxFallbackCount, fallbackCount, meshCount));
                 if (fallbackCount > 0)
-                {
-                    System.Diagnostics.Debug.WriteLine(
-                        string.Format("[FullPipeline] BBox fallback: {0} objects", fallbackCount));
                     meshCount += fallbackCount;
-                }
 
                 ExportProgressPercentage = 60;
 
@@ -1367,14 +1756,29 @@ namespace DXTnavis.ViewModels
                 geoWriter.WriteCsv(geometries, System.IO.Path.Combine(outputDir, "geometry.csv"));
                 geoWriter.WriteManifest(geometries, outputDir);
 
-                // ──── Stage 4/5: Adjacency 검출 ────
-                ExportStatusMessage = string.Format("[4/5] Adjacency 검출 중... ({0:N0}개 객체)", geometries.Count);
+                // ──── Stage 4/5: Adjacency 검출 (leaf 노드만 대상) ────
+                // Phase 28: container 노드 제외 — BBox가 자식 전체를 포함하므로
+                // spatial hash grid에서 너무 많은 쌍을 생성하여 leaf-leaf 인접 누락 유발
+                var leafGeometries = new Dictionary<Guid, Models.Geometry.GeometryRecord>();
+                foreach (var kvp in geometries)
+                {
+                    // container(skipped_container)와 hidden은 adjacency 대상에서 제외
+                    string q = kvp.Value.MeshQuality;
+                    if (q == "skipped_container" || q == "hidden")
+                        continue;
+                    leafGeometries.Add(kvp.Key, kvp.Value);
+                }
+                System.Diagnostics.Debug.WriteLine(
+                    string.Format("[FullPipeline] Phase 28: Adjacency leaf filter: {0} total → {1} leaf nodes (skipped {2} containers/hidden)",
+                        geometries.Count, leafGeometries.Count, geometries.Count - leafGeometries.Count));
+
+                ExportStatusMessage = string.Format("[4/5] Adjacency 검출 중... ({0:N0}개 leaf 객체)", leafGeometries.Count);
 
                 var detector = new Services.Spatial.AdjacencyDetector();
                 detector.ProgressChanged += (s, p) => ExportProgressPercentage = 60 + p / 5;
                 detector.StatusChanged += (s, msg) => ExportStatusMessage = "[4/5] " + msg;
 
-                var adjacencies = detector.Detect(geometries);
+                var adjacencies = detector.Detect(leafGeometries);
 
                 // Connected Components
                 var componentFinder = new Services.Spatial.ConnectedComponentFinder();
@@ -1404,7 +1808,16 @@ namespace DXTnavis.ViewModels
                         + "── Geometry ──\n"
                         + "  BBox 추출: {1:N0}개\n\n"
                         + "── Mesh GLB ──\n"
-                        + "  GLB 생성: {2:N0}개\n\n"
+                        + "  GLB 생성: {2:N0}개\n"
+                        + "  Container Skip: {7:N0}개\n"
+                        + "  Partial Container: {14:N0}개\n"
+                        + "  FBX Fallback: {13:N0}개\n"
+                        + "  Box Fallback: {8:N0}개\n\n"
+                        + "── Tess 실패 진단 ──\n"
+                        + "  NoGeometry: {9:N0}개\n"
+                        + "  Hidden: {10:N0}개\n"
+                        + "  NoFragments: {11:N0}개\n"
+                        + "  AllStratFail: {12:N0}개\n\n"
                         + "── Spatial ──\n"
                         + "  인접 관계: {3:N0}\n"
                         + "  연결 그룹: {4:N0}\n\n"
@@ -1412,7 +1825,9 @@ namespace DXTnavis.ViewModels
                         + "저장 위치: {6}",
                         unifiedCount, geometries.Count, meshCount,
                         adjacencies.Count, groups.Count,
-                        sw.Elapsed.TotalSeconds, outputDir),
+                        sw.Elapsed.TotalSeconds, outputDir, containerIds.Count, fallbackCount,
+                        noGeometryCount, hiddenCount, noFragmentCount, allStratFailCount,
+                        fbxFallbackCount, partialContainerCount),
                     "Full Pipeline Export",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);

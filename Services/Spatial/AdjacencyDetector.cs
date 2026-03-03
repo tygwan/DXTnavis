@@ -106,11 +106,12 @@ namespace DXTnavis.Services.Spatial
                     processed++;
                 }
 
-                // 100개마다 진행률 보고
+                // 100개마다 진행률 보고 + COM 메시지 펌핑
                 if (i % 100 == 0)
                 {
                     int pct = total > 1 ? (int)(100.0 * i / total) : 100;
                     OnProgressChanged(pct);
+                    System.Windows.Forms.Application.DoEvents();
                 }
             }
 
@@ -169,6 +170,10 @@ namespace DXTnavis.Services.Spatial
                         }
                     }
                 }
+
+                // 500개마다 COM 메시지 펌핑 (Grid 구성 중 ContextSwitchDeadlock 방지)
+                if (i % 500 == 0)
+                    System.Windows.Forms.Application.DoEvents();
             }
 
             // 2) 셀 내 이웃 후보 쌍만 검사
@@ -226,6 +231,7 @@ namespace DXTnavis.Services.Spatial
                 {
                     int pct = (int)(100.0 * cellsProcessed / totalCells);
                     OnProgressChanged(pct);
+                    System.Windows.Forms.Application.DoEvents();
                 }
             }
 

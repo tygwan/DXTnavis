@@ -41,6 +41,13 @@ namespace DXTnavis.Services.Geometry
         public Dictionary<Guid, ModelItem> LastModelItemMap { get; private set; }
             = new Dictionary<Guid, ModelItem>();
 
+        /// <summary>
+        /// Phase 24: 마지막 추출 시 기록된 ParentObjectId → List of ChildObjectId 매핑
+        /// Container 감지에 사용 — parent.Children wrapper 재계산 없이 안정적으로 판별
+        /// </summary>
+        public Dictionary<Guid, List<Guid>> LastParentChildMap { get; private set; }
+            = new Dictionary<Guid, List<Guid>>();
+
         #endregion
 
         #region Public Methods
@@ -99,10 +106,13 @@ namespace DXTnavis.Services.Geometry
         /// <returns>ObjectId → GeometryRecord 딕셔너리</returns>
         public Dictionary<Guid, GeometryRecord> ExtractAllBoundingBoxes(
             IEnumerable<ModelItem> items,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            Dictionary<ModelItem, ModelItem> childToParent = null)
         {
             var result = new Dictionary<Guid, GeometryRecord>();
             var modelItemMap = new Dictionary<Guid, ModelItem>();
+            // Phase 24: extraction 시점에 각 아이템의 StableObjectId를 기록
+            var itemToStableId = new Dictionary<ModelItem, Guid>(new ModelItemReferenceComparer());
             var itemList = new List<ModelItem>(items);
             int total = itemList.Count;
             int processed = 0;
@@ -129,6 +139,7 @@ namespace DXTnavis.Services.Geometry
                 {
                     result[record.ObjectId] = record;
                     modelItemMap[record.ObjectId] = item;
+                    itemToStableId[item] = record.ObjectId;
                     successful++;
                 }
 
@@ -143,12 +154,56 @@ namespace DXTnavis.Services.Geometry
                 }
             }
 
+            // Phase 24: parent → child 관계 구축
+            // childToParent는 CollectAllModelItems에서 traversal 시점에 캡처됨
+            // 동일 인스턴스를 사용하므로 wrapper 불안정성 문제 없음
+            var parentChildMap = new Dictionary<Guid, List<Guid>>();
+            if (childToParent != null)
+            {
+                foreach (var kvp in childToParent)
+                {
+                    Guid childId;
+                    Guid parentId;
+                    if (!itemToStableId.TryGetValue(kvp.Key, out childId))
+                        continue;
+                    if (!itemToStableId.TryGetValue(kvp.Value, out parentId))
+                        continue;
+
+                    List<Guid> children;
+                    if (!parentChildMap.TryGetValue(parentId, out children))
+                    {
+                        children = new List<Guid>();
+                        parentChildMap[parentId] = children;
+                    }
+                    children.Add(childId);
+                }
+            }
+
             sw.Stop();
             OnProgressChanged(100);
-            OnStatusChanged($"추출 완료: {successful:N0}개 BoundingBox ({sw.Elapsed.TotalSeconds:F1}초)");
+            OnStatusChanged($"추출 완료: {successful:N0}개 BoundingBox ({sw.Elapsed.TotalSeconds:F1}초, {parentChildMap.Count}개 container 관계)");
 
             LastModelItemMap = modelItemMap;
+            LastParentChildMap = parentChildMap;
             return result;
+        }
+
+        /// <summary>
+        /// Phase 24: ModelItem reference equality comparer
+        /// CollectAllModelItems에서 수집한 동일 인스턴스 간 비교에 사용
+        /// (parent.Children과 달리 동일 traversal의 인스턴스는 reference-equal)
+        /// </summary>
+        private class ModelItemReferenceComparer : IEqualityComparer<ModelItem>
+        {
+            public bool Equals(ModelItem x, ModelItem y)
+            {
+                return ReferenceEquals(x, y);
+            }
+
+            public int GetHashCode(ModelItem obj)
+            {
+                return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+            }
         }
 
         /// <summary>
@@ -167,13 +222,14 @@ namespace DXTnavis.Services.Geometry
                 return new Dictionary<Guid, GeometryRecord>();
             }
 
-            // 모든 ModelItem 수집
+            // 모든 ModelItem 수집 + Phase 24: parent-child 관계 기록
             var allItems = new List<ModelItem>();
-            CollectAllModelItems(document.Models.RootItems, allItems);
+            var childToParent = new Dictionary<ModelItem, ModelItem>(new ModelItemReferenceComparer());
+            CollectAllModelItems(document.Models.RootItems, allItems, childToParent);
 
             OnStatusChanged($"총 {allItems.Count:N0}개 객체 발견");
 
-            return ExtractAllBoundingBoxes(allItems, cancellationToken);
+            return ExtractAllBoundingBoxes(allItems, cancellationToken, childToParent);
         }
 
         /// <summary>
@@ -195,6 +251,17 @@ namespace DXTnavis.Services.Geometry
             return ExtractAllBoundingBoxes(selection, cancellationToken);
         }
 
+        /// <summary>
+        /// Phase 24: 외부에서 ModelItem의 StableObjectId를 계산할 수 있도록 공개
+        /// parent.Children으로 접근한 child의 StableObjectId를 알아내기 위해 사용
+        /// (Navisworks가 새 wrapper 객체를 반환하므로 Dictionary 키 비교 불가)
+        /// </summary>
+        public Guid ComputeStableObjectId(ModelItem item)
+        {
+            var hierarchyPath = BuildHierarchyPath(item);
+            return GetStableObjectId(item, hierarchyPath);
+        }
+
         #endregion
 
         #region Private Helper Methods
@@ -202,8 +269,11 @@ namespace DXTnavis.Services.Geometry
         /// <summary>
         /// 모든 ModelItem을 재귀적으로 수집
         /// Hidden 객체와 하위 노드는 스킵 (NavisworksDataExtractor.TraverseAndExtractProperties와 동일)
+        /// Phase 24: traversal 시점에 child → parent 관계도 기록 (wrapper 안정성 보장)
         /// </summary>
-        private void CollectAllModelItems(ModelItemEnumerableCollection rootItems, List<ModelItem> result)
+        private void CollectAllModelItems(ModelItemEnumerableCollection rootItems,
+            List<ModelItem> result, Dictionary<ModelItem, ModelItem> childToParent,
+            ModelItem parentItem = null)
         {
             foreach (var item in rootItems)
             {
@@ -212,10 +282,12 @@ namespace DXTnavis.Services.Geometry
                 if (item.IsHidden) continue;
 
                 result.Add(item);
+                if (parentItem != null)
+                    childToParent[item] = parentItem;
 
                 if (item.Children != null && item.Children.Any())
                 {
-                    CollectAllModelItems(item.Children, result);
+                    CollectAllModelItems(item.Children, result, childToParent, item);
                 }
             }
         }

@@ -57,15 +57,15 @@
     </Reference>
     <Reference Include="Autodesk.Navisworks.Interop.ComApi">
       <HintPath>..\..\..\..\..\..\..\Program Files\Autodesk\Navisworks Manage 2025\Autodesk.Navisworks.Interop.ComApi.dll</HintPath>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="Autodesk.Navisworks.Interop.ComApiAutomation">
       <HintPath>..\..\..\..\..\..\..\Program Files\Autodesk\Navisworks Manage 2025\Autodesk.Navisworks.Interop.ComApiAutomation.dll</HintPath>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="Autodesk.Navisworks.Interop.Timeliner">
       <HintPath>..\..\..\..\..\..\..\Program Files\Autodesk\Navisworks Manage 2025\Autodesk.Navisworks.Interop.Timeliner.dll</HintPath>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="Autodesk.Navisworks.Resolver">
       <HintPath>..\..\..\..\..\..\..\Program Files\Autodesk\Navisworks Manage 2025\Autodesk.Navisworks.Resolver.dll</HintPath>
@@ -201,6 +201,8 @@
     <Compile Include="Services\Geometry\GeometryExtractor.cs" />
     <Compile Include="Services\Geometry\GeometryFileWriter.cs" />
     <Compile Include="Services\Geometry\MeshExtractor.cs" />
+    <Compile Include="Services\Geometry\ParametricMeshGenerator.cs" />
+    <Compile Include="Services\Geometry\FbxExportService.cs" />
     <Compile Include="Services\Geometry\GeometryRdfIntegrator.cs" />
     <!-- Phase 14/15: 임시 비활성화 - 플러그인 로딩 테스트
     <Compile Include="Models\Ontology\OntologyRules.cs" />
@@ -285,9 +287,12 @@
   <PropertyGroup>
     <PostBuildEvent>echo === DXTnavis PostBuild Deploy ===
 powershell -Command "if (Get-Process -Name Roamer -ErrorAction SilentlyContinue) { Write-Host '[WARNING] Closing Navisworks...'; Stop-Process -Name Roamer -Force; Start-Sleep -Seconds 2; Write-Host '[OK] Navisworks closed.' }"
-echo === Copy Main DLL ===
+echo === Copy Main DLL to Plugins root ===
 copy /Y "$(TargetPath)" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\"
 copy /Y "$(TargetDir)$(TargetName).pdb" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\"
+echo === Copy Main DLL to Plugins\DXTnavis subfolder ===
+copy /Y "$(TargetPath)" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\DXTnavis\"
+copy /Y "$(TargetDir)$(TargetName).pdb" "C:\Program Files\Autodesk\Navisworks Manage 2025\Plugins\DXTnavis\"
 echo === DXTnavis Deploy Complete ===
 exit /b 0</PostBuildEvent>
   </PropertyGroup>

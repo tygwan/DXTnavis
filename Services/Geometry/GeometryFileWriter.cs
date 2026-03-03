@@ -103,7 +103,7 @@ namespace DXTnavis.Services.Geometry
                 using (var writer = new StreamWriter(csvPath, false, Encoding.UTF8))
                 {
                     // CSV 헤더
-                    writer.WriteLine("ObjectId,DisplayName,Category,MinX,MinY,MinZ,MaxX,MaxY,MaxZ,CentroidX,CentroidY,CentroidZ,Volume,HasMesh,MeshUri");
+                    writer.WriteLine("ObjectId,DisplayName,Category,MinX,MinY,MinZ,MaxX,MaxY,MaxZ,CentroidX,CentroidY,CentroidZ,Volume,HasMesh,MeshUri,MeshQuality,VertexCount,TriangleCount");
 
                     int processed = 0;
                     int total = records.Count;
@@ -112,7 +112,7 @@ namespace DXTnavis.Services.Geometry
                     {
                         var r = kvp.Value;
                         var line = string.Format(CultureInfo.InvariantCulture,
-                            "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
+                            "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17}",
                             r.ObjectId,
                             EscapeCsvField(r.DisplayName ?? ""),
                             EscapeCsvField(r.Category ?? ""),
@@ -127,7 +127,10 @@ namespace DXTnavis.Services.Geometry
                             r.Centroid.Z,
                             r.GetVolume(),
                             r.HasMesh,
-                            EscapeCsvField(r.MeshUri ?? ""));
+                            EscapeCsvField(r.MeshUri ?? ""),
+                            EscapeCsvField(r.MeshQuality ?? ""),
+                            r.VertexCount,
+                            r.TriangleCount);
 
                         writer.WriteLine(line);
 
@@ -301,12 +304,28 @@ namespace DXTnavis.Services.Geometry
             // MeshUri
             if (string.IsNullOrEmpty(r.MeshUri))
             {
-                writer.WriteLine("      \"meshUri\": null");
+                writer.WriteLine("      \"meshUri\": null,");
             }
             else
             {
-                writer.WriteLine($"      \"meshUri\": \"{EscapeJsonString(r.MeshUri)}\"");
+                writer.WriteLine($"      \"meshUri\": \"{EscapeJsonString(r.MeshUri)}\",");
             }
+
+            // Phase 21: MeshQuality
+            if (!string.IsNullOrEmpty(r.MeshQuality))
+            {
+                writer.WriteLine($"      \"meshQuality\": \"{EscapeJsonString(r.MeshQuality)}\",");
+            }
+            else
+            {
+                writer.WriteLine("      \"meshQuality\": null,");
+            }
+
+            // Phase 25: VertexCount & TriangleCount
+            writer.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "      \"vertexCount\": {0},", r.VertexCount));
+            writer.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "      \"triangleCount\": {0}", r.TriangleCount));
 
             writer.WriteLine(hasMore ? "    }," : "    }");
         }
