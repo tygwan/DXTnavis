@@ -280,18 +280,22 @@ namespace DXTnavis.Services.Geometry
                 writer.WriteLine($"      \"category\": \"{EscapeJsonString(r.Category)}\",");
             }
 
-            // BoundingBox
-            writer.WriteLine("      \"bbox\": {");
+            // BoundingBox — Phase 30: null BBox → JSON null (빈 객체 {} 방지)
             if (r.BBox != null)
             {
+                writer.WriteLine("      \"bbox\": {");
                 writer.WriteLine(string.Format(CultureInfo.InvariantCulture,
                     "        \"min\": {{ \"x\": {0}, \"y\": {1}, \"z\": {2} }},",
                     r.BBox.Min.X, r.BBox.Min.Y, r.BBox.Min.Z));
                 writer.WriteLine(string.Format(CultureInfo.InvariantCulture,
                     "        \"max\": {{ \"x\": {0}, \"y\": {1}, \"z\": {2} }}",
                     r.BBox.Max.X, r.BBox.Max.Y, r.BBox.Max.Z));
+                writer.WriteLine("      },");
             }
-            writer.WriteLine("      },");
+            else
+            {
+                writer.WriteLine("      \"bbox\": null,");
+            }
 
             // Centroid
             writer.WriteLine(string.Format(CultureInfo.InvariantCulture,

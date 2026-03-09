@@ -1549,18 +1549,23 @@ namespace DXTnavis.ViewModels
                             {
                                 var glbPath = System.IO.Path.Combine(meshDir,
                                     string.Format("{0}.glb", objectId.ToString("D")));
-                                meshExtractor.SaveToGlb(meshData, glbPath);
+                                // Phase 30: SaveToGlb 반환값 체크 — 실패 시 HasMesh=true 방지
+                                bool glbSaved = meshExtractor.SaveToGlb(meshData, glbPath);
 
-                                // GeometryRecord 업데이트 + Phase 25: MeshQuality + VertexCount/TriangleCount
-                                if (geometries.ContainsKey(objectId))
+                                if (glbSaved && geometries.ContainsKey(objectId))
                                 {
                                     geometries[objectId].HasMesh = true;
                                     geometries[objectId].MeshUri = string.Format("mesh/{0}.glb", objectId.ToString("D"));
                                     geometries[objectId].MeshQuality = meshData.Quality ?? "full_mesh";
                                     geometries[objectId].VertexCount = meshData.VertexCount;
                                     geometries[objectId].TriangleCount = meshData.TriangleCount;
+                                    meshCount++;
                                 }
-                                meshCount++;
+                                else if (!glbSaved)
+                                {
+                                    System.Diagnostics.Debug.WriteLine(
+                                        string.Format("[FullPipeline] SaveToGlb failed for {0}", objectId));
+                                }
                             }
                             else
                             {
@@ -1722,16 +1727,26 @@ namespace DXTnavis.ViewModels
                         {
                             var glbPath = System.IO.Path.Combine(meshDir,
                                 string.Format("{0}.glb", kvp.Key.ToString("D")));
+                            // Phase 30: SaveToGlb 반환값 체크
+                            bool boxSaved;
                             using (var fallbackWriter = new Services.Geometry.MeshExtractor())
                             {
-                                fallbackWriter.SaveToGlb(boxMesh, glbPath);
+                                boxSaved = fallbackWriter.SaveToGlb(boxMesh, glbPath);
                             }
-                            kvp.Value.HasMesh = true;
-                            kvp.Value.MeshUri = string.Format("mesh/{0}.glb", kvp.Key.ToString("D"));
-                            kvp.Value.MeshQuality = "box_placeholder";
-                            kvp.Value.VertexCount = boxMesh.VertexCount;
-                            kvp.Value.TriangleCount = boxMesh.TriangleCount;
-                            fallbackCount++;
+                            if (boxSaved)
+                            {
+                                kvp.Value.HasMesh = true;
+                                kvp.Value.MeshUri = string.Format("mesh/{0}.glb", kvp.Key.ToString("D"));
+                                kvp.Value.MeshQuality = "box_placeholder";
+                                kvp.Value.VertexCount = boxMesh.VertexCount;
+                                kvp.Value.TriangleCount = boxMesh.TriangleCount;
+                                fallbackCount++;
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine(
+                                    string.Format("[FullPipeline] Box GLB save failed for {0}", kvp.Key));
+                            }
                         }
                     }
                     else if (kvp.Value.HasMesh && string.IsNullOrEmpty(kvp.Value.MeshQuality))
@@ -1795,6 +1810,30 @@ namespace DXTnavis.ViewModels
                 spatialWriter.WriteGroupsCsv(groups, outputDir);
                 spatialWriter.WriteTtl(adjacencies, groups, outputDir);
 
+                // ──── Phase 29: Object Validation CSV ────
+                ExportStatusMessage = "[5/5] 객체 검증 중...";
+                var validationService = new Services.Validation.ObjectValidationService();
+                validationService.ProgressChanged += (s, p) => ExportProgressPercentage = 85 + p / 10;
+                validationService.StatusChanged += (s, msg) => ExportStatusMessage = "[5/5] " + msg;
+
+                var validationRecords = validationService.Validate(
+                    geometries, modelItemMap,
+                    containerIds, partialContainerIds,
+                    adjacencies, groups, parentChildMap,
+                    meshDir);
+
+                validationService.WriteCsv(validationRecords, outputDir);
+                ExportProgressPercentage = 95;
+
+                // Phase 29: Verdict 집계
+                int verdictFailCount = 0;
+                int verdictWarnCount = 0;
+                foreach (var vr in validationRecords)
+                {
+                    if (vr.Verdict == "FAIL_NO_EXTRACT") verdictFailCount++;
+                    if (vr.Verdict == "WARN_BOX") verdictWarnCount++;
+                }
+
                 sw.Stop();
                 spatialWriter.WriteSummary(adjacencies, groups, outputDir, sw.Elapsed.TotalSeconds);
 
@@ -1821,13 +1860,16 @@ namespace DXTnavis.ViewModels
                         + "── Spatial ──\n"
                         + "  인접 관계: {3:N0}\n"
                         + "  연결 그룹: {4:N0}\n\n"
+                        + "── Phase 29 검증 ──\n"
+                        + "  FAIL_NO_EXTRACT: {15:N0}개\n"
+                        + "  WARN_BOX: {16:N0}개\n\n"
                         + "처리 시간: {5:F1}초\n"
                         + "저장 위치: {6}",
                         unifiedCount, geometries.Count, meshCount,
                         adjacencies.Count, groups.Count,
                         sw.Elapsed.TotalSeconds, outputDir, containerIds.Count, fallbackCount,
                         noGeometryCount, hiddenCount, noFragmentCount, allStratFailCount,
-                        fbxFallbackCount, partialContainerCount),
+                        fbxFallbackCount, partialContainerCount, verdictFailCount, verdictWarnCount),
                     "Full Pipeline Export",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);

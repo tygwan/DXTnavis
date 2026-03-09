@@ -104,6 +104,15 @@ namespace DXTnavis.Models
         /// <summary>Mesh 파일 URI (상대 경로)</summary>
         public string MeshUri { get; set; }
 
+        /// <summary>Phase 30: Mesh 품질 (full_mesh / fbx_supplemented / box_placeholder 등)</summary>
+        public string MeshQuality { get; set; }
+
+        /// <summary>Phase 30: Vertex count (0 if no mesh)</summary>
+        public int VertexCount { get; set; }
+
+        /// <summary>Phase 30: Triangle count (0 if no mesh)</summary>
+        public int TriangleCount { get; set; }
+
         #endregion
 
         #region Methods
@@ -141,6 +150,9 @@ namespace DXTnavis.Models
 
             HasMesh = geometry.HasMesh;
             MeshUri = geometry.MeshUri;
+            MeshQuality = geometry.MeshQuality;
+            VertexCount = geometry.VertexCount;
+            TriangleCount = geometry.TriangleCount;
         }
 
         /// <summary>
@@ -190,7 +202,7 @@ namespace DXTnavis.Models
         /// </summary>
         public static string GetCsvHeader()
         {
-            return "SchemaVersion,ExportedAtUtc,ObjectId,ParentId,Level,DisplayName,ObjectCategory,HierarchyPath,PropertyCount,PropertiesJson,BBoxMinX,BBoxMinY,BBoxMinZ,BBoxMaxX,BBoxMaxY,BBoxMaxZ,CentroidX,CentroidY,CentroidZ,BBoxVolume,HasMesh,MeshUri";
+            return "SchemaVersion,ExportedAtUtc,ObjectId,ParentId,Level,DisplayName,ObjectCategory,HierarchyPath,PropertyCount,PropertiesJson,BBoxMinX,BBoxMinY,BBoxMinZ,BBoxMaxX,BBoxMaxY,BBoxMaxZ,CentroidX,CentroidY,CentroidZ,BBoxVolume,HasMesh,MeshUri,MeshQuality,VertexCount,TriangleCount";
         }
 
         /// <summary>
@@ -201,7 +213,7 @@ namespace DXTnavis.Models
             var culture = CultureInfo.InvariantCulture;
 
             return string.Format(culture,
-                "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21}",
+                "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24}",
                 EscapeCsv(SchemaVersion),
                 ExportedAtUtc.ToString("o"),  // ISO 8601
                 ObjectId,
@@ -223,7 +235,10 @@ namespace DXTnavis.Models
                 FormatDouble(CentroidZ),
                 FormatDouble(BBoxVolume),
                 HasMesh.ToString().ToLowerInvariant(),
-                EscapeCsv(MeshUri ?? string.Empty));
+                EscapeCsv(MeshUri ?? string.Empty),
+                EscapeCsv(MeshQuality ?? string.Empty),
+                VertexCount,
+                TriangleCount);
         }
 
         private static string FormatDouble(double? value)
